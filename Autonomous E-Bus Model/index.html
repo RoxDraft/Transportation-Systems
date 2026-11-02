@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>รถเมล์ไฟฟ้าไร้คนขับ — โมเดล 3D</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eceeed;--panel:#fafaf9;--ink:#16191c;--muted:#5b6168;--line:#dcdfdd;--acc:#2f67ad;--warm:#c8622f;--ok:#2f8a57;--mono:"IBM Plex Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Thai",system-ui,sans-serif;font-size:14px;line-height:1.55}
+a{color:var(--acc)} a:hover{color:#1d4f8f}
+button{font-family:inherit}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 440px;height:100vh}
+.viewport{position:relative;min-width:0;overflow:hidden}
+three-d-stage{height:100%}
+three-d-stage:not(:defined){visibility:hidden}
+.panel{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;height:100vh;min-height:0}
+@media (max-width:980px){.app{grid-template-columns:1fr;grid-template-rows:max(64vh,460px) auto;height:auto}.panel{height:auto;border-left:0;border-top:1px solid var(--line)}.tabc{overflow:visible}}
+.ph{padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+.ph h1{font-size:19px;margin:0;font-weight:600;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:12.5px}
+.specs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.specs span{font:500 11px/1 var(--mono);padding:5px 7px;border:1px solid var(--line);border-radius:4px;background:#fff}
+.tabs{display:flex;border-bottom:1px solid var(--line);padding:0 10px;gap:0;overflow-x:auto;scrollbar-width:none}
+.tabs button{appearance:none;border:0;background:none;padding:11px 8px;font-size:13px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+.tabc{flex:1;overflow:auto;padding:16px 20px 48px;min-height:0}
+.tabc>section{display:none}.tabc>section.on{display:block}
+h2{font-size:15px;margin:18px 0 8px;font-weight:600}
+h2:first-child{margin-top:0}
+h3{font-size:13.5px;margin:14px 0 6px;font-weight:600}
+p{margin:0 0 8px;text-wrap:pretty}
+ul{margin:0;padding-left:18px}li{margin:2px 0;text-wrap:pretty}
+.note{font-size:12px;color:var(--muted)}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font:500 11px/22px var(--mono);text-align:center}
+.comp{border:1px solid var(--line);border-radius:7px;background:#fff;margin-bottom:6px}
+.comp .hd{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px;cursor:pointer}
+.comp .hd b{font-weight:500}
+.comp .hd small{display:block;color:var(--muted);font-size:11.5px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.comp .hd .c{font:500 11.5px var(--mono);color:var(--muted)}
+.comp.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.comp .bd{display:none;padding:0 12px 12px 42px;font-size:13px}
+.comp.on .bd{display:block}
+.mat{font-family:var(--mono);font-size:11.5px;color:#26313d}
+.minibars{display:grid;grid-template-columns:38px 1fr 64px;gap:4px 8px;align-items:center;margin-top:8px;font:500 11px var(--mono)}
+.bar{height:8px;border-radius:2px;background:#c9cdd1}
+.bar.y21{background:#8d96a0}.bar.y26{background:var(--acc)}
+.legend{display:flex;gap:12px;font:500 11px var(--mono);color:var(--muted);margin:6px 0 10px}
+.legend i{display:inline-block;width:10px;height:8px;border-radius:2px;margin-right:4px;vertical-align:0}
+.costrow{padding:8px 0;border-bottom:1px solid var(--line)}
+.costrow .t{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.costrow .t span{font:500 11.5px var(--mono);color:var(--muted);white-space:nowrap}
+.costrow .bars{display:grid;gap:2px;margin-top:5px}
+.big{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.big div{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.big b{display:block;font-size:20px;font-weight:600;letter-spacing:-.01em}
+.big small{color:var(--muted);font-size:11.5px}
+.drop{color:var(--ok)}.up{color:var(--warm)}
+.city h3{margin:0}
+.city .meta{font:500 11px var(--mono);color:var(--muted);margin-bottom:6px}
+.tag{display:inline-block;font:500 10.5px var(--mono);padding:2px 6px;border-radius:3px;background:#eef1f4;color:#33404d;margin:0 4px 4px 0}
+.mx{display:grid;grid-template-columns:96px repeat(5,minmax(0,1fr));font-size:11.5px;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:#fff}
+.mx div{padding:6px 5px;border-bottom:1px solid var(--line);text-align:center}
+.mx div.h{font-weight:600;background:#f3f4f3}
+.mx div.l{text-align:left;font-weight:500}
+.mx div.hl{background:#e6eef8}
+.dots{letter-spacing:1px;font-family:var(--mono)}
+.log{font:12px/1.5 var(--mono);display:grid;gap:6px}
+.log div{padding:6px 8px;background:#fff;border:1px solid var(--line);border-radius:6px}
+.log time{color:var(--muted);margin-right:6px}
+.labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lb{position:absolute;transform:translate(-50%,calc(-100% - 10px));display:flex;align-items:center;gap:5px;padding:2px 9px 2px 2px;background:rgba(255,255,255,.95);border:1px solid rgba(20,20,20,.14);border-radius:999px;font-size:11.5px;white-space:nowrap;pointer-events:auto;cursor:pointer;transition:opacity .15s}
+.lb .num{width:18px;height:18px;line-height:18px;font-size:10px}
+.lb::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:calc(9px + var(--drop,0px));background:rgba(20,20,20,.45)}
+.lb .tx{display:inline}.labels.compact .lb{padding:2px}.labels.compact .lb .tx{display:none}.labels.compact .lb:hover .tx,.labels.compact .lb.on .tx{display:inline;padding-right:7px}.lb:hover{z-index:3}
+.lb.dim{opacity:.22}.lb.on{background:var(--ink);color:#fff;z-index:2}.lb.on .num{background:var(--acc)}
+.topbar{position:absolute;top:12px;left:12px;right:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;pointer-events:none}
+.topbar>*{pointer-events:auto}
+.seg{display:flex;background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px;gap:2px}
+.seg button{appearance:none;border:0;background:none;padding:6px 10px;border-radius:6px;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--ink);color:#fff}
+.ctrl{white-space:nowrap;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px}
+.ctrl input[type=range]{width:120px;accent-color:var(--acc)}
+.btn{white-space:nowrap;appearance:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--ink)}
+.btn:hover{background:#f4f5f4}
+body[data-mode=model] .sim-only{display:none!important}
+body[data-mode=sim] .model-only{display:none!important}
+.hud{position:absolute;left:12px;top:62px;width:272px;max-width:calc(100% - 24px);background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:12.5px}
+.hud .state{font-weight:600;font-size:14px;line-height:1.35;margin-bottom:8px;min-height:38px}
+.kv{display:grid;grid-template-columns:84px minmax(0,1fr);gap:3px 10px;font-family:var(--mono);font-size:11px}
+@media (max-width:1100px){.hud{width:220px;padding:10px 12px}.hud .state{font-size:13px;min-height:0}.kv{grid-template-columns:64px minmax(0,1fr);gap:2px 8px;font-size:10.5px}.ctrl input[type=range]{width:90px}}
+.kv span:nth-child(odd){color:var(--muted)}
+.soc{height:6px;border-radius:3px;background:#e4e6e5;margin:6px 0 8px;overflow:hidden}
+.hud{max-height:calc(100% - 74px);overflow:auto}
+.soc i{display:block;height:100%;background:var(--ok)}
+.announce{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);max-width:80%;background:var(--ink);color:#fff;padding:9px 16px;border-radius:7px;font-size:13px;opacity:0;transition:opacity .35s;pointer-events:none;text-align:center}
+.announce.show{opacity:1}
+.calc{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:12.5px}
+.calc input[type=range]{width:100%;accent-color:var(--acc)}
+.calc output{font:500 12px var(--mono);min-width:56px;text-align:right}
+select{font-family:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.res{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.res div{background:#f4f6f8;border-radius:6px;padding:8px 10px}
+.res b{display:block;font-size:17px;font-weight:600}
+.res small{color:var(--muted);font-size:11px}
+.tier{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.tier .w{font:600 12px var(--mono);color:var(--acc)}
+.org{display:grid;gap:6px}
+.org .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px}
+.org .box{background:#fff;border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:12px}
+.org .box b{display:block;font-size:12.5px}
+.org .top{background:var(--ink);color:#fff;border-color:var(--ink)}
+.vsel{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.vsel button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;font-size:12.5px;cursor:pointer}
+.vsel button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.reuse{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;font-size:12px;margin:6px 0 4px}
+.reuse span{display:flex;gap:6px;align-items:center}
+.reuse i{flex:none;width:8px;height:8px;border-radius:50%;background:#d3d6d9}
+.reuse i.y{background:var(--ok)}.reuse i.m{background:#e2a33b}
+</style>
+</head>
+<body data-mode="model">
+<div class="app">
+  <div class="viewport" id="vp">
+    <three-d-stage name="autonomous-ebus-12m" background="#eceeed"></three-d-stage>
+    <div class="labels" id="labels"></div>
+    <div class="topbar">
+      <div class="seg" id="modeSeg"><button data-mode="model" class="on">โมเดลแยกชิ้นส่วน</button><button data-mode="sim">จำลองบนถนนจริง</button></div>
+      <div class="ctrl model-only"><span>แยกชิ้นส่วน</span><input type="range" id="explode" min="0" max="1" step="0.01" value="0"><label style="display:flex;gap:5px;align-items:center"><input type="checkbox" id="showLabels" checked> ป้ายชื่อ</label></div>
+      <button class="btn model-only" id="clearSel" style="display:none">ล้างการเลือก</button>
+      <div class="seg sim-only" id="weatherSeg"><button data-w="clear" class="on">แดด</button><button data-w="rain">ฝนหนัก</button><button data-w="fog">หมอก/ควัน</button><button data-w="night">กลางคืน</button></div>
+      <div class="seg sim-only" id="speedSeg"><button data-s="0">หยุด</button><button data-s="1" class="on">1×</button><button data-s="3">3×</button></div>
+      <button class="btn sim-only" id="followBtn">กล้องตามรถ: เปิด</button>
+    </div>
+    <div class="hud sim-only" id="hud">
+      <div class="state" id="hState">กำลังเริ่ม…</div>
+      <div class="kv"><span>แบตเตอรี่</span><span id="hSoc">–</span><span>วิ่งได้อีก</span><span id="hLeft">–</span></div>
+      <div class="soc"><i id="hSocBar" style="width:80%"></i></div>
+      <div class="kv">
+        <span>ความเร็ว</span><span id="hSpeed">0 กม./ชม.</span>
+        <span>ไฟจราจร</span><span id="hSig">–</span>
+        <span>ระบุตำแหน่ง</span><span id="hLoc">–</span>
+        <span>ลิงก์ OCC</span><span id="hOcc">–</span>
+        <span>ระยะรับรู้</span><span id="hRange">–</span>
+        <span>ตรวจพบ</span><span id="hObj">–</span>
+      </div>
+    </div>
+    <div class="announce" id="announce"></div>
+  </div>
+
+  <aside class="panel">
+    <div class="ph">
+      <h1>รถเมล์ไฟฟ้าไร้คนขับ 12 เมตร</h1>
+      <div class="sub">Autonomous battery-electric bus · SAE Level 4 · ต้นแบบเพื่อการศึกษา</div>
+      <div class="specs"><span>12.0 × 2.55 × 3.5 ม.</span><span>29 นั่ง + 50 ยืน</span><span>LFP 350 kWh</span><span>~250 กม./ชาร์จ</span><span>ทางลาดวีลแชร์</span></div>
+    </div>
+    <div class="tabs" id="tabs">
+      <button data-t="parts" class="on">ชิ้นส่วน &amp; วัสดุ</button>
+      <button data-t="cost">ต้นทุน 10 ปี</button>
+      <button data-t="charge">จุดชาร์จ</button>
+      <button data-t="maint">ซ่อมบำรุง</button>
+      <button data-t="fleet">ต่อยอดยานอื่น</button>
+      <button data-t="cities">เมืองที่ใช้</button>
+      <button data-t="real">สภาพแวดล้อมจริง</button>
+    </div>
+    <div class="tabc">
+      <section data-t="parts" class="on">
+        <p class="note">คลิกชื่อชิ้นส่วนในรายการหรือป้ายบนโมเดลเพื่อไฮไลต์ · เลื่อนแถบ “แยกชิ้นส่วน” เพื่อดูภายใน</p>
+        <div id="compList"></div>
+        <h2>วิ่งได้อีกกี่ชั่วโมง</h2>
+        <div class="card">
+          <div class="calc">
+            <span>แบตเตอรี่คงเหลือ</span><input type="range" id="eSoc" min="10" max="100" value="80"><output id="eSocO">80%</output>
+            <span>สภาพการใช้งาน</span><select id="eCond" style="grid-column:span 2"><option value="1.05">ปกติ (แอร์ปานกลาง)</option><option value="1.32">ร้อนจัด 38°C แอร์เต็ม</option><option value="1.15">ฝนตก รถติด</option><option value="0.98">กลางคืน การจราจรเบาบาง</option></select>
+          </div>
+          <div class="res"><div><b id="eHrs">–</b><small>ชั่วโมงบริการ (เฉลี่ย 18 กม./ชม.)</small></div><div><b id="eKm">–</b><small>กิโลเมตร (สำรองไว้ 10%)</small></div></div>
+          <p class="note" style="margin-top:8px">แสดงผลบนจอ OCC และจอผู้ควบคุมแบบเรียลไทม์ คำนวณจากอัตราใช้พลังงานย้อนหลัง 15 นาที</p>
+        </div>
+      </section>
+
+      <section data-t="cost">
+        <div class="big"><div><small>ต้นทุนชิ้นส่วนรวม ~2016</small><b id="tot16">–</b><small id="tot16b"></small></div><div><small>ต้นทุนชิ้นส่วนรวม ~2026</small><b id="tot26">–</b><small id="tot26b"></small></div></div>
+        <div class="legend"><span><i style="background:#c9cdd1"></i>2016</span><span><i style="background:#8d96a0"></i>2021</span><span><i style="background:var(--acc)"></i>2026</span></div>
+        <div id="costList"></div>
+        <h2>ปัจจัยที่ทำให้ราคาเปลี่ยน</h2>
+        <ul>
+          <li><b>แบตเตอรี่ LFP</b> ราคาต่อ kWh ลดลงราว 75% จากการผลิตจำนวนมากและแคโทด LiFePO₄ ที่ไม่ใช้โคบอลต์</li>
+          <li><b>LiDAR</b> เปลี่ยนจากกลไกหมุนราคาหลักหมื่นดอลลาร์ เป็นแบบ solid-state / MEMS ราคาหลักพัน</li>
+          <li><b>อะลูมิเนียมและคอมโพสิต</b> ราคาวัตถุดิบและค่าแรงสูงขึ้น ทำให้ตัวถังและแชสซีแพงขึ้นเล็กน้อย</li>
+        </ul>
+        <p class="note" style="margin-top:10px">ตัวเลขเป็นค่าประมาณการเพื่อการศึกษา (USD, อัตรา ~34 บาท/USD) ไม่ใช่ใบเสนอราคา ราคาจริงขึ้นกับผู้ผลิต ปริมาณสั่งซื้อ และภาษีนำเข้า</p>
+      </section>
+
+      <section data-t="charge">
+        <h2>รูปแบบการชาร์จ</h2>
+        <div class="card"><h3 style="margin-top:0">1 · ชาร์จที่อู่ (Depot, overnight)</h3><p>หัวชาร์จ CCS2 แบบเสียบ 150 kW × 2 ช่อง · 10→90% ใช้เวลาราว 1–1.5 ชม. · ชาร์จช่วงกลางคืนซึ่งค่าไฟถูก (TOU off-peak)</p><span class="tag">ช่องรับไฟ CCS2 ท้ายรถด้านขวา</span></div>
+        <div class="card"><h3 style="margin-top:0">2 · ชาร์จปลายทาง (Opportunity, pantograph)</h3><p>เสาชาร์จแบบแพนโทกราฟลงมาแตะรางรับไฟบนหลังคา 450 kW · จอด 6 นาที ได้ ~45 kWh ≈ 40 กม. · ใช้ที่สถานีปลายสายระหว่างพักรถ</p><span class="tag">รางทองแดง-กราไฟต์บนหลังคา</span><span class="tag">ดูได้ในโหมดจำลองที่สถานี B</span></div>
+        <h2>คำนวณระยะห่างจุดชาร์จ</h2>
+        <div class="card">
+          <div class="calc">
+            <span>ความยาวเส้นทาง/รอบ</span><input type="range" id="cLoop" min="8" max="60" value="24"><output id="cLoopO"></output>
+            <span>ชั่วโมงให้บริการ/วัน</span><input type="range" id="cHrs" min="8" max="20" value="17"><output id="cHrsO"></output>
+            <span>สภาพการใช้งาน</span><select id="cCond" style="grid-column:span 2"><option value="1.05">ปกติ</option><option value="1.32">ร้อนจัด แอร์เต็ม</option><option value="1.15">ฝนตก รถติด</option></select>
+          </div>
+          <div class="res">
+            <div><b id="rRange">–</b><small>ระยะวิ่งปลอดภัย/ชาร์จ (SoC 90→20%)</small></div>
+            <div><b id="rDaily">–</b><small>ระยะวิ่งต่อวัน</small></div>
+            <div><b id="rSpacing">–</b><small>ระยะห่างจุดชาร์จสูงสุดที่แนะนำ</small></div>
+            <div><b id="rTop">–</b><small>ชาร์จปลายทาง (6 นาที) ต่อวัน</small></div>
+          </div>
+          <p class="note" id="rNote" style="margin-top:10px"></p>
+        </div>
+        <h2>หลักวางตำแหน่งจุดชาร์จ</h2>
+        <ul>
+          <li>อู่จอด/ชาร์จไม่ควรห่างจากต้นสายเกิน ~10–15 กม. เพื่อลดระยะวิ่งเปล่า</li>
+          <li>ติดตั้งแพนโทกราฟที่ปลายสายทั้งสองฝั่งเมื่อระยะต่อวันเกินระยะวิ่งปลอดภัย</li>
+          <li>เผื่อสำรอง 20% สำหรับรถติด น้ำท่วม หรือเปลี่ยนเส้นทางฉุกเฉินที่ OCC สั่ง</li>
+          <li>ระบบไฟฟ้า: ต้องประสานการไฟฟ้า (MEA/PEA) เรื่องหม้อแปลงและค่าความต้องการไฟฟ้าสูงสุด</li>
+        </ul>
+      </section>
+
+      <section data-t="maint">
+        <h2>รอบการซ่อมบำรุง</h2>
+        <div id="tiers"></div>
+        <h2>โครงสร้างองค์กรซ่อมบำรุง</h2>
+        <div class="org">
+          <div class="row"><div class="box top"><b>ผู้จัดการระบบเดินรถ</b>ความปลอดภัย · ใบอนุญาต · KPI</div></div>
+          <div class="row">
+            <div class="box"><b>ศูนย์ควบคุม OCC</b>ผู้ควบคุมระยะไกล 1 คน : 5–10 คัน · เฝ้าระวัง 24 ชม.</div>
+            <div class="box"><b>อู่ซ่อมบำรุง</b>ช่างไฟฟ้าแรงสูง · ช่างช่วงล่าง/ตัวถัง</div>
+            <div class="box"><b>ทีมระบบอัตโนมัติ</b>ช่างเซนเซอร์/สอบเทียบ · วิศวกรซอฟต์แวร์ · ทีมแผนที่ HD</div>
+          </div>
+          <div class="row">
+            <div class="box"><b>Predictive maintenance</b>ข้อมูลจาก Monitor: อุณหภูมิเซลล์ การสั่นมอเตอร์ จำนวนรอบเปิดประตู</div>
+            <div class="box"><b>ผู้ผลิต/ซัพพลายเออร์</b>รับประกันแบตเตอรี่ 8 ปี · อัปเดต OTA · อะไหล่</div>
+          </div>
+        </div>
+        <h2>พื้นที่ในอู่</h2>
+        <ul>
+          <li>ช่องชาร์จ CCS2 + ที่จอด</li><li>ช่องล้างรถและล้างเซนเซอร์ (น้ำ DI ไม่ทิ้งคราบ)</li><li>หลุมตรวจ/ลิฟต์ยกรถ พร้อมเครนยกแบตเตอรี่บนหลังคา</li><li>ห้องสอบเทียบเซนเซอร์ (calibration bay) พร้อมเป้าตาราง</li><li>คลังอะไหล่และพื้นที่กักแบตเตอรี่เสียหาย (quarantine) แยกอาคาร</li>
+        </ul>
+        <div class="card" style="margin-top:12px"><b>ค่าซ่อมบำรุงโดยประมาณ</b><p style="margin:4px 0 0">รถบัสดีเซล ~13–15 บาท/กม. · รถบัสไฟฟ้า ~7–9 บาท/กม. (ไม่มีน้ำมันเครื่อง เบรกสึกน้อยเพราะ regen) · ระบบขับขี่อัตโนมัติเพิ่ม ~2–3 บาท/กม. (สอบเทียบ ทำความสะอาด ซอฟต์แวร์)</p></div>
+      </section>
+
+      <section data-t="fleet">
+        <p class="note">ชิ้นส่วนหลักของรถเมล์ (แบตเตอรี่ มอเตอร์ เซนเซอร์ ระบบ OCC ดับเพลิง) เป็นแพลตฟอร์มเดียวกับยานพาหนะกลุ่มอื่นได้ เลือกประเภทเพื่อดูว่าใช้ร่วมอะไรได้บ้าง</p>
+        <div class="vsel" id="vsel"></div>
+        <div id="vdetail"></div>
+      </section>
+
+      <section data-t="cities">
+        <div id="cityList"></div>
+        <h2>บทเรียนร่วม</h2>
+        <ul>
+          <li>เทคโนโลยีพร้อมเร็วกว่ากฎหมาย — ถ้ายังต้องมีคนขับสำรอง ต้นทุนแทบไม่ลด</li>
+          <li>สภาพอากาศเป็นความเสี่ยงหลักของเซนเซอร์ จึงต้องรวมหลายเซนเซอร์ (sensor fusion)</li>
+          <li>เส้นทางเฉพาะหรือช่องทางพิเศษ (BRT) ช่วยให้ระบบทำงานได้เสถียรกว่าการจราจรผสม</li>
+        </ul>
+        <p class="note" style="margin-top:10px">สรุปโดยย่อ ปีเป็นค่าโดยประมาณ ควรตรวจสอบสถานะล่าสุดกับแหล่งข้อมูลทางการ</p>
+      </section>
+
+      <section data-t="real">
+        <p class="note">กดแท็บนี้แล้วโมเดลจะเข้าสู่โหมดจำลอง: สถานี A → ทางม้าลาย + ไฟแดง → สะพานยกระดับข้ามแม่น้ำ → อุโมงค์ทางลอด → สถานี B (ชาร์จแพนโทกราฟ)</p>
+        <h2>บันทึกเหตุการณ์ (สด)</h2>
+        <div class="log" id="log"></div>
+        <h2>การมองเห็นในสภาพอากาศต่างๆ</h2>
+        <div class="mx" id="matrix"></div>
+        <p class="note" style="margin-top:6px">●●● ดีมาก · ●●○ ใช้ได้ · ●○○ ลดลงมาก · ○○○ ใช้ไม่ได้ — ระบบเลือกน้ำหนักของแต่ละเซนเซอร์ตามสภาพแวดล้อม (sensor fusion)</p>
+        <h2>การสื่อสารกับสิ่งแวดล้อม</h2>
+        <ul>
+          <li><b>V2I</b> สัญญาณไฟจราจรส่งข้อมูลเฟสและเวลาเปลี่ยนไฟ (SPaT/MAP) ผ่าน C-V2X 5.9 GHz รถรู้ล่วงหน้าว่าจะหยุดหรือผ่าน</li>
+          <li><b>V2N</b> 5G ไปศูนย์ควบคุม OCC: ภาพ CCTV ตำแหน่ง SoC ผู้ควบคุมสั่งหยุด/เลี่ยงเส้นทางได้ทันที</li>
+          <li><b>V2V</b> รับสัญญาณรถฉุกเฉิน (รถพยาบาล) เพื่อชะลอและเปิดทาง</li>
+          <li><b>V2P</b> ลำโพงภายนอกและป้าย LED บอกคนเดินถนน “รถกำลังหยุด เชิญข้าม”</li>
+          <li><b>ในอุโมงค์</b> GNSS หาย → LiDAR-SLAM + IMU + บีคอน UWB; 5G ต่อเนื่องด้วยเสาอากาศกระจาย (DAS)</li>
+          <li><b>บนสะพาน</b> เพิ่มแรงบิดขึ้นเนิน ตรวจลมขวาง ลงเนินใช้เบรกคืนพลังงาน</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+</div>
+
+<script src="three-d-stage.js"></script>
+<script type="module">
+const stage = document.querySelector('three-d-stage');
+const { THREE } = await stage.ready;
+const V = (x,y,z)=>new THREE.Vector3(x,y,z);
+const $ = id=>document.getElementById(id);
+
+/* ---------- materials ---------- */
+const M = {};
+const mat = (name,color,r=.6,m=0,o={}) => (M[name] = new THREE.MeshStandardMaterial({name,color,roughness:r,metalness:m,...o}));
+mat('paint_GFRP',0xeef0ee,.45,.05);
+mat('paint_accent',0x2f67ad,.45,.1);
+mat('trim_black_ABS',0x1e2124,.6);
+mat('glass_laminated',0x6c8494,.08,.1,{transparent:true,opacity:.36,depthWrite:false});
+mat('aluminium_6082',0xb9bec2,.4,.35);
+mat('steel_HSLA',0x5d6266,.5,.3);
+mat('stainless_304',0xd2d6d8,.3,.35);
+mat('rubber_tire',0x1b1b1b,.9);
+mat('battery_LFP_case',0x3a4148,.55,.2);
+mat('hv_cable_orange',0xe3742f,.5);
+mat('copper_contact',0xc07a45,.35,.35);
+mat('seat_fabric_FR',0x2b3f63,.85);
+mat('seat_shell_PPGF',0x8a9096,.55);
+mat('floor_PVC',0x6e7275,.85);
+mat('wheelchair_blue',0x2d7fd0,.6);
+mat('emergency_red',0xc8352b,.5);
+mat('led_amber',0xffa733,.4,0,{emissive:0xff9a1f,emissiveIntensity:1.2});
+mat('lcd_screen',0x5aa9e6,.3,0,{emissive:0x2b7fd0,emissiveIntensity:.8});
+mat('lamp_head',0xffffff,.2,0,{emissive:0xfff5dd,emissiveIntensity:.5});
+mat('lamp_tail',0xd02a20,.3,0,{emissive:0xc01a10,emissiveIntensity:.6});
+mat('sensor_black',0x121416,.35,.2);
+mat('photolum_green',0x9fe3a0,.5,0,{emissive:0x5fd06a,emissiveIntensity:.5});
+mat('pc_smoke',0x4b5560,.15,0,{transparent:true,opacity:.6});
+const ghostMat = new THREE.MeshStandardMaterial({name:'ghost',color:0xaab2ba,transparent:true,opacity:.07,depthWrite:false});
+
+const gm = m => typeof m==='string' ? M[m] : m;
+function bx(p,name,m,x0,x1,y0,y1,z0,z1){
+  const me = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(x1-x0),Math.abs(y1-y0),Math.abs(z1-z0)), gm(m));
+  me.name=name; me.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2); p.add(me); return me;
+}
+function cy(p,name,m,r,len,axis,x,y,z,seg=24,rTop){
+  const me = new THREE.Mesh(new THREE.CylinderGeometry(rTop??r,r,len,seg), gm(m));
+  if(axis==='x') me.rotation.z=Math.PI/2; if(axis==='z') me.rotation.x=Math.PI/2;
+  me.name=name; me.position.set(x,y,z); p.add(me); return me;
+}
+function segs(a,b,holes){
+  holes=[...holes].sort((p,q)=>p[0]-q[0]); const out=[]; let c=a;
+  for(const [h0,h1] of holes){ if(h1<=c||h0>=b) continue; if(h0>c) out.push([c,h0]); c=Math.max(c,h1); }
+  if(c<b) out.push([c,b]); return out;
+}
+
+/* ---------- bus ---------- */
+const bus = new THREE.Group(); bus.name='autonomous_ebus_12m';
+const SUBS = {};
+function sub(key,ex,ey,ez,tag=''){ const g=new THREE.Group(); g.name=key+(tag?'_'+tag:''); g.userData={key,ex:V(ex,ey,ez)}; bus.add(g); (SUBS[key] ||= []).push(g); return g; }
+const ZW=1.275, YB=1.15, YW=2.55, YR=3.0, FL=0.38, AF=3.3, AR=-2.6, AH=.62;
+const D1=[4.3,5.5], D2=[-.4,.9];
+const ARCH=[[AF-AH,AF+AH],[AR-AH,AR+AH]];
+const E_IN=1.2, E_SIDE=2.4, E_ROOF=2.6, E_BAT=3.8, E_SEN=5.0;
+
+for(const s of [-1,1]){
+  const zo=s*ZW, zi=s*(ZW-.05);
+  const g=sub('body',0,E_IN,s*E_SIDE,s<0?'left':'right');
+  const holes = s<0 ? [...ARCH,D1,D2] : ARCH;
+  for(const [a,b] of segs(-5.85,5.85,holes)){
+    bx(g,'side_skirt','paint_GFRP',a,b,.32,YB,zi,zo);
+    bx(g,'accent_stripe','paint_accent',a,b,.86,1.0,zo,zo+s*.004);
+  }
+  for(const [a,b] of ARCH){ bx(g,'wheel_arch','paint_GFRP',a,b,1.06,YB,zi,zo); bx(g,'wheel_housing','seat_shell_PPGF',a,b,FL,1.06,s*(ZW-.05),s*(ZW-.5)); }
+  bx(g,'upper_band','paint_GFRP',-5.85,5.85,YW,YR,zi,zo);
+  const doors = s<0?[D1,D2]:[];
+  for(let x=-5.8;x<=5.85;x+=1.45){ if(doors.some(([a,b])=>x>a-.06&&x<b+.06)) continue; bx(g,'window_pillar','trim_black_ABS',x-.05,x+.05,YB,YW,zi,zo+s*.003); }
+  for(const [a,b] of doors){ for(const x of [a,b]) bx(g,'door_frame_pillar','trim_black_ABS',x-.05,x+.05,.32,YW,zi,zo+s*.003); }
+  const gg=sub('glass',0,E_IN,s*E_SIDE,s<0?'left':'right');
+  for(const [a,b] of segs(-5.85,5.85,doors)) bx(gg,'side_window','glass_laminated',a,b,YB,YW,s*(ZW-.03),s*(ZW-.01));
+}
+{ const f=sub('body',1.8,E_IN,0,'front');
+  bx(f,'front_bumper','trim_black_ABS',5.85,6.02,.32,.75,-1.2,1.2);
+  bx(f,'front_lower','paint_GFRP',5.85,6.0,.75,1.0,-1.2,1.2);
+  bx(f,'front_stripe','paint_accent',6.0,6.004,.86,1.0,-1.1,1.1);
+  bx(f,'front_header','paint_GFRP',5.85,6.0,2.7,YR,-1.2,1.2);
+  for(const s of [-1,1]){ cy(f,'corner_pillar','paint_GFRP',.09,YR-.32,'y',5.9,(YR+.32)/2,s*1.19,20); bx(f,'headlight','lamp_head',6.0,6.03,.6,.72,s*.72,s*1.05); }
+  const g=sub('glass',1.8,E_IN,0,'front'); bx(g,'windshield','glass_laminated',5.92,5.95,1.0,2.7,-1.12,1.12);
+}
+{ const r=sub('body',-1.8,E_IN,0,'rear');
+  bx(r,'rear_panel_lower','paint_GFRP',-6.0,-5.85,.32,1.8,-1.2,1.2);
+  bx(r,'rear_panel_upper','paint_GFRP',-6.0,-5.85,2.5,YR,-1.2,1.2);
+  for(const s of [-1,1]){ bx(r,'rear_panel_side','paint_GFRP',-6.0,-5.85,1.8,2.5,s*.8,s*1.2); cy(r,'corner_pillar','paint_GFRP',.09,YR-.32,'y',-5.9,(YR+.32)/2,s*1.19,20); bx(r,'tail_light','lamp_tail',-6.03,-6.0,.9,1.4,s*.95,s*1.12); }
+  bx(r,'rear_bumper','trim_black_ABS',-6.02,-5.85,.32,.7,-1.2,1.2);
+  const g=sub('glass',-1.8,E_IN,0,'rear'); bx(g,'rear_window','glass_laminated',-5.96,-5.93,1.8,2.5,-.8,.8);
+}
+{ const r=sub('body',0,E_ROOF,0,'roof');
+  bx(r,'roof_panel','paint_GFRP',-5.95,5.95,YR,YR+.08,-ZW,ZW);
+  for(const s of [-1,1]) cy(r,'roof_edge','paint_GFRP',.07,11.9,'x',0,YR,s*(ZW-.04),20);
+  const fl=sub('body',0,E_IN,0,'floor'); bx(fl,'floor_panel','floor_PVC',-5.85,5.85,.30,FL,-1.225,1.225);
+}
+// doors
+const doorLeaves=[];
+{ const dg=sub('doors',0,E_IN,-E_SIDE);
+  for(const [a,b] of [D1,D2]){ const w=(b-a)/2;
+    for(let i=0;i<2;i++){ const leaf=new THREE.Group(); leaf.name='door_leaf'; const cx=a+i*w+w/2; leaf.position.set(cx,0,0); dg.add(leaf);
+      const z0=-ZW-.005, z1=-ZW+.04;
+      bx(leaf,'door_glass','glass_laminated',-w/2+.05,w/2-.05,.48,2.42,-ZW+.01,-ZW+.03);
+      bx(leaf,'door_frame_Al','aluminium_6082',-w/2,w/2,2.42,2.52,z0,z1);
+      bx(leaf,'door_frame_Al','aluminium_6082',-w/2,w/2,.36,.48,z0,z1);
+      bx(leaf,'door_frame_Al','aluminium_6082',-w/2,-w/2+.05,.48,2.42,z0,z1);
+      bx(leaf,'door_frame_Al','aluminium_6082',w/2-.05,w/2,.48,2.42,z0,z1);
+      if(i===0) bx(leaf,'door_edge_EPDM','trim_black_ABS',w/2-.02,w/2+.005,.4,2.5,z0-.003,z1); else bx(leaf,'door_edge_EPDM','trim_black_ABS',-w/2-.005,-w/2+.02,.4,2.5,z0-.003,z1);
+      leaf.userData={base:cx,dir:i===0?-1:1,w}; doorLeaves.push(leaf);
+    }
+  }
+}
+// chassis
+{ const c=sub('chassis',0,0,0);
+  for(const s of [-1,1]){ bx(c,'longitudinal_rail_Al6082','aluminium_6082',-5.6,5.6,.12,.29,s*.48,s*.62); for(const ax of [AF,AR]) bx(c,'trailing_arm_HSLA','steel_HSLA',ax-.75,ax+.05,.3,.4,s*.6,s*.74); }
+  for(let x=-5.4;x<=5.45;x+=1.2) bx(c,'crossmember','aluminium_6082',x-.05,x+.05,.15,.29,-.62,.62);
+  for(const ax of [AF,AR]) cy(c,'axle_beam_HSLA','steel_HSLA',.07,1.9,'z',ax,.5,0,16);
+}
+// drive
+{ const d=sub('drive',0,.55,0);
+  cy(d,'PMSM_motor_housing','aluminium_6082',.24,.66,'z',AR,.5,0,32);
+  for(const s of [-1,1]) cy(d,'stator_winding_Cu','copper_contact',.2,.07,'z',AR,.5,s*.37,32);
+  bx(d,'SiC_inverter','aluminium_6082',-4.4,-3.6,.15,.33,-.35,.35);
+  for(let z=-.3;z<=.31;z+=.1) bx(d,'inverter_heatsink_fin','steel_HSLA',-4.38,-3.62,.33,.37,z-.008,z+.008);
+  for(const s of [-1,1]) cy(d,'hv_cable','hv_cable_orange',.025,1.0,'x',-3.1,.3,s*.15,10);
+  bx(d,'DCDC_converter','aluminium_6082',4.6,5.3,.15,.29,-.4,.4);
+  cy(d,'hv_riser_cable','hv_cable_orange',.03,2.6,'y',-5.72,1.65,1.12,10);
+}
+// wheels
+const wheelGroups=[];
+for(const s of [-1,1]){ const wg=sub('wheels',0,0,s*2.6,s<0?'left':'right');
+  for(const ax of [AF,AR]){ const w=ax===AR?.42:.32; const g=new THREE.Group(); g.name='wheel'; g.position.set(ax,.5,s*(1.18-w/2)); wg.add(g);
+    cy(g,'tire_NR_SBR','rubber_tire',.5,w,'z',0,0,0,40);
+    cy(g,'rim_Al6061','aluminium_6082',.31,w+.012,'z',0,0,0,32);
+    cy(g,'hub','steel_HSLA',.1,w+.03,'z',0,0,0,16);
+    for(let k=0;k<5;k++){ const p=new THREE.Group(); p.rotation.z=k*Math.PI*2/5; g.add(p); bx(p,'rim_spoke','steel_HSLA',-.035,.035,.1,.29,s*(w/2+.002),s*(w/2+.012)); }
+    wheelGroups.push(g);
+  }
+}
+// battery
+{ const b=sub('battery',0,E_BAT,0);
+  for(const [a,c] of [[-5.2,-3.4],[-3.2,-1.4],[-1.2,.6],[.8,2.6]]){
+    bx(b,'LFP_battery_pack','battery_LFP_case',a,c,YR+.08,YR+.42,-.9,.9);
+    bx(b,'pack_vent_strip','aluminium_6082',a+.1,c-.1,YR+.42,YR+.43,-.82,-.7);
+  }
+  cy(b,'hv_busbar','hv_cable_orange',.03,7.8,'x',-1.3,YR+.16,.98,10);
+  bx(b,'HVAC_thermal_unit','paint_GFRP',3.6,5.0,YR+.08,YR+.36,-1.0,1.0);
+  for(const z of [-.5,.5]) cy(b,'hvac_fan','trim_black_ABS',.22,.02,'y',4.3,YR+.37,z,28);
+}
+// charging
+{ const c=sub('charging',0,E_BAT+.6,0,'roof');
+  for(const z of [-.3,.3]){ cy(c,'pantograph_contact_rail_Cu','copper_contact',.03,1.4,'x',1.7,YR+.53,z,12); for(const x of [1.1,2.3]) cy(c,'rail_insulator','trim_black_ABS',.035,.1,'y',x,YR+.47,z,12); }
+  const c2=sub('charging',0,E_IN,E_SIDE,'inlet');
+  bx(c2,'CCS2_inlet_PA66','trim_black_ABS',-5.0,-4.6,.95,1.25,ZW,ZW+.02);
+  bx(c2,'CCS2_flap','paint_accent',-4.98,-4.62,1.27,1.3,ZW,ZW+.02);
+}
+// fire
+{ const f=sub('fire',0,E_BAT,0,'roof');
+  cy(f,'aerosol_cylinder','emergency_red',.09,1.0,'x',-4.3,YR+.2,-1.1,24);
+  cy(f,'aerosol_cylinder','emergency_red',.09,1.0,'x',1.7,YR+.2,-1.1,24);
+  cy(f,'water_mist_pipe','emergency_red',.02,7.8,'x',-1.3,YR+.5,0,8);
+  for(const x of [-4.3,-2.3,-.3,1.7]) cy(f,'mist_nozzle','stainless_304',.03,.08,'y',x,YR+.46,0,12);
+  const f2=sub('fire',0,E_IN,0,'cabin');
+  for(const [x,z] of [[5.25,1.1],[-1.2,-1.1]]){ cy(f2,'extinguisher_ABC','emergency_red',.08,.55,'y',x,FL+.3,z,24); cy(f2,'extinguisher_valve','trim_black_ABS',.03,.1,'y',x,FL+.62,z,12); }
+}
+// sensors
+{ const s=sub('sensors',0,E_SEN,0);
+  bx(s,'sensor_roof_bar','sensor_black',5.1,5.85,YR+.08,YR+.22,-.9,.9);
+  cy(s,'lidar_main_360','sensor_black',.12,.16,'y',5.45,YR+.30,0,40);
+  cy(s,'lidar_window_PC','pc_smoke',.125,.06,'y',5.45,YR+.30,0,40);
+  for(const z of [-.7,-.35,.35,.7]){ bx(s,'camera_CMOS','trim_black_ABS',5.75,5.88,YR+.1,YR+.2,z-.05,z+.05); cy(s,'camera_window_sapphire','pc_smoke',.03,.02,'x',5.89,YR+.15,z,16); }
+  bx(s,'thermal_camera_VOx','aluminium_6082',5.7,5.88,YR+.22,YR+.32,.15,.3);
+  for(const x of [5.95,-5.95]) for(const z of [-1.26,1.26]) cy(s,'lidar_corner','sensor_black',.07,.12,'y',x,2.78,z,24);
+  bx(s,'radar_77GHz','trim_black_ABS',6.02,6.06,.52,.66,-.15,.15);
+  for(const z of [-1,1]){ bx(s,'radar_77GHz','trim_black_ABS',6.02,6.05,.52,.64,z*.95,z*1.1); bx(s,'radar_77GHz','trim_black_ABS',-6.05,-6.02,.52,.64,z*.95,z*1.1);
+    bx(s,'camera_mirror_arm','trim_black_ABS',5.8,5.9,2.55,2.6,z*1.27,z*1.5); bx(s,'camera_mirror_head','sensor_black',5.82,6.0,2.38,2.62,z*1.45,z*1.58); }
+  bx(s,'rear_camera','sensor_black',-6.05,-5.98,2.55,2.65,-.08,.08);
+}
+// seats + handrails
+{ const st=sub('seats',0,E_IN,0);
+  const seat=(x,z,dy=0)=>{ bx(st,'seat_pan','seat_fabric_FR',x-.21,x+.21,.8+dy,.88+dy,z-.21,z+.21); bx(st,'seat_back','seat_fabric_FR',x-.25,x-.19,.88+dy,1.5+dy,z-.21,z+.21); bx(st,'seat_back_shell_PPGF','seat_shell_PPGF',x-.27,x-.25,.85+dy,1.52+dy,z-.22,z+.22); cy(st,'seat_grab_handle','stainless_304',.018,.36,'z',x-.26,1.56+dy,z,10); cy(st,'seat_pedestal','stainless_304',.03,.42+dy,'y',x,.59+dy/2,z,12); };
+  const overArch = x=> x>AR-AH-.25 && x<AR+AH+.25;
+  for(const x of [-4.9,-4.1,-3.3,-2.5,-1.7,1.8,4.5]) for(const z of [.5,.97]) seat(x,z, z>.9&&overArch(x)?.3:0);
+  for(const x of [-4.9,-4.1,-3.3,-2.5,-1.7]) for(const z of [-.5,-.97]) seat(x,z, z<-.9&&overArch(x)?.3:0);
+  for(const z of [-.96,-.48,0,.48,.96]) seat(-5.55,z,.25);
+  bx(st,'rear_podium','floor_PVC',-5.85,-5.3,FL,FL+.25,-1.2,1.2);
+  for(const s of [-1,1]) cy(st,'ceiling_rail','stainless_304',.02,10.1,'x',-.25,2.35,s*.55,12);
+  for(const x of [-4.5,-2.1,2.3,3.6]) for(const s of [-1,1]){ cy(st,'grab_pole_SS304','stainless_304',.02,2.35-FL,'y',x,(2.35+FL)/2,s*.27,12); bx(st,'stop_button','emergency_red',x-.03,x+.03,1.38,1.46,s*.27-.03,s*.27+.03); }
+}
+// luggage
+{ const l=sub('luggage',0,E_IN,0);
+  for(const s of [-1,1]){ bx(l,'overhead_rack_Al6063','aluminium_6082',-5.3,2.4,2.55,2.58,s*.85,s*1.22); bx(l,'overhead_rack_lip_PC','pc_smoke',-5.3,2.4,2.58,2.72,s*.84,s*.86); }
+  bx(l,'luggage_floor_tray','trim_black_ABS',1.15,2.6,FL,FL+.03,-1.2,-.62);
+  bx(l,'luggage_shelf_Al','aluminium_6082',1.15,2.6,.95,.98,-1.2,-.62);
+  for(const x of [1.15,2.6]) cy(l,'luggage_post','aluminium_6082',.025,1.1,'y',x,FL+.55,-.62,12);
+  for(const y of [.65,1.3]) cy(l,'luggage_rail','aluminium_6082',.02,1.45,'x',1.875,y,-.62,10);
+  bx(l,'luggage_divider_PC','pc_smoke',2.56,2.6,FL,1.4,-1.2,-.62);
+}
+// wheelchair
+let ramp;
+{ const w=sub('wc',0,E_IN,0);
+  bx(w,'wheelchair_floor_marking','wheelchair_blue',-.85,1.45,FL,FL+.006,.15,1.2);
+  bx(w,'wheelchair_backrest_pad','trim_black_ABS',-.95,-.85,.6,1.45,.45,1.05);
+  cy(w,'wheelchair_handrail','stainless_304',.02,2.1,'x',.3,.95,1.17,12);
+  bx(w,'tip_up_seat','seat_fabric_FR',.95,1.4,.7,1.3,1.12,1.2);
+  bx(w,'request_stop_button_blue','wheelchair_blue',-.2,-.08,1.0,1.1,1.19,1.215);
+  bx(w,'restraint_belt_webbing','hv_cable_orange',-.8,-.78,.4,1.0,.6,.66);
+  ramp=bx(w,'foldout_ramp_Al6063','aluminium_6082',-.25,.75,FL+.008,FL+.035,-1.2,-.45);
+  ramp.userData.z0=ramp.position.z;
+}
+// emergency
+{ const e=sub('emergency',0,E_ROOF,0,'roof');
+  for(const hx of [3.1,-5.55]){ bx(e,'roof_hatch_frame','emergency_red',hx-.3,hx+.3,YR+.08,YR+.12,-.33,.33); bx(e,'roof_hatch_PC','pc_smoke',hx-.26,hx+.26,YR+.12,YR+.14,-.28,.28); }
+  const e2=sub('emergency',0,E_IN,0,'cabin');
+  for(const s of [-1,1]){ const z0=s*(ZW-.06), z1=s*(ZW-.045);
+    bx(e2,'emergency_window_frame','emergency_red',-3.6,-2.2,2.48,2.53,z0,z1); bx(e2,'emergency_window_frame','emergency_red',-3.6,-2.2,1.17,1.22,z0,z1);
+    bx(e2,'emergency_window_frame','emergency_red',-3.6,-3.55,1.17,2.53,z0,z1); bx(e2,'emergency_window_frame','emergency_red',-2.25,-2.2,1.17,2.53,z0,z1);
+    for(const x of [-3.75,-2.05]) bx(e2,'emergency_hammer_WC','emergency_red',x-.03,x+.03,1.9,2.1,s*(ZW-.12),s*(ZW-.06));
+  }
+  for(const [a] of [D1,D2]) bx(e2,'door_emergency_release','emergency_red',a-.18,a-.08,1.6,1.75,-(ZW-.12),-(ZW-.06));
+  bx(e2,'photoluminescent_floor_path','photolum_green',-5.2,5.5,FL,FL+.004,-.03,.03);
+}
+// fare
+{ const f=sub('fare',0,E_IN,0);
+  for(const [px,pz] of [[4.15,-.75],[.95,-.85]]){
+    cy(f,'validator_post_SS304','stainless_304',.03,.74,'y',px,FL+.37,pz,16);
+    bx(f,'validator_body_PCABS','trim_black_ABS',px-.1,px+.1,1.1,1.42,pz-.13,pz+.08);
+    bx(f,'validator_screen','lcd_screen',px-.08,px+.08,1.24,1.38,pz-.136,pz-.13);
+    bx(f,'nfc_reader_pad','paint_accent',px-.08,px+.08,1.13,1.2,pz-.136,pz-.13);
+  }
+}
+// signs + speakers
+{ const a=sub('signs',1.8,E_IN,0,'front');
+  bx(a,'front_LED_destination','led_amber',6.0,6.015,2.74,2.96,-.95,.95);
+  for(const s of [-1,1]) bx(a,'AVAS_external_speaker','trim_black_ABS',6.02,6.04,.4,.5,s*.3,s*.55);
+  const b=sub('signs',0,E_IN,-E_SIDE,'side'); bx(b,'side_LED_destination','led_amber',1.2,3.2,2.62,2.92,-ZW-.012,-ZW-.002);
+  const c=sub('signs',-1.8,E_IN,0,'rear'); bx(c,'rear_LED_route_number','led_amber',-6.015,-6.0,2.62,2.92,-.5,.5);
+  const d=sub('signs',0,E_IN,0,'cabin');
+  for(const x of [2.2,-2.0]){ bx(d,'cabin_LCD_next_stop','lcd_screen',x-.02,x+.02,2.52,2.84,-.45,.45); cy(d,'lcd_mount','stainless_304',.015,.16,'y',x,2.92,0,8); }
+  for(const x of [-4.5,-1.5,1.5,4.5]) cy(d,'ceiling_speaker_NdFeB','trim_black_ABS',.08,.02,'y',x,YR-.012,0,24);
+}
+// monitor / OCC
+{ const m=sub('monitor',0,E_IN,0,'cabin');
+  bx(m,'attendant_console','trim_black_ABS',5.3,5.75,FL,1.1,.4,1.05);
+  bx(m,'OCC_status_display','lcd_screen',5.25,5.3,1.1,1.45,.45,1.0);
+  bx(m,'AD_compute_unit','aluminium_6082',-5.85,-5.4,2.35,2.95,-1.15,1.15);
+  for(let z=-1.0;z<=1.01;z+=.15) bx(m,'compute_heatsink_fin','steel_HSLA',-5.4,-5.36,2.4,2.9,z-.01,z+.01);
+  const dome=new THREE.SphereGeometry(.07,24,12,0,Math.PI*2,0,Math.PI/2);
+  for(const x of [4.8,.3,-4.4]){ const me=new THREE.Mesh(dome,M.pc_smoke); me.name='CCTV_dome_PC'; me.rotation.x=Math.PI; me.position.set(x,YR-.002,.0); m.add(me); }
+  const m2=sub('monitor',0,E_ROOF,0,'roof');
+  for(const s of [-1,1]){ cy(m2,'antenna_5G_CV2X','trim_black_ABS',.07,.14,'y',2.95,YR+.15,s*.9,16,.015); cy(m2,'GNSS_RTK_antenna','paint_GFRP',.07,.04,'y',3.4,YR+.1,s*.9,24); }
+}
+
+const COMPS=[
+ {k:'body',s:'ตัวถัง',th:'ตัวถังและหลังคา',a:[-4.6,.7,-1.3],f:'เปลือกนอกกันน้ำ กันความร้อน ยึดอุปกรณ์ และช่วยรับแรงบิดของโครงสร้าง',m:['GFRP — พอลิเมอร์เสริมใยแก้ว (E-glass/อีพ็อกซี)','แกนแซนด์วิช PET foam รีไซเคิล','สีพอลิยูรีเทน 2K สะท้อน UV/IR'],c:[38000,40000,42000]},
+ {k:'chassis',s:'แชสซี',th:'แชสซีและโครงสร้างใต้พื้น',a:[-5,.29,-.55],f:'รับน้ำหนักผู้โดยสาร ~80 คน และดูดซับแรงชน',m:['อะลูมิเนียมอัลลอย 6082-T6 (Al-Mg-Si) แบบรีดขึ้นรูป','เหล็กกล้า HSLA S700MC ที่จุดยึดเพลาและช่วงล่าง','ถุงลมกันสะเทือน: ยาง EPDM เสริมไนลอน'],c:[60000,62000,66000]},
+ {k:'glass',s:'กระจก',th:'กระจกหน้าต่างและกระจกบังลม',a:[-1.5,2.2,-1.27],f:'มองเห็นภายนอก ลดความร้อนเข้าห้องโดยสาร',m:['กระจกลามิเนต soda-lime + ฟิล์ม PVB (บังลม)','กระจกนิรภัยเทมเปอร์ (หน้าต่างข้าง)','เคลือบ low-E (SnO₂/Ag) ลดรังสีความร้อน'],c:[12000,13000,14000]},
+ {k:'doors',s:'ประตู',th:'ประตูผู้โดยสาร 2 จุด',a:[.25,1.9,-1.3],f:'ประตูบานเลื่อน (plug door) เปิดเมื่อรถจอดสนิทเท่านั้น มีขอบกันหนีบ',m:['กรอบอะลูมิเนียม 6063-T5','ขอบยาง EPDM พร้อมเซนเซอร์แรงดัน','มอเตอร์ไฟฟ้า BLDC แม่เหล็ก NdFeB'],c:[9000,9500,10000]},
+ {k:'battery',s:'แบตเตอรี่',th:'แบตเตอรี่ขับเคลื่อน 350 kWh',a:[-2.3,3.43,0],f:'จ่ายไฟ ~600 V DC วิ่งได้ราว 250 กม./ชาร์จ พร้อมระบบระบายความร้อนด้วยของเหลว',m:['เซลล์ LiFePO₄ (LFP) แคโทด / กราไฟต์แอโนด','กล่องอะลูมิเนียม 6061 + แผ่นกันไฟ ceramic aerogel','สารหล่อเย็น water-glycol 50/50'],c:[147000,70000,35000],nt:'ราคาแพ็กลดลงจาก ≈$420 เหลือ ≈$100 ต่อ kWh'},
+ {k:'charging',s:'รับไฟชาร์จ',th:'ระบบรับไฟชาร์จ',a:[1.7,3.56,.3],f:'รางรับแพนโทกราฟบนหลังคา (450 kW) + ช่องเสียบ CCS2 ด้านท้าย (150 kW ×2)',m:['รางสัมผัสทองแดง-กราไฟต์ (Cu-C composite)','ฉนวนอีพ็อกซีเสริมใยแก้ว','ช่องรับ CCS2 วัสดุ PA66-GF30 ทนความร้อน'],c:[18000,12000,9000]},
+ {k:'drive',s:'มอเตอร์',th:'มอเตอร์และระบบขับเคลื่อน e-axle',a:[AR,.74,0],f:'มอเตอร์ซิงโครนัสแม่เหล็กถาวร ~250 kW พร้อมเบรกคืนพลังงาน',m:['แม่เหล็กถาวร NdFeB (Nd₂Fe₁₄B)','ขดลวดทองแดง hairpin','อินเวอร์เตอร์ SiC MOSFET (ซิลิคอนคาร์ไบด์)'],c:[45000,32000,24000]},
+ {k:'wheels',s:'ล้อ',th:'ล้อและยาง',a:[AF,.5,-1.2],f:'ยางกว้างล้อหลัง (wide-base) รองรับน้ำหนักเพลาขับ',m:['ยางธรรมชาติ + SBR + ซิลิกา (ลดแรงต้านการหมุน)','เส้นลวดเหล็กเสริมแรง (steel cord)','กระทะล้ออะลูมิเนียมหลอม 6061-T6'],c:[8000,8500,9000]},
+ {k:'sensors',s:'เซนเซอร์',th:'ชุดเซนเซอร์ขับขี่อัตโนมัติ',a:[5.45,3.38,0],f:'LiDAR 5 ตัว · กล้อง 10 ตัว · เรดาร์ 77 GHz 6 ตัว · กล้องความร้อน — มองรอบคัน 360°',m:['LiDAR: ตัวรับ SPAD/InGaAs, ฝาครอบโพลีคาร์บอเนต','กล้อง: CMOS, หน้าต่างแซฟไฟร์ (Al₂O₃) เคลือบไม่เกาะน้ำ','เรดาร์: ชิป SiGe / RF-CMOS','กล้องความร้อน: microbolometer VOx, เลนส์เจอร์เมเนียม'],c:[141000,51000,13500],nt:'LiDAR ลดจากหลักหมื่นเหลือหลักพันดอลลาร์ต่อตัว'},
+ {k:'seats',s:'ที่นั่ง',th:'โซนที่นั่งและราวจับ (29 ที่นั่ง)',a:[-3.3,1.55,.73],f:'ที่นั่งหันหน้า + ม้านั่งท้าย ราวจับและปุ่มขอลงทุกเสา',m:['เปลือกเบาะ PP-GF (โพลีพรอพิลีนเสริมใยแก้ว)','ผ้าหุ้มขนสัตว์-โพลีเอสเตอร์ หน่วงไฟ (UN R118)','ราวสแตนเลส 304 เคลือบต้านจุลชีพ Ag-ion'],c:[20000,21000,22000]},
+ {k:'luggage',s:'ที่วางของ',th:'ที่วางสัมภาระ',a:[1.9,1.0,-.9],f:'ชั้นวางเหนือศีรษะ 2 ฝั่ง + ชั้นวางกระเป๋าใหญ่ข้างประตูกลาง',m:['รางอะลูมิเนียม 6063-T5 anodized','แผ่นกั้นโพลีคาร์บอเนตใส'],c:[3000,3200,3400]},
+ {k:'wc',s:'วีลแชร์',th:'พื้นที่รถเข็นวีลแชร์',a:[.3,.45,.7],f:'ทางลาดพับอัตโนมัติ (ชัน ≤ 1:8) พนักพิงหันหลัง ปุ่มขอลงระดับต่ำ',m:['ทางลาดอะลูมิเนียม 6063 เคลือบเม็ด Al₂O₃ กันลื่น','พื้นไวนิล PVC กันลื่น R10','สายรัดโพลีเอสเตอร์ webbing'],c:[6000,6500,7000]},
+ {k:'emergency',s:'ทางออกฉุกเฉิน',th:'ทางออกฉุกเฉิน',a:[3.1,3.14,0],f:'ช่องหลังคา 2 จุด · หน้าต่างฉุกเฉิน 2 บาน + ค้อนทุบ · วาล์วปลดประตู · แถบนำทางเรืองแสง',m:['ฝาช่องหลังคา PC + ซีลยาง EPDM','หัวค้อนทังสเตนคาร์ไบด์ (WC)','แถบเรืองแสง SrAl₂O₄:Eu,Dy'],c:[3000,3200,3500]},
+ {k:'fare',s:'ที่จ่ายเงิน',th:'ที่จ่ายเงิน / เครื่องตรวจบัตร',a:[4.15,1.42,-.75],f:'แตะบัตร EMV contactless หรือ QR ที่ทั้งสองประตู ส่งข้อมูลเรียลไทม์',m:['ตัวเครื่อง PC/ABS ทนแรงกระแทก','จออะลูมิโนซิลิเกตเสริมแรงเคมี','เสาสแตนเลส 304'],c:[8000,5000,3000]},
+ {k:'signs',s:'ป้าย/ลำโพง',th:'ป้ายและลำโพงประกาศสถานี',a:[6.0,2.96,0],f:'ป้าย LED หน้า/ข้าง/ท้าย · จอ LCD ภายใน · ลำโพงภายใน 4 จุด · ลำโพงภายนอก AVAS เตือนคนเดินถนน',m:['LED InGaN/AlInGaP บน PCB FR-4','จอ IGZO TFT-LCD','ลำโพงแม่เหล็ก NdFeB กรวย PP'],c:[10000,8000,6000]},
+ {k:'monitor',s:'Monitor OCC',th:'ระบบ Monitor ผ่านศูนย์ควบคุม (OCC)',a:[5.5,1.45,.72],f:'คอมพิวเตอร์ AI + 5G/C-V2X ส่งภาพ CCTV สถานะแบตเตอรี่ ตำแหน่ง RTK-GNSS ทุก 100 ms ผู้ควบคุมระยะไกลสั่งการได้',m:['ชิปประมวลผล Si 5–7 nm ระบายความร้อนด้วยอะลูมิเนียมหล่อ','เสาอากาศ 5G/GNSS ฝาครอบ ASA','กล้อง CCTV โดม PC'],c:[55000,30000,19000]},
+ {k:'fire',s:'ดับเพลิง',th:'ระบบดับเพลิงและตรวจจับไฟ',a:[-4.3,3.3,-1.1],f:'ตรวจจับความร้อน/ก๊าซจากแบตเตอรี่ (thermal runaway) แล้วฉีดอัตโนมัติ + ถังดับเพลิงในห้องโดยสาร',m:['ละอองน้ำ (water-mist) + aerosol โพแทสเซียม','ถังเหล็กกล้า ผงเคมีแห้ง ABC (NH₄H₂PO₄)','สายตรวจจับความร้อนแบบเส้น'],c:[7000,6000,6000]},
+];
+COMPS.forEach((c,i)=>c.n=i+1);
+const CM = Object.fromEntries(COMPS.map(c=>[c.k,c]));
+bus.traverse(o=>{ if(o.isMesh){ o.userData.orig=o.material; let p=o.parent; while(p&&!p.userData.key) p=p.parent; o.userData.comp=p?p.userData.key:null; }});
+
+/* ---------- state + model mode ---------- */
+let mode='model', selected=null, expT=0, expCur=0, labelsOn=true;
+const camera=stage._camera, controls=stage._controls, scene=stage._scene, key=stage._key;
+const hemi=scene.children.find(o=>o.isHemisphereLight);
+scene.add(key.target);
+
+function applyExplode(){ for(const k in SUBS) for(const g of SUBS[k]) g.position.copy(g.userData.ex).multiplyScalar(expCur); }
+function fixShadows(root){ root.traverse(o=>{ if(o.isMesh){ const t=o.material.transparent||o.userData.noShadow; o.castShadow=!t; }}); }
+function applyGhost(){
+  bus.traverse(o=>{ if(!o.isMesh) return; const g=selected&&o.userData.comp!==selected; o.material=g?ghostMat:o.userData.orig; o.castShadow=!o.material.transparent; });
+  document.querySelectorAll('.comp').forEach(e=>e.classList.toggle('on',e.dataset.k===selected));
+  labelEls.forEach((e,k)=>{ e.classList.toggle('on',k===selected); e.classList.toggle('dim',!!selected&&k!==selected); });
+  $('clearSel').style.display=selected?'':'none';
+}
+function select(k){
+  selected = selected===k?null:k;
+  if(mode!=='model') enterModel();
+  applyGhost();
+  if(selected){ const el=document.querySelector(`.comp[data-k="${k}"]`); const pane=document.querySelector('.tabc'); showTab('parts'); if(el) pane.scrollTop=el.offsetTop-pane.offsetTop-60; }
+}
+
+// labels
+const labelBox=$('labels'), labelEls=new Map();
+for(const c of COMPS){ const d=document.createElement('div'); d.className='lb'; d.innerHTML=`<span class="num">${c.n}</span><span class="tx">${c.s}</span>`; d.title=c.th; d.onclick=()=>select(c.k); labelBox.appendChild(d); labelEls.set(c.k,d); }
+const tmp=new THREE.Vector3();
+function updateLabels(){
+  const show = mode==='model' && labelsOn;
+  labelBox.style.display = show?'':'none'; if(!show) return;
+  const w=stage.clientWidth, h=stage.clientHeight; bus.updateMatrixWorld();
+  labelBox.classList.toggle('compact', w<1000);
+  const pts=[];
+  for(const c of COMPS){ const el=labelEls.get(c.k); tmp.set(...c.a).add(SUBS[c.k][0].position); bus.localToWorld(tmp); tmp.project(camera);
+    if(tmp.z>1){ el.style.display='none'; continue; } el.style.display='';
+    pts.push({c,el,x:(tmp.x+1)/2*w,y:(1-tmp.y)/2*h}); }
+  // collision: stack overlapping chips upward
+  pts.sort((a,b)=>b.y-a.y); const placed=[];
+  for(const p of pts){ const lw=p.el.offsetWidth||24, lh=22; let y=p.y;
+    for(let k=0;k<12;k++){ const hit=placed.find(q=>Math.abs(q.x-p.x)<(q.w+lw)/2+2 && Math.abs(q.y-y)<lh); if(!hit) break; y=hit.y-lh; }
+    placed.push({x:p.x,y,w:lw}); p.el.style.left=p.x.toFixed(1)+'px'; p.el.style.top=y.toFixed(1)+'px';
+    p.el.style.setProperty('--drop',(p.y-y)+'px'); }
+}
+
+function setWeatherLook(w){
+  const W={clear:['#eceeed',null,1.0,2.2,.5],sim_clear:['#dfe7ec',null,1.0,2.2,.5],rain:['#a8b1b8',[25,150],.65,.6,1.2],fog:['#cdd1d2',[6,60],.9,.45,1.2],night:['#121820',[40,230],.16,.12,3]}[w];
+  stage.style.setProperty('--stage-bg',W[0]);
+  scene.fog = W[1]? new THREE.Fog(new THREE.Color(W[0]),W[1][0],W[1][1]) : null;
+  hemi.intensity=W[2]; key.intensity=W[3]; M.lamp_head.emissiveIntensity=W[4];
+  if(CITY){ CITY.mats.street.emissiveIntensity = w==='night'?2.5:(w==='rain'||w==='fog')?1:0; CITY.mats.win.emissiveIntensity = w==='night'?1.1:0; CITY.rain.visible = w==='rain'; }
+}
+function enterModel(){
+  mode='model'; document.body.dataset.mode='model'; setSeg('modeSeg','model');
+  setWeatherLook('clear');
+  bus.position.set(0,0,0); bus.rotation.set(0,0,0); setDoors(0);
+  key.position.set(4,7,5); key.target.position.set(0,0,0);
+  stage.setObject(bus); applyGhost();
+  const t=controls.target; camera.position.z = t.z-(camera.position.z-t.z); controls.update();
+}
+
+/* ---------- city / simulation ---------- */
+let CITY=null;
+const hgt = x => { const ss=t=>t*t*(3-2*t); if(x<0||x>100) return 0; if(x<40) return 4.5*ss(x/40); if(x<=60) return 4.5; return 4.5*(1-ss((x-60)/40)); };
+const slope = x => (hgt(x+.05)-hgt(x-.05))/.1;
+function buildCity(){
+  const city=new THREE.Group(); city.name='city_simulation';
+  const cm={}; const cmat=(n,c,r=.8,m=0,o={})=>(cm[n]=new THREE.MeshStandardMaterial({name:n,color:c,roughness:r,metalness:m,...o}));
+  cmat('asphalt',0x3b3e42,.92); cmat('marking',0xf1f1ec,.6); cmat('grass',0x9aab84,.95); cmat('concrete',0xc5c6c1,.85);
+  cmat('water',0x5f8fb0,.25); cmat('b1',0xdcd8d0,.85); cmat('b2',0xbfc5ca,.85); cmat('b3',0xa9aeb3,.85); cmat('dark',0x24272a,.6,.2);
+  cmat('cut',0xbfc2bd,.9,0,{transparent:true,opacity:.28,depthWrite:false}); cmat('grasscut',0x9aab84,.9,0,{transparent:true,opacity:.25,depthWrite:false});
+  cmat('tree',0x6f8f5e,.9); cmat('trunk',0x6d5a48,.9);
+  cmat('street',0xfff4d6,.4,0,{emissive:0xffd89a,emissiveIntensity:0}); cmat('win',0x56606a,.3,0,{emissive:0xffd59a,emissiveIntensity:0});
+  cmat('tlamp',0xfff8e8,.4,0,{emissive:0xfff0d0,emissiveIntensity:1.6});
+  cmat('sigR',0x3a1a18,.3,0,{emissive:0xff2a1a,emissiveIntensity:0}); cmat('sigY',0x3a3018,.3,0,{emissive:0xffb000,emissiveIntensity:0}); cmat('sigG',0x183a22,.3,0,{emissive:0x10e060,emissiveIntensity:0});
+  cmat('ring',0xff3b30,.5,0,{emissive:0xff3b30,emissiveIntensity:.8,transparent:true,opacity:.85,side:THREE.DoubleSide});
+  cmat('sense',0x3d8be0,.5,0,{emissive:0x3d8be0,emissiveIntensity:.4,transparent:true,opacity:.14,depthWrite:false,side:THREE.DoubleSide});
+  cmat('siren',0x2060ff,.3,0,{emissive:0x2060ff,emissiveIntensity:0});
+  const ribbon=(name,m,x0,x1,z0,z1,dy,seg)=>{ const g=new THREE.PlaneGeometry(x1-x0,z1-z0,seg,1); g.rotateX(-Math.PI/2); const p=g.attributes.position; const cx=(x0+x1)/2;
+    for(let i=0;i<p.count;i++) p.setY(i,hgt(p.getX(i)+cx)+dy); g.computeVertexNormals(); const me=new THREE.Mesh(g,m); me.name=name; me.position.set(cx,0,(z0+z1)/2); city.add(me); return me; };
+  bx(city,'ground_grass',cm.grass,-130,210,-.2,0,-70,70);
+  ribbon('road_asphalt',cm.asphalt,-115,195,-4,4,.02,620);
+  for(const s of [-1,1]) ribbon('edge_line',cm.marking,-115,195,s*3.7,s*3.85,.03,620);
+  for(let x=-114;x<194;x+=6){ if(x>-35&&x<-25) continue; ribbon('center_dash',cm.marking,x,x+3,-.08,.08,.03,6); }
+  for(let z=-3.5;z<=3.51;z+=1) bx(city,'zebra_stripe',cm.marking,-31.5,-28.5,.021,.035,z-.25,z+.25);
+  bx(city,'stop_line',cm.marking,-33.9,-33.6,.021,.035,-3.7,0); bx(city,'stop_line',cm.marking,-26.4,-26.1,.021,.035,0,3.7);
+  for(const s of [-1,1]) for(const [a,b] of [[-115,-2],[102,110],[142,195]]) bx(city,'sidewalk',cm.concrete,a,b,0,.15,s*4,s*6.5);
+  // bridge
+  for(let x=0;x<100;x+=2){ const hm=hgt(x+1); if(hm<.25) continue; const a=Math.atan(slope(x+1));
+    const d=bx(city,'bridge_deck',cm.concrete,x-.01,x+2.01,-.6,0,-4.3,4.3); d.position.y=hm+.01; d.rotation.z=a;
+    for(const s of [-1,1]){ const g=bx(city,'bridge_barrier',cm.concrete,x-.01,x+2.01,0,.9,s*4.05,s*4.3); g.position.y=hm+.45; g.rotation.z=a; } }
+  for(let x=10;x<=90;x+=8){ const hm=hgt(x); if(hm<1.2) continue; for(const z of [-2.5,2.5]) cy(city,'bridge_pier',cm.concrete,.4,hm-.5,'y',x,(hm-.5)/2,z,20); bx(city,'pier_cap',cm.concrete,x-.5,x+.5,hm-.95,hm-.55,-3.8,3.8); }
+  bx(city,'river',cm.water,32,68,0,.04,-70,70);
+  // tunnel / underpass
+  for(const s of [-1,1]) bx(city,'tunnel_wall',cm.concrete,112,140,0,5.2,s*4.2,s*4.6);
+  const roof=bx(city,'tunnel_roof_slab',cm.cut,112,140,5.2,5.7,-4.6,4.6); roof.userData.noShadow=true;
+  const cover=bx(city,'earth_cover',cm.grasscut,112,140,5.7,6.6,-4.6,4.6); cover.userData.noShadow=true;
+  bx(city,'embankment',cm.grass,112,140,0,6.6,4.6,18);
+  const emb=bx(city,'embankment_cutaway',cm.grasscut,112,140,0,6.6,-18,-4.6); emb.userData.noShadow=true;
+  for(const x of [111.4,140]) bx(city,'tunnel_portal',cm.concrete,x,x+.6,5.2,6.9,-5.4,5.4);
+  const ov=bx(city,'overpass_street',cm.asphalt,122,130,6.6,6.65,-18,18); ov.userData.noShadow=true;
+  for(let x=114;x<139;x+=3) bx(city,'tunnel_light',cm.tlamp,x-.4,x+.4,5.08,5.18,-.12,.12);
+  // signals
+  const signal=(x,z,face)=>{ const s=Math.sign(z); cy(city,'signal_pole',cm.dark,.08,5,'y',x,2.5,z,12); bx(city,'signal_arm',cm.dark,x-.05,x+.05,4.8,4.9,z,z-s*2.9);
+    const hz=z-s*2.6; bx(city,'signal_head',cm.dark,x-.15,x+.15,3.9,4.85,hz-.18,hz+.18);
+    [['sigR',4.66],['sigY',4.38],['sigG',4.1]].forEach(([m,y])=>{ const l=new THREE.Mesh(new THREE.SphereGeometry(.11,20,12),cm[m]); l.name='signal_lamp_'+m; l.position.set(x+face*.16,y,hz); city.add(l); }); };
+  signal(-34.3,-4.7,-1); signal(-25.7,4.7,1);
+  // buildings
+  let seed=7; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647);
+  const bm=[cm.b1,cm.b2,cm.b3];
+  for(const s of [-1,1]){ let x=-112, i=0;
+    while(x<192){ const w=7+rnd()*9; if(x+w>28&&x<72){x=72;continue;} if(x+w>108&&x<146){x=146;continue;}
+      const hh=6+rnd()*24, d=8+rnd()*8, z0=s*(9+rnd()*3);
+      bx(city,'building',bm[i++%3],x,x+w,0,hh,z0,z0+s*d);
+      for(let y=2.2;y<hh-1;y+=3.2) bx(city,'building_windows',cm.win,x+.6,x+w-.6,y,y+1.3,z0-s*.02,z0);
+      x+=w+2+rnd()*4; } }
+  for(const s of [-1,1]) for(let x=-108;x<192;x+=14){ if((x>-4&&x<104)||(x>106&&x<146)||Math.abs(x+30)<6||Math.abs(x+66)<6||Math.abs(x-162)<6) continue;
+    cy(city,'tree_trunk',cm.trunk,.12,1.6,'y',x,.95,s*5.9,8); cy(city,'tree_crown',cm.tree,1.1,2.6,'y',x,2.9,s*5.9,12,0); }
+  for(let x=-100;x<192;x+=24){ if((x>-4&&x<104)||(x>106&&x<146)) continue; cy(city,'street_light_pole',cm.dark,.06,6,'y',x,3,-6.1,8); bx(city,'street_light_head',cm.street,x-.4,x+.4,5.85,6.0,-5.6,-5.2); bx(city,'street_light_arm',cm.dark,x-.03,x+.03,5.95,6.05,-6.1,-5.4); }
+  // stations
+  const shelter=(x0,name)=>{ bx(city,name+'_shelter_roof',cm.dark,x0,x0+4,2.6,2.7,-6.5,-4.9); for(const x of [x0+.2,x0+3.8]) cy(city,name+'_shelter_post',cm.concrete,.05,2.45,'y',x,1.37,-6.3,8);
+    bx(city,name+'_bench',cm.concrete,x0+.5,x0+3.5,.55,.62,-6.3,-5.9); bx(city,name+'_sign',M.paint_accent,x0+4.3,x0+4.9,2.2,2.7,-4.65,-4.6); cy(city,name+'_sign_pole',cm.dark,.04,2.6,'y',x0+4.6,1.3,-4.6,8); };
+  shelter(-70,'stationA'); shelter(164,'stationB');
+  // pantograph mast (station B)
+  const PX=161.7;
+  cy(city,'pantograph_mast',cm.dark,.18,5.6,'y',PX,2.8,-6.2,16); bx(city,'pantograph_boom',cm.dark,PX-.15,PX+.15,5.3,5.6,-6.2,-1.3);
+  const panto=new THREE.Group(); panto.name='pantograph_head'; panto.position.set(PX,4.6,-1.75); city.add(panto);
+  bx(panto,'pantograph_hood',cm.dark,-.9,.9,0,.25,-.7,.7); bx(panto,'pantograph_contacts',M.copper_contact,-.8,.8,-.06,0,-.4,.4);
+  cy(city,'charger_cabinet_450kW',cm.b2,.6,2.0,'y',PX-3,1.0,-7.6,4);
+  // pedestrians
+  const pedCols=[0xc0533a,0x3a6fb0,0x5a8a4a,0x8a5aa0];
+  const peds=pedCols.map((c,i)=>{ const g=new THREE.Group(); g.name='pedestrian_'+i; const m=new THREE.MeshStandardMaterial({name:'ped_'+i,color:c,roughness:.8});
+    cy(g,'ped_body',m,.2,1.05,'y',0,.72,0,12,.17); const head=new THREE.Mesh(new THREE.SphereGeometry(.13,16,10),M.seat_shell_PPGF); head.name='ped_head'; head.position.y=1.38; g.add(head);
+    const r=new THREE.Mesh(new THREE.RingGeometry(.45,.55,32),cm.ring); r.rotation.x=-Math.PI/2; r.position.y=.06; r.name='detection_ring'; r.visible=false; r.userData.noShadow=true; g.add(r);
+    city.add(g); const z=i%2?5.3:-5.3; return {g,ring:r,x:-31+i*.6,z,walking:false,late:i===3,delay:i*.6,speed:i===3?1.5:1.25+i*.05}; });
+  // vehicles in the opposite lane
+  const mkCar=(name,color,len,h,extra)=>{ const g=new THREE.Group(); g.name=name; const m=new THREE.MeshStandardMaterial({name:name+'_paint',color,roughness:.45,metalness:.1});
+    const inner=new THREE.Group(); g.add(inner);
+    bx(inner,name+'_body',m,-len/2,len/2,.35,h,-.9,.9); bx(inner,name+'_glass',M.glass_laminated,-len/2+.3,-len/2+1.2,h-.05,h+.5,-.85,.85);
+    if(extra) extra(inner,len,h);
+    for(const x of [-len/2+.8,len/2-.8]) for(const z of [-.85,.85]) cy(inner,name+'_tire',M.rubber_tire,.33,.24,'z',x,.33,z,20);
+    city.add(g); return {g,inner,len}; };
+  const amb=mkCar('ambulance',0xf4f4f0,5.6,2.5,(p,len,h)=>{ bx(p,'ambulance_stripe',M.emergency_red,-len/2,len/2,1.1,1.3,-.905,.905); bx(p,'ambulance_lightbar',cm.siren,-len/2+.4,-len/2+1.2,h,h+.15,-.6,.6); });
+  const van=mkCar('delivery_van_EV',0x6d8e6a,5.2,2.3,(p,len,h)=>{ bx(p,'van_cargo_box',M.paint_GFRP,-len/2+1.4,len/2,h-1.6,h+.3,-.95,.95); cy(p,'van_lidar',M.sensor_black,.09,.12,'y',-len/2+.8,h+.6,0,16); });
+  const car=mkCar('sedan',0x9aa3ab,4.4,1.25,(p,len,h)=>bx(p,'sedan_cabin',M.glass_laminated,-1.2,1.0,h,h+.5,-.8,.8));
+  const traffic=[{...amb,x:40,v:9,kind:'amb'},{...van,x:110,v:8,kind:'van'},{...car,x:-90,v:9,kind:'car'}];
+  // bus mover + perception visuals
+  const mover=new THREE.Group(); mover.name='bus_mover'; city.add(mover);
+  const sense=new THREE.Mesh(new THREE.CircleGeometry(1,64),cm.sense); sense.rotation.x=-Math.PI/2; sense.position.y=.07; sense.name='perception_field'; sense.userData.noShadow=true; mover.add(sense);
+  // rain
+  const N=2200, rp=new Float32Array(N*3); for(let i=0;i<N;i++){ rp[i*3]=(Math.random()-.5)*80; rp[i*3+1]=Math.random()*22; rp[i*3+2]=(Math.random()-.5)*50; }
+  const rg=new THREE.BufferGeometry(); rg.setAttribute('position',new THREE.BufferAttribute(rp,3));
+  const rain=new THREE.Points(rg,new THREE.PointsMaterial({name:'rain',color:0xd8e2ec,size:.09,transparent:true,opacity:.8})); rain.name='rain'; rain.visible=false; city.add(rain);
+  return {group:city,mats:{street:cm.street,win:cm.win,R:cm.sigR,Y:cm.sigY,G:cm.sigG,siren:cm.siren},peds,traffic,mover,sense,rain,panto};
+}
+
+const STN=[{id:'A',name:'ป้ายหอสมุดเมือง',stop:-62},{id:'B',name:'ป้ายท่าน้ำ (ชาร์จแพนโทกราฟ)',stop:166}];
+const PERC={clear:{lidar:120,cam:150,radar:200,th:80,c:1.05},rain:{lidar:55,cam:60,radar:190,th:60,c:1.15},fog:{lidar:35,cam:30,radar:180,th:70,c:1.08},night:{lidar:120,cam:45,radar:200,th:90,c:.98}};
+const sim={x:-68,v:0,dwell:4,station:'A',served:{},soc:.82,t:0,cycPrev:0,reason:null,weather:'clear',speed:1,follow:true,charging:false,lap:0,ambLogged:false};
+let prevBus=new THREE.Vector3();
+
+function enterSim(){
+  if(!CITY) CITY=buildCity();
+  mode='sim'; document.body.dataset.mode='sim'; setSeg('modeSeg','sim'); labelBox.style.display='none';
+  selected=null; applyGhost(); expCur=expT=0; $('explode').value=0; applyExplode();
+  CITY.mover.add(bus);
+  stage.setObject(CITY.group); fixShadows(CITY.group);
+  camera.near=.1; camera.far=2000; camera.updateProjectionMatrix();
+  const span=45; Object.assign(key.shadow.camera,{left:-span,right:span,top:span,bottom:-span}); key.shadow.camera.updateProjectionMatrix();
+  setWeatherLook(sim.weather==='clear'?'sim_clear':sim.weather);
+  poseBus();
+  const p=CITY.mover.position; controls.target.set(p.x+2,p.y+1.5,p.z); camera.position.set(p.x-14,p.y+9,p.z-17); controls.update(); prevBus.copy(p);
+  if(!logEl.children.length) log(`เริ่มที่ ${STN[0].name} · ตรวจระบบก่อนออกวิ่ง (self-check) ผ่าน · เชื่อมต่อ OCC แล้ว`);
+}
+function poseBus(){ const m=CITY.mover; m.position.set(sim.x,hgt(sim.x),-1.75); bus.rotation.z=Math.atan(slope(sim.x)); bus.position.y=0; }
+function setDoors(o){ for(const l of doorLeaves){ l.position.x=l.userData.base+l.userData.dir*o*l.userData.w*.92; l.position.z=-.07*Math.min(1,o*3); } ramp.position.z=ramp.userData.z0-o*.95; }
+
+const logEl=$('log');
+const fmt=t=>{ const s=Math.floor(t); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); };
+function log(msg){ const d=document.createElement('div'); d.innerHTML=`<time>${fmt(sim.t)}</time>${msg}`; logEl.prepend(d); while(logEl.children.length>40) logEl.lastChild.remove(); }
+let annT=0; function announce(msg){ const a=$('announce'); a.textContent=msg; a.classList.add('show'); annT=4.5; }
+
+const TRIG=[
+ [-90,()=>log('รับข้อมูล SPaT/MAP จากไฟจราจรผ่าน C-V2X: คำนวณความเร็วให้ถึงทางม้าลายพอดีไฟเขียว')],
+ [0,()=>log(`ขึ้นสะพานยกระดับ ความชันสูงสุด ~${(Math.max(...[...Array(40).keys()].map(slope))*100).toFixed(0)}% → เพิ่มแรงบิด ตรวจลมขวางจากเซนเซอร์บนหลังคา`)],
+ [42,()=>log('บนสะพาน: ส่งตำแหน่ง RTK-GNSS ±2 ซม. + ภาพ CCTV 4 ช่องไปศูนย์ควบคุม OCC ผ่าน 5G')],
+ [62,()=>log('ลงสะพาน: ใช้เบรกคืนพลังงาน (regenerative braking) ชาร์จกลับเข้าแบตเตอรี่')],
+ [112,()=>log('เข้าอุโมงค์: สัญญาณ GNSS หาย → LiDAR-SLAM + IMU + บีคอน UWB · กล้องสลับโหมดแสงน้อย')],
+ [140,()=>log('ออกจากอุโมงค์: GNSS กลับมา (RTK FIX) · รีเซ็ตตำแหน่ง')],
+ [146,()=>announce('สถานีถัดไป: ป้ายท่าน้ำ · Next stop: Tha Nam')],
+];
+
+function simStep(dt){
+  const C=CITY; sim.t+=dt;
+  const cyc=sim.t%24, phase=cyc<11?'G':cyc<14?'Y':'R';
+  C.mats.G.emissiveIntensity=phase==='G'?2.6:0; C.mats.Y.emissiveIntensity=phase==='Y'?2.6:0; C.mats.R.emissiveIntensity=phase==='R'?2.6:0;
+  const cycleN=Math.floor(sim.t/24);
+  // pedestrians
+  const front=sim.x+6, P=PERC[sim.weather];
+  for(const p of C.peds){
+    const startAt = p.late?8.5:14.4+p.delay;
+    if(!p.walking && sim.cycPrev<startAt && cyc>=startAt && (!p.late || cycleN%2===1)){ p.walking=true; p.dir=p.z>0?-1:1; }
+    if(p.walking){ p.z+=p.dir*p.speed*dt; if(Math.abs(p.z)>=5.3 && Math.sign(p.z)===p.dir){ p.z=p.dir*5.3; p.walking=false; } }
+    p.g.position.set(p.x,Math.abs(p.z)>4?.15:.02,p.z); p.g.rotation.y=p.walking?(p.dir>0?0:Math.PI):0;
+    p.ring.visible = p.walking && Math.abs(p.z)<4.4 && p.x-front>-2 && p.x-front<P.lidar;
+  }
+  sim.cycPrev=cyc;
+  const pedOn=C.peds.some(p=>p.walking&&Math.abs(p.z)<4.4);
+  // traffic (opposite lane, heading -x)
+  for(const c of C.traffic){
+    const f=c.x-c.len/2; let vt=c.kind==='amb'?12:9;
+    const ahead=C.traffic.filter(o=>o!==c&&o.x<c.x&&c.x-o.x<40).map(o=>c.x-o.x-o.len/2-c.len/2-3);
+    if(ahead.length) vt=Math.min(vt,Math.max(0,Math.min(...ahead)*.8));
+    if(f>=-26.1 && f+26.1<45 && (phase!=='G'||pedOn) && c.kind!=='amb') vt=Math.min(vt,Math.sqrt(Math.max(0,2*2*(f+26.1-.3))));
+    c.v += Math.max(-4*dt,Math.min(1.5*dt,vt-c.v)); c.x-=c.v*dt; if(c.x<-118) c.x=198;
+    c.g.position.set(c.x,hgt(c.x),1.75); c.inner.rotation.z=Math.atan(slope(c.x));
+    if(c.kind==='amb'){ C.mats.siren.emissiveIntensity=(sim.t*4%1)<.5?3:0;
+      const d=c.x-front; if(d>0&&d<60&&!sim.ambLogged){ sim.ambLogged=true; log('V2V: รับสัญญาณรถพยาบาลฝั่งตรงข้าม ระยะ '+d.toFixed(0)+' ม. → ชะลอ ชิดซ้าย แจ้ง OCC'); }
+      if(d<-20) sim.ambLogged=false; }
+  }
+  // bus
+  let stopX=Infinity, reason=null;
+  if(sim.dwell>0){
+    sim.dwell-=dt; sim.v=0;
+    const st=STN.find(s=>s.id===sim.station);
+    const o=Math.min(1,Math.min(sim.dwell, (sim.dwellMax-sim.dwell))/1); setDoors(Math.max(0,o));
+    if(sim.station==='B'){ const pd=Math.min(1,Math.min(sim.dwell,sim.dwellMax-sim.dwell)/1.2); C.panto.position.y=4.6-pd*1.04; if(pd>=1){ sim.soc=Math.min(.95,sim.soc+dt*.012); if(!sim.charging){ sim.charging=true; log('แพนโทกราฟลงแตะรางบนหลังคา · ชาร์จ 450 kW · BMS ควบคุมอุณหภูมิเซลล์'); } } }
+    reason='dwell';
+    if(sim.dwell<=0){ setDoors(0); sim.served[sim.station]=true; sim.charging=false; C.panto.position.y=4.6; log(`ออกจาก${st.name} · ประตูปิดสนิท ตรวจไม่มีสิ่งกีดขวาง`); announce('รถกำลังออก กรุณาจับราว · Doors closing'); }
+  } else {
+    for(const s of STN) if(!sim.served[s.id] && front<=s.stop+.05 && s.stop-front<220){ if(s.stop<stopX){ stopX=s.stop; reason=(s.stop-front < sim.v*sim.v/2.6+5)?'station':null; } }
+    const SL=-33.6;
+    if(front<=SL+.05 && SL-front<70){
+      if(phase==='R' || (phase==='Y' && SL-front > sim.v*sim.v/5+1)){ if(SL<stopX){stopX=SL; reason='red';} }
+      if(pedOn && SL-front<45){ if(SL<=stopX){ stopX=SL; reason=phase==='G'?'ped':reason||'red'; } }
+    }
+    let vmax = (front>-60&&front<-28)?8.3:(sim.x>0&&sim.x<100)?7.5:(sim.x>110&&sim.x<142)?8:9.5;
+    if(sim.weather==='fog') vmax*=.65; if(sim.weather==='rain') vmax*=.8;
+    let vt=vmax; if(isFinite(stopX)) vt=Math.min(vt,Math.sqrt(Math.max(0,2*1.3*(stopX-front-.25))));
+    sim.v += Math.max(-3*dt,Math.min(1.1*dt,vt-sim.v)); if(sim.v<0) sim.v=0;
+    const pf=front; sim.x+=sim.v*dt; const nf=sim.x+6;
+    for(const [at,fn] of TRIG) if(pf<at&&nf>=at) fn();
+    const sHit=STN.find(q=>q.stop===stopX); if(sHit && stopX-nf<.6 && sim.v<.2){ const s=sHit; sim.station=s.id; sim.v=0; sim.dwellMax=sim.dwell=s.id==='B'?9:5;
+      log(`จอด${s.name} · เปิดประตู + ทางลาดวีลแชร์ · กล้องนับผู้โดยสารขึ้น/ลง`); announce(`ถึง${s.name} · ประตูกำลังเปิด`); }
+    // energy
+    const dk=sim.v*dt/1000, gr=slope(sim.x);
+    let e=dk*P.c + 19000*9.81*gr*sim.v*dt/3.6e6; if(e<0) e*=.65;
+    sim.soc=Math.max(.1,sim.soc-e/350);
+    if(sim.x>196){ sim.x=-110; sim.served={}; sim.lap++; log('— เริ่มรอบใหม่ —'); }
+  }
+  if(reason!==sim.reason){
+    if(reason==='red') log('ไฟแดง: หยุดก่อนเส้นหยุด · ลำโพงภายนอก “รถกำลังหยุด เชิญข้ามได้”');
+    if(reason==='ped') log('LiDAR + กล้องตรวจพบคนข้ามทางม้าลายขณะไฟเขียว → เบรกนุ่มนวล 1.3 m/s² หยุดให้ทาง');
+    if(sim.reason==='red'||sim.reason==='ped') log('ทางม้าลายโล่ง → ออกตัว');
+    sim.reason=reason;
+  }
+  for(const w of wheelGroups) w.rotation.z-=sim.v*dt/.5;
+  poseBus();
+  // perception field
+  const R=P.lidar/4; C.sense.scale.set(R,R,1); C.sense.position.x=4; C.sense.position.y=.07+(hgt(sim.x+4)-hgt(sim.x));
+  C.rain.position.set(sim.x,0,0);
+  if(C.rain.visible){ const a=C.rain.geometry.attributes.position; for(let i=0;i<a.count;i++){ let y=a.getY(i)-22*dt; if(y<0) y+=22; a.setY(i,y);} a.needsUpdate=true; }
+  // camera follow + light follow
+  const bp=C.mover.position;
+  if(sim.follow){ tmp.copy(bp).sub(prevBus); camera.position.add(tmp); controls.target.add(tmp); }
+  prevBus.copy(bp);
+  key.position.set(bp.x+20,bp.y+40,bp.z+22); key.target.position.copy(bp);
+  // HUD
+  if(annT>0){ annT-=dt; if(annT<=0) $('announce').classList.remove('show'); }
+  hudTick(phase,cyc,front,P);
+}
+let hudAcc=0;
+function hudTick(phase,cyc,front,P){
+  hudAcc++; if(hudAcc%6) return;
+  const inT=sim.x>108&&sim.x<142;
+  const st={dwell:sim.station==='B'&&sim.charging?'จอดสถานี B · กำลังชาร์จผ่านแพนโทกราฟ':'จอดรับ-ส่งผู้โดยสาร',red:'หยุดรอไฟแดง',ped:'หยุดให้ทางคนเดินข้ามทางม้าลาย',station:'ชะลอเข้าสถานี'}[sim.reason]
+    || (inT?'วิ่งในอุโมงค์ทางลอด (ไม่มี GNSS)':(sim.x>0&&sim.x<100)?(sim.x<40?'ขึ้นสะพานยกระดับ':sim.x<60?'บนสะพานข้ามแม่น้ำ':'ลงสะพาน · เบรกคืนพลังงาน'):'วิ่งตามเส้นทาง');
+  $('hState').textContent=st;
+  $('hSpeed').textContent=(sim.v*3.6).toFixed(0)+' กม./ชม.';
+  const rem=phase==='G'?11-cyc:phase==='Y'?14-cyc:24-cyc;
+  $('hSig').textContent={G:'เขียว',Y:'เหลือง',R:'แดง'}[phase]+` · อีก ${rem.toFixed(0)} วิ (SPaT)`;
+  $('hLoc').textContent=inT?'LiDAR-SLAM + IMU ±10 ซม.':'RTK-GNSS FIX ±2 ซม.';
+  $('hOcc').textContent=(inT?'5G ผ่าน DAS · ':'5G · ')+(inT?38+Math.round(Math.random()*8):20+Math.round(Math.random()*8))+' ms';
+  $('hRange').textContent=`LiDAR ${P.lidar} · กล้อง ${P.cam} · เรดาร์ ${P.radar} ม.`;
+  const near=CITY.peds.filter(p=>Math.abs(p.x-front)<P.lidar).length + CITY.traffic.filter(c=>Math.abs(c.x-sim.x)<P.radar).length;
+  $('hObj').textContent=near+' (คน + รถ)';
+  const usable=(sim.soc-.1)*350, cons=P.c;
+  $('hSoc').textContent=(sim.soc*100).toFixed(1)+'%'+(sim.charging?' ⚡':''); $('hSocBar').style.width=(sim.soc*100)+'%';
+  $('hLeft').textContent=`≈ ${(usable/(cons*18)).toFixed(1)} ชม. · ${(usable/cons).toFixed(0)} กม.`;
+  const col={clear:1,rain:2,fog:3,night:4}[sim.weather], c2=inT?5:-1;
+  document.querySelectorAll('#matrix div').forEach(d=>{ const ci=+d.dataset.c; d.classList.toggle('hl',ci===col||ci===c2); });
+}
+
+let last=performance.now();
+stage.onFrame=()=>{
+  const now=performance.now(); const dt=Math.min(.05,(now-last)/1000); last=now;
+  if(Math.abs(expCur-expT)>1e-4){ expCur+=(expT-expCur)*Math.min(1,dt*7); applyExplode(); }
+  if(mode==='model') updateLabels(); else simStep(dt*sim.speed);
+};
+
+/* ---------- UI ---------- */
+function setSeg(id,val){ document.querySelectorAll(`#${id} button`).forEach(b=>b.classList.toggle('on',Object.values(b.dataset)[0]===String(val))); }
+$('modeSeg').onclick=e=>{ const m=e.target.dataset.mode; if(!m) return; m==='sim'?enterSim():enterModel(); };
+$('explode').oninput=e=>{ expT=+e.target.value; };
+$('showLabels').onchange=e=>{ labelsOn=e.target.checked; };
+$('clearSel').onclick=()=>{ selected=null; applyGhost(); };
+$('weatherSeg').onclick=e=>{ const w=e.target.dataset.w; if(!w) return; sim.weather=w; setSeg('weatherSeg',w); setWeatherLook(w==='clear'?'sim_clear':w); log({clear:'สภาพอากาศ: แดดจัด — ใช้กล้อง + LiDAR เป็นหลัก',rain:'ฝนตกหนัก: LiDAR/กล้องลดระยะ → เพิ่มน้ำหนักเรดาร์ เปิดหัวฉีดล้างเซนเซอร์ ลดความเร็ว 20%',fog:'หมอก/ควัน: ระยะมองเห็นกล้อง ~30 ม. → พึ่งเรดาร์ + กล้องความร้อน ลดความเร็ว 35%',night:'กลางคืน: กล้อง RGB ลดลง → LiDAR + กล้องความร้อนตรวจคนเดินถนน'}[w]); };
+$('speedSeg').onclick=e=>{ const s=e.target.dataset.s; if(s==null) return; sim.speed=+s; setSeg('speedSeg',s); };
+$('followBtn').onclick=e=>{ sim.follow=!sim.follow; e.target.textContent='กล้องตามรถ: '+(sim.follow?'เปิด':'ปิด'); };
+
+function showTab(t){ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t)); document.querySelectorAll('.tabc>section').forEach(s=>s.classList.toggle('on',s.dataset.t===t)); }
+$('tabs').onclick=e=>{ const t=e.target.dataset.t; if(!t) return; showTab(t); document.querySelector('.tabc').scrollTop=0; if(t==='real'&&mode!=='sim') enterSim(); if(t==='parts'&&mode!=='model') enterModel(); };
+
+const usd=v=>'$'+(v>=1000?(v/1000).toFixed(v%1000?1:0)+'k':v);
+const thb=v=>(v*34/1e6).toFixed(1)+' ล้านบาท';
+const MAXC=Math.max(...COMPS.map(c=>c.c[0]));
+const minib=c=>`<div class="minibars">${['2016','2021','2026'].map((y,i)=>`<span>${y}</span><div class="bar ${['y16','y21','y26'][i]}" style="width:${Math.max(2,c.c[i]/MAXC*100)}%"></div><span>${usd(c.c[i])}</span>`).join('')}</div>`;
+$('compList').innerHTML=COMPS.map(c=>`<div class="comp" data-k="${c.k}"><div class="hd"><span class="num">${c.n}</span><div><b>${c.th}</b><small>${c.m[0]}</small></div><span class="c">${usd(c.c[2])}</span></div>
+ <div class="bd"><p>${c.f}</p><div class="mat">${c.m.map(x=>'• '+x).join('<br>')}</div>${minib(c)}${c.nt?`<p class="note" style="margin:6px 0 0">${c.nt}</p>`:''}</div></div>`).join('');
+document.querySelectorAll('.comp .hd').forEach(h=>h.onclick=()=>select(h.parentNode.dataset.k));
+
+const T=[0,1,2].map(i=>COMPS.reduce((s,c)=>s+c.c[i],0));
+$('tot16').textContent=usd(T[0]); $('tot16b').textContent='≈ '+thb(T[0]);
+$('tot26').textContent=usd(T[2]); $('tot26b').textContent='≈ '+thb(T[2])+` · ${((T[2]/T[0]-1)*100).toFixed(0)}%`;
+$('costList').innerHTML=[...COMPS].sort((a,b)=>b.c[0]-a.c[0]).map(c=>{ const ch=(c.c[2]/c.c[0]-1)*100;
+  return `<div class="costrow"><div class="t"><b style="font-weight:500">${c.n}. ${c.th}</b><span class="${ch<0?'drop':'up'}">${usd(c.c[0])} → ${usd(c.c[2])} (${ch>0?'+':''}${ch.toFixed(0)}%)</span></div>
+  <div class="bars">${[0,1,2].map(i=>`<div class="bar ${['y16','y21','y26'][i]}" style="width:${Math.max(1,c.c[i]/MAXC*100)}%"></div>`).join('')}</div></div>`; }).join('');
+
+// energy card
+function energy(){ const soc=+$('eSoc').value/100, c=+$('eCond').value; $('eSocO').textContent=Math.round(soc*100)+'%'; const u=Math.max(0,(soc-.1)*350); $('eHrs').textContent=(u/(c*18)).toFixed(1)+' ชม.'; $('eKm').textContent=(u/c).toFixed(0)+' กม.'; }
+$('eSoc').oninput=energy; $('eCond').onchange=energy; energy();
+
+// charging calc
+function charge(){
+  const L=+$('cLoop').value, H=+$('cHrs').value, c=+$('cCond').value;
+  $('cLoopO').textContent=L+' กม.'; $('cHrsO').textContent=H+' ชม.';
+  const R=245/c, D=H*18, need=D*c, top=Math.max(0,Math.ceil((need-245)/45)), loops=Math.floor(D/L);
+  $('rRange').textContent=R.toFixed(0)+' กม.'; $('rDaily').textContent=D.toFixed(0)+' กม.';
+  $('rSpacing').textContent=(R*.8).toFixed(0)+' กม.'; $('rTop').textContent=top?top+' ครั้ง':'ไม่ต้อง';
+  $('rNote').textContent = top===0 ? `ชาร์จที่อู่ช่วงกลางคืนอย่างเดียวพอ (${loops} รอบ/วัน ใช้ ${need.toFixed(0)} kWh จาก 245 kWh ที่ใช้ได้)`
+    : `ใช้พลังงาน ${need.toFixed(0)} kWh/วัน เกินความจุใช้งาน 245 kWh → ติดแพนโทกราฟที่ปลายสาย ชาร์จ 6 นาทีทุก ~${Math.max(1,Math.floor(loops/top))} รอบ (เส้นทาง ${L} กม./รอบ, ${loops} รอบ/วัน)`;
+}
+['cLoop','cHrs'].forEach(i=>$(i).oninput=charge); $('cCond').onchange=charge; charge();
+
+// maintenance tiers
+const TIERS=[
+ ['ทุกวัน','ระบบตรวจตัวเองก่อนออกวิ่ง (self-diagnostic) · ล้างหน้าเซนเซอร์ · ตรวจลมยาง · ทดสอบประตู/ทางลาด · ทำความสะอาดภายใน · ชาร์จ'],
+ ['ทุก 15,000 กม.','เบรกและผ้าเบรก (สึกน้อยเพราะ regen) · ช่วงล่างและถุงลม · กรองแอร์ · ตรวจถังดับเพลิงและแรงดัน aerosol'],
+ ['ทุก 6 เดือน','สอบเทียบ LiDAR/กล้อง/เรดาร์ในห้อง calibration · ทดสอบฉนวนไฟฟ้าแรงสูง · ตรวจรางรับไฟแพนโทกราฟ · ตรวจรับรองซอฟต์แวร์ OTA'],
+ ['ทุกปี','ตรวจสภาพตามกรมการขนส่งทางบก · ตรวจสุขภาพแบตเตอรี่ (SoH) · ตรวจระบบดับเพลิงอัตโนมัติ · ทดสอบทางออกฉุกเฉิน'],
+ ['2–3 ปี','เปลี่ยนสารหล่อเย็นแบตเตอรี่/มอเตอร์ · เปลี่ยนยาง · ปรับปรุงแผนที่ HD ทั้งเส้นทาง'],
+ ['8–10 ปี','เปลี่ยนแบตเตอรี่เมื่อ SoH < 80% · แบตเก่าไปใช้ซ้ำเป็นระบบกักเก็บพลังงานที่อู่ (second-life ESS) แล้วรีไซเคิล'],
+];
+$('tiers').innerHTML=TIERS.map(([w,t])=>`<div class="tier"><span class="w">${w}</span><span>${t}</span></div>`).join('');
+
+// fleet extension
+const FLEET=[
+ {id:'tractor',name:'รถลากตู้คอนเทนเนอร์',reuse:{battery:'m',drive:'m',sensors:'y',monitor:'y',fire:'y',charging:'m',chassis:'m',signs:'m'},
+  spec:'แบตเตอรี่ 400–600 kWh · มอเตอร์คู่แรงบิดสูง · ชาร์จ MCS ~1 MW · น้ำหนักรวม ~40 ตัน',
+  where:'ท่าเรือ ศูนย์กระจายสินค้า เส้นทางท่าเรือ–ICD (เช่น แหลมฉบัง–ลาดกระบัง)',
+  diff:['ข้อต่อแป้นลาก (fifth wheel) + ล็อกตู้อัตโนมัติ','เซนเซอร์มองไกลขึ้นเพราะระยะเบรกยาว','พื้นที่ปิดในท่าเรือเริ่มไร้คนขับได้ก่อนถนนสาธารณะ'],
+  issue:'ระยะเบรกยาว น้ำหนักเพลาสูง สถานีชาร์จกำลังสูงต้องใช้หม้อแปลงใหญ่'},
+ {id:'amb',name:'รถพยาบาล',reuse:{battery:'m',monitor:'y',fire:'y',signs:'y',sensors:'m',wc:'m',charging:'y',glass:'y'},
+  spec:'แบตเตอรี่ 100–150 kWh · ADAS ระดับ 2–3 (ยังมีคนขับ) · ลิงก์ 5G ส่งสัญญาณชีพถึงโรงพยาบาล',
+  where:'ใช้ระบบ Monitor/OCC เดียวกันเป็นศูนย์สั่งการ + V2X ขอไฟเขียว (signal pre-emption)',
+  diff:['ทางลาดวีลแชร์ → ระบบยกเปลอัตโนมัติ','ไฟฉุกเฉิน + V2V แจ้งรถรอบข้างหลีกทาง','ไฟฟ้าสำรองสำหรับอุปกรณ์การแพทย์'],
+  issue:'ต้องวิ่งเร็วและฝ่าไฟแดงได้ จึงยังไม่เหมาะไร้คนขับเต็มรูปแบบ — ใช้เป็นผู้ช่วยขับ + เปิดทางด้วย V2X'},
+ {id:'fresh',name:'รถส่งวัตถุดิบอาหารรายวัน',reuse:{battery:'y',drive:'y',sensors:'y',monitor:'y',fire:'y',charging:'y',chassis:'m',doors:'m',luggage:'m'},
+  spec:'รถบรรทุก 6–7.5 ตัน · ตู้เย็นไฟฟ้า (e-TRU) 0–4°C · เซนเซอร์อุณหภูมิ IoT ส่งเข้า OCC',
+  where:'ตลาดค้าส่ง → ร้านอาหาร/โรงพยาบาล/โรงเรียน เส้นทางซ้ำทุกวันคล้ายรถเมล์',
+  diff:['ส่งช่วงกลางคืน 01:00–05:00 ถนนว่าง เสียงเงียบ','บันทึก cold chain ตลอดเส้นทาง','ช่องเก็บแยกอุณหภูมิ (multi-temp)'],
+  issue:'ต้องมีคน/แขนกลขนของลงปลายทาง · แอร์ตู้เย็นกินไฟเพิ่ม ~15–25%'},
+ {id:'ecom',name:'รถส่งพัสดุ e-commerce',reuse:{battery:'y',drive:'y',sensors:'y',monitor:'y',fare:'m',charging:'y',fire:'y',signs:'m'},
+  spec:'รถตู้ 3.5 ตัน · ตู้ล็อกเกอร์ในรถ · ลูกค้าสแกน QR รับของ (ต่อยอดจากเครื่องตรวจบัตร)',
+  where:'ศูนย์คัดแยก → จุดรับพัสดุในชุมชน/คอนโด',
+  diff:['ล็อกเกอร์อัตโนมัติแทนพนักงานส่ง','หุ่นยนต์ทางเท้าส่ง 100 ม. สุดท้าย','จอดชั่วคราวริมถนนบ่อย'],
+  issue:'ที่จอดริมถนนจำกัด · ลูกค้าไม่อยู่รับ · ความปลอดภัยของพัสดุ'},
+ {id:'food',name:'ส่งอาหารและสินค้า (food & goods)',reuse:{battery:'m',drive:'m',sensors:'y',monitor:'y',fare:'m',signs:'m',fire:'m'},
+  spec:'ยานขนาดเล็กความเร็วต่ำ 25–40 กม./ชม. · แบตเตอรี่ 20–30 kWh · ช่องร้อน/เย็นแยก',
+  where:'ร้านอาหาร → ลูกค้าในรัศมี 3–5 กม.',
+  diff:['ไม่มีห้องโดยสาร จึงออกแบบแคบและเบาได้','ปลดล็อกช่องด้วยแอป','อัตรารอบต่อวันสูง ชาร์จสั้นบ่อย'],
+  issue:'แข่งกับไรเดอร์มอเตอร์ไซค์ที่ยืดหยุ่นกว่า · ถนนในซอยแคบ · กฎหมายยานพาหนะใหม่'},
+];
+let vCur='tractor';
+function renderFleet(){
+  $('vsel').innerHTML=FLEET.map(f=>`<button data-v="${f.id}" class="${f.id===vCur?'on':''}">${f.name}</button>`).join('');
+  const f=FLEET.find(x=>x.id===vCur);
+  const keys=['battery','drive','charging','sensors','monitor','fire','chassis','signs','fare','doors','wc','luggage','glass','seats'];
+  $('vdetail').innerHTML=`<div class="card"><h3 style="margin-top:0">${f.name}</h3><p>${f.spec}</p><p class="note">${f.where}</p>
+   <h3>ใช้ชิ้นส่วนร่วมกับรถเมล์</h3><div class="reuse">${keys.map(k=>`<span><i class="${f.reuse[k]||''}"></i>${CM[k].s}</span>`).join('')}</div>
+   <p class="note"><span style="color:var(--ok)">●</span> ใช้ร่วมได้เลย · <span style="color:#e2a33b">●</span> ปรับขนาด/ดัดแปลง · <span style="color:#b9bdc1">●</span> ไม่ใช้</p>
+   <h3>สิ่งที่ต่างจากรถเมล์</h3><ul>${f.diff.map(d=>`<li>${d}</li>`).join('')}</ul>
+   <h3>ปัญหาที่พบ</h3><p>${f.issue}</p></div>
+   <p class="note">ข้อดีของการใช้แพลตฟอร์มร่วม: ใช้อู่ ศูนย์ควบคุม OCC ช่างไฟฟ้าแรงสูง และสถานีชาร์จร่วมกัน ลดต้นทุนอะไหล่และฝึกอบรม</p>`;
+}
+$('vsel').onclick=e=>{ const v=e.target.dataset.v; if(!v) return; vCur=v; renderFleet(); };
+renderFleet();
+
+// cities
+const CITIES=[
+ {c:'เอดินบะระ – ไฟฟ์',n:'สกอตแลนด์',y:'~2023–2025',w:'รถบัสอัตโนมัติขนาดเต็ม 5 คัน (โครงการ CAVForth) วิ่งข้ามสะพาน Forth Road Bridge',i:['กฎหมายยังต้องมีคนขับนั่งประจำ + พนักงานบนรถ ต้นทุนจึงไม่ลด','ผู้โดยสารน้อยกว่าที่คาด จนยุติบริการ']},
+ {c:'สิงคโปร์',n:'สิงคโปร์',y:'~2019–ปัจจุบัน',w:'ทดลองรถบัสไฟฟ้าอัตโนมัติ 12 ม. ร่วมกับมหาวิทยาลัย และให้บริการรถอัตโนมัติในย่านพักอาศัยบางสาย',i:['ฝนเขตร้อนทำให้ LiDAR/กล้องมองเห็นลดลง','ต้องทำแผนที่ HD ละเอียดและอัปเดตบ่อย','ช่วงแรกยังต้องมี safety operator']},
+ {c:'เซินเจิ้น',n:'จีน',y:'~2017',w:'ทดลองรถบัสอัตโนมัติบนเส้นทางสั้นราว 1.2 กม. ในเขตจำกัด',i:['เส้นทางสั้น ความเร็วต่ำ ขยายสู่ถนนทั่วไปยาก','คนและรถยนต์แทรกเข้าเลนทำให้หยุดบ่อย']},
+ {c:'ออสโล',n:'นอร์เวย์',y:'~2019–2024',w:'ทดลองมินิบัสอัตโนมัติหลายรุ่นในย่านชานเมือง',i:['หิมะ/น้ำแข็งเกาะเซนเซอร์ ต้องมีระบบทำความร้อน','เกล็ดหิมะหรือใบไม้ถูกตีความเป็นสิ่งกีดขวาง → เบรกกะทันหัน']},
+ {c:'โซล',n:'เกาหลีใต้',y:'~2023–ปัจจุบัน',w:'รถบัสอัตโนมัติรอบดึกในใจกลางเมือง รับผู้โดยสารจริง',i:['จราจรผสมหนาแน่น รถอื่นเปลี่ยนเลนกะทันหัน','ยังต้องมีผู้ควบคุมนั่งที่คนขับ']},
+ {c:'เอเฮจิ (ฟุกุอิ)',n:'ญี่ปุ่น',y:'~2023',w:'บริการรถอัตโนมัติระดับ 4 บนเส้นทางเฉพาะในชนบท สำหรับผู้สูงอายุ',i:['เกิดเหตุเฉี่ยวชนจักรยานที่จอดอยู่ ต้องระงับบริการชั่วคราว']},
+ {c:'กรุงเทพฯ และพื้นที่ทดลอง',n:'ไทย',y:'~2020–ปัจจุบัน',w:'ทดลองรถรับส่งไฟฟ้าอัตโนมัติขนาดเล็กในพื้นที่ปิด เช่น มหาวิทยาลัยและเขตเศรษฐกิจพิเศษ',i:['มอเตอร์ไซค์ตัดหน้าและแทรกช่องว่าง','เส้นจราจรเลือน น้ำท่วมขังช่วงฝนหนัก','กฎหมายยังไม่รองรับรถไร้คนขับบนถนนสาธารณะเต็มรูปแบบ']},
+];
+$('cityList').innerHTML=CITIES.map(c=>`<div class="card city"><h3>${c.c}</h3><div class="meta">${c.n} · ${c.y}</div><p>${c.w}</p><ul>${c.i.map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');
+
+// matrix
+const COLS=['แดด','ฝนหนัก','หมอก/ควัน','กลางคืน','อุโมงค์'];
+const ROWS=[['กล้อง RGB',[3,1,1,1,2]],['LiDAR',[3,1,1,3,3]],['เรดาร์ 77 GHz',[2,3,3,3,2]],['กล้องความร้อน',[2,2,2,3,2]],['RTK-GNSS + แผนที่ HD',[3,3,3,3,0]]];
+const dots=n=>'●'.repeat(n)+'○'.repeat(3-n);
+$('matrix').innerHTML='<div class="h l">เซนเซอร์</div>'+COLS.map((c,i)=>`<div class="h" data-c="${i+1}">${c}</div>`).join('')+ROWS.map(([n,v])=>`<div class="l">${n}</div>`+v.map((x,i)=>`<div class="dots" data-c="${i+1}">${dots(x)}</div>`).join('')).join('');
+
+enterModel();
+</script>
+</body>
+</html>
