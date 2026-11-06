@@ -132,8 +132,10 @@
    en:{title:'Transportation Systems — Explore a connected city',description:'Explore electric buses, future mobility and the connections between urban transport and water through interactive models.',skip:'Skip to projects',home:'Transportation Systems home',navigation:'Main navigation',language:'Choose language',browse:'Explore projects',eyebrow:'MOBILITY · PEOPLE · CONNECTED CITIES',heroFirst:'Connected cities.',heroSecond:'Lives in motion.',intro:'Explore the future of mobility, from electric buses to cities that connect people, streets and the flow of water.',choose:'Choose a model',connected:'CONNECTED',mobility:'MOBILITY',artNote:'Conceptual urban network',projects:'Choose your exploration',projectCount:'02 PROJECTS',busCategory:'01 / MOBILITY',busTag:'INTERACTIVE 3D',busDescription:'Explore an autonomous electric bus in 3D, from materials and energy to operation on city streets.',busTopics:'Electric buses · Energy · Design',explore:'Explore',urbanCategory:'02 / URBAN SYSTEMS',urbanTag:'15 SCENARIOS',urbanDescription:'Experiment with the links between urban mobility and water, including streets, people, bus stops and neighboring communities.',urbanTopics:'Mobility · Flooding · Inclusive cities',footer:'Models for exploring ideas and understanding systems',about:'About the project',limitations:'Data & limitations',changed:'Language changed to English'}
   };
   const buttons=document.querySelectorAll('[data-language]');
+  let currentLanguage='th';
   function applyLanguage(language,{remember=false,announce=false}={}){
    if(!Object.prototype.hasOwnProperty.call(messages,language))language='th';
+   currentLanguage=language;
    const text=messages[language];
    document.documentElement.lang=language;document.title=text.title;
    document.querySelector('meta[name="description"]').setAttribute('content',text.description);
@@ -142,6 +144,7 @@
    for(const button of buttons)button.setAttribute('aria-pressed',String(button.dataset.language===language));
    for(const link of document.querySelectorAll('a.project')){const target=new URL(link.getAttribute('href'),location.href);target.searchParams.set('lang',language);link.setAttribute('href',target.pathname+target.search+target.hash);}
    if(remember)try{localStorage.setItem(key,language);}catch{/* Selection still works when browser storage is unavailable. */}
+   if(remember)try{const target=new URL(location.href);target.searchParams.set('lang',language);history.replaceState(history.state,'',target.href);}catch{}
    if(announce)document.getElementById('language-status').textContent=text.changed;
   }
   for(const button of buttons)button.addEventListener('click',()=>applyLanguage(button.dataset.language,{remember:true,announce:true}));
@@ -149,7 +152,7 @@
   let saved=requested==='en'||requested==='th'?requested:'th';try{const stored=localStorage.getItem(key);if(stored==='en'||stored==='th')saved=stored;}catch{}
   applyLanguage(saved);
   window.addEventListener('storage',event=>{if(event.key===key||event.key===null)applyLanguage(event.newValue||'th');});
-  window.addEventListener('pageshow',event=>{if(!event.persisted)return;try{applyLanguage(localStorage.getItem(key)||saved);}catch{applyLanguage(saved);}});
+  window.addEventListener('pageshow',event=>{if(!event.persisted)return;try{applyLanguage(localStorage.getItem(key)||currentLanguage);}catch{applyLanguage(currentLanguage);}});
  })();
  </script>
 </body>
