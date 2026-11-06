@@ -20,4 +20,4 @@ _Created by Claude (Anthropic)._
 
 ดู [ผลเปรียบเทียบ ข้อมูล ข้อจำกัด และวิธีตรวจซ้ำ](./urban-systems-lab/README.md) · Source และเคสเก็บแยกจากไฟล์ใช้งานสำเร็จ เพื่อให้พัฒนาต่อได้โดยไม่ทับงานเดิม
 
-_Urban Systems Lab developed with OpenAI Codex; existing project attribution above is retained._
+_Urban Systems Lab developed with OpenAI Codex GPT-6.1 Sol; existing project attribution above is retained._
