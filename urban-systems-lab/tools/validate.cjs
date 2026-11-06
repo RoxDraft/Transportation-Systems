@@ -34,7 +34,7 @@ class Element{
  querySelectorAll(q){if(q==='[data-risk]')return all.filter(e=>e.dataset.risk&&this._html.includes('data-risk="'+e.dataset.risk+'"'));return [];}
  setAttribute(k,v){this.attrs[k]=v;}getAttribute(k){return this.attrs[k];}append(...v){this.children.push(...v);}appendChild(e){this.append(e);return e;}replaceChildren(...v){this.children=v;}remove(){}addEventListener(k,f){(this.listeners[k]??=[]).push(f);}removeEventListener(k,f){this.listeners[k]=(this.listeners[k]||[]).filter(x=>x!==f);}fire(k,event={}){for(const f of [...this.listeners[k]||[]])f(event);}getBoundingClientRect(){return {width:viewport,height:viewport*.66,left:0,top:0};}
 }
-const root=new Element('div',{id:'urban-lab'}),html=fs.readFileSync(base+'/urban-systems.html','utf8');root.innerHTML=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');elements.set('urban-lab',root);
+const root=new Element('div',{id:'urban-lab'}),english=process.env.URBAN_LANGUAGE==='en',html=fs.readFileSync(base+(english?'/index.en.html':'/urban-systems.html'),'utf8');root.innerHTML=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');elements.set('urban-lab',root);
 global.document={documentElement:new Element(),hidden:false,getElementById:id=>{assert(elements.has(id),'Missing root '+id);return elements.get(id);},createElement:tag=>new Element(tag),addEventListener(){},removeEventListener(){}};
 let saved;
 global.window={devicePixelRatio:1,d3,matchMedia:()=>({matches:true}),openai:{setWidgetState:s=>{saved=s;return Promise.resolve();}},addEventListener(){},removeEventListener(){}};
@@ -47,7 +47,7 @@ new Function(scripts.at(-1)[1].replace(/\}\)\(\);\s*$/,'globalThis.UQA={state,ru
 function select(id,value){const e=elements.get('ul-'+id);e.value=value;e.fire('change');}
 function image(name){const source=elements.get('ul-map').surface,c=createCanvas(source.width,source.height),ctx=c.getContext('2d');ctx.fillStyle=colors['--background'];ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(source,0,0);fs.writeFileSync(base+'/'+name+'.png',c.toBuffer('image/png'));}
 for(const area of ['network','cw','middle','lower','talat','TH-90']){select('area',area);image('qa-'+area);assert.equal(UQA.state.area,area);}
-select('area','network');select('method','outlet');assert(elements.get('ul-selected').textContent.includes('F'),'Missing receiver warning');select('method','adaptive');assert(elements.get('ul-selected').textContent.includes('ไม่พบ'),'No-worsening state');
+select('area','network');select('method','outlet');assert(elements.get('ul-selected').textContent.includes('F'),'Missing receiver warning');select('method','adaptive');assert(elements.get('ul-selected').textContent.includes(english?'No worsening':'ไม่พบ'),'No-worsening state');
 for(const c of UQA.legacyCases){select('layer',c.layer);select('case',c.id);assert.equal(UQA.state.case,c.id);assert(!elements.get('ul-legacy').hidden);console.log('Mounted',c.id);}
 select('layer','water');select('case','network');viewport=320;UQA.resize();image('qa-mobile');select('area','cw');image('qa-mobile-cw');
 select('area','network');for(const minute of [0,10,100,718,720]){const e=elements.get('ul-time');e.value=minute;e.fire('input');assert.equal(elements.get('ul-current').textContent,minute.toFixed(1));}
