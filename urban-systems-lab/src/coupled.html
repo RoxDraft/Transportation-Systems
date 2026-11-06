@@ -1,0 +1,107 @@
+<div id="coupled-mobility">
+ <h2>แจ้งวัฒนะ · น้ำขัง คิวรถ และทางไปป้าย</h2>
+ <div class="text-small">เชื่อมระดับน้ำกับกำลังถนนและการเข้าถึงป้าย · ซอยและป้ายเป็นจุดทดสอบสมมติ · ไม่ใช่ข้อมูลจราจรสดหรือคำแนะนำให้ลุยน้ำ</div>
+ <div class="viz-controls">
+  <label class="form-label" for="cm-rain">ฝน 1 ชั่วโมง · <output id="cm-rain-value">80</output> มม./ชม.<input class="form-range" id="cm-rain" type="range" min="0" max="150" step="5" value="80"></label>
+  <label class="form-label" for="cm-tide">น้ำหนุนปลายทาง · <output id="cm-tide-value">1.5</output> ม. สมมติ<input class="form-range" id="cm-tide" type="range" min="0" max="2" step=".1" value="1.5"></label>
+  <label class="form-label" for="cm-trash">ขยะลดช่องรับ · <output id="cm-trash-value">25</output>%<input class="form-range" id="cm-trash" type="range" min="0" max="100" step="5" value="25"></label>
+  <label class="form-label" for="cm-silt">ตะกอนลดกำลังท่อ · <output id="cm-silt-value">40</output>%<input class="form-range" id="cm-silt" type="range" min="0" max="90" step="5" value="40"></label>
+ </div>
+ <div class="viz-controls">
+  <label class="form-label" for="cm-plan">แบบที่ดู<select class="form-select" id="cm-plan"><option value="base">ฐานสมมติ</option><option value="detain">หน่วงน้ำ + คุมปล่อย</option><option value="relay">เพิ่มปั๊มส่งต่อ</option><option value="pump">เพิ่มปั๊มปลายคลอง</option><option value="integrated" selected>หน่วง + คุมซอย/ทางไปป้าย</option></select></label>
+  <label class="form-label" for="cm-view">มุมมอง<select class="form-select" id="cm-view"><option value="street">ผังเชื่อมถนน–ซอย–ป้าย</option><option value="map">แผนที่อ้างอิงแจ้งวัฒนะ</option></select></label>
+ </div>
+ <div class="cm-playback"><div><button class="btn btn-primary btn-block" id="cm-play" type="button">เล่น</button></div><div class="cm-clock tabular-nums" role="timer" aria-label="นาทีที่จำลองจากทั้งหมด 720 นาที"><span id="cm-current" class="text-end">60.0</span><span>/</span><span class="text-end">720</span><span>นาที</span></div></div>
+ <label class="form-label" for="cm-time">เวลา · ฝนหยุด 60 · ความต้องการช่วงเร่งด่วนถึง 120 · รถเมล์ต่อถึง 240 · ตรวจคิวและน้ำถึง 720 นาที</label>
+ <input class="form-range" id="cm-time" type="range" min="0" max="720" step="1" value="60">
+ <div id="cm-stage"><canvas id="cm-canvas" role="img" aria-label="ถนนหลักเชื่อมสองซอยและป้ายรถเมล์ แสดงน้ำขัง คิวรถ ผู้โดยสารที่ยังรอ และทางเดินไร้ขั้น"></canvas></div>
+ <div class="text-small">สีพื้นที่น้ำและตำแหน่งป้ายเป็นผลสาธิต ไม่ใช่พื้นที่ท่วมตรวจวัด · รูปรถ/คนแทนการไหล อ่านจำนวนจริงของแบบจำลองจากตัวเลข</div>
+ <div id="cm-live" class="tabular-nums"></div>
+ <div id="cm-effect" aria-live="polite"></div>
+ <div class="table-responsive"><table class="table table-sm"><caption>เทียบตลอดเหตุการณ์ 12 ชม. · ความต้องการเดินทางชุดเดียวกัน ไม่ตัดรถหรือผู้โดยสารที่ยังรอออก</caption><thead><tr><th scope="col">แบบ</th><th scope="col" class="text-end">น้ำถนน<br>ซม.</th><th scope="col" class="text-end">คิวถนนสูงสุด<br>หน่วยรถ</th><th scope="col" class="text-end">รถเลี่ยงผ่านซอย<br>หน่วยรถ</th><th scope="col" class="text-end">รอรถเมล์สะสม<br>คน·ชม.</th><th scope="col">น้ำข้างเคียงแย่ลง</th></tr></thead><tbody id="cm-results"></tbody></table></div>
+ <details><summary>คนในซอย การเข้าถึงป้าย และสมมติฐาน</summary><div class="cm-notes text-small">
+  <div class="table-responsive"><table class="table table-sm"><caption>ผลต่อคนในพื้นที่และผู้ใช้ทางไร้ขั้น</caption><thead><tr><th scope="col">แบบ</th><th scope="col" class="text-end">รถคนในซอยรอสะสม<br>หน่วยรถ·ชม.</th><th scope="col" class="text-end">ทางไร้ขั้นขาดช่วง<br>นาที</th><th scope="col" class="text-end">ผู้โดยสารยังรอ 12 ชม.<br>คน</th></tr></thead><tbody id="cm-access-results"></tbody></table></div>
+  <span>ต่อจากแบบจำลองน้ำเดิม โดยแบ่งพื้นที่รับฝน A เป็นถนน/แปลงหลัก 96% และซอยตัวอย่าง S1/S2 อย่างละ 2% น้ำซอยผ่านช่องรับเข้าคลองร่วมและย้อนกลับได้ บัญชีน้ำนับซอยทั้งสองด้วย ไม่มีการสร้างน้ำซ้ำ</span>
+  <span>รูปแผนที่ใช้แนวถนนจริงจาก OpenStreetMap แต่ S1/S2 ป้าย และทางเดินเป็นจุดแทน ยังไม่สำรวจระดับหรือยืนยันว่าถนนซอยทะลุและอนุญาตให้รถผ่านจริง</span>
+  <span>กำลังถนนลดต่อเนื่องตามน้ำ ไม่ตั้งว่าเปิดเต็ม/ปิดอย่างเดียว · กำลังฐาน 2,200 หน่วยรถ/ชม. ซอยละ 450 หน่วยรถ/ชม. ความต้องการถนน 1,980 และรถคนในซอย 240 หน่วยรถ/ชม./ซอย นาน 2 ชม. เป็นสมมติฐาน</span>
+  <span>หน่วยรถเป็นปริมาณการใช้ช่องทางเทียบเท่ารถเล็ก ไม่ใช่จำนวนคนหรือรถจริงทุกชนิด รถเมล์คันละ 2.5 หน่วยรถรวมใช้กำลังถนนด้วย รูปมอเตอร์ไซค์ รถส่งของ และรถอัตโนมัติเป็นตัวแทนประเภท ไม่มีการสมมติว่ารถอัตโนมัติแก้คิวได้เอง</span>
+  <span>ซอยมีที่เก็บคิวสมมติ 50 หน่วยรถ ก่อนรับรถเลี่ยงเพิ่ม · ถนนเก็บก่อนคอขวด 160 หน่วยรถ ส่วนเกินยังนับเป็นคิวต้นทาง ไม่ถูกลบทิ้ง · ไม่จำลองทุกแยกในเมือง</span>
+  <span>แบบไม่คุมซอย: รถบางส่วนเลือกทางเลี่ยงเมื่อคาดว่ารอถนนหลักนานกว่าทางอ้อม · แบบคุมซอย: ไม่ให้รถผ่านลัดเข้าซอยพักอาศัย ยังคงรถของคนในพื้นที่ คิวที่เหลืออยู่ถนนหลักถูกนับทั้งหมด</span>
+  <span>หน่วงน้ำเพิ่ม 20,000 ลบ.ม. ก่อนเข้าท่อและคุมปล่อยตามคลองล่าง/ฝั่งรับ · เพิ่มปั๊มส่งต่อย้ายภาระจากคลองบนลงคลองล่าง · เพิ่มปั๊มปลายคลองย้ายจากคลองล่างเข้าสู่ฝั่งรับร่วม F ซึ่งอาจแย่ลงได้</span>
+  <span>ผิวทางเดิน ป้าย และจุดต่ำทางเข้ามีระดับต่างกันในโมเดล: ชานป้ายอาจยังแห้ง แต่เข้าถึงไม่ได้เพราะทางเชื่อมขัง · แบบผสมเพิ่มทางต่อเนื่องยกสูงเสนอ พร้อมให้รถเมล์ผ่านคิวก่อน โดยยังใช้กำลังถนนชุดเดิม</span>
+  <span>สมมติว่าทางยกไม่ขวางทางไหลและช่องรับน้ำ จึงใช้ผลน้ำชุดเดียวกับหน่วงน้ำอย่างเดียว งานจริงต้องออกแบบทางน้ำลอดและช่องรับร่วมด้วย แบบจำลองยังไม่คำนวณการเปลี่ยนทางน้ำจากโครงสร้างทางยก</span>
+  <span>รถเมล์ทุก 5 นาทีต่อเนื่อง 4 ชั่วโมง จุรับเพิ่มคันละ 40 คน ผู้โดยสารเข้าป้าย 360 คน/ชม. นาน 2 ชั่วโมง โดย 20% ต้องใช้ทางไร้ขั้น ทุกคนยังถูกนับแม้ขึ้นไม่ได้ ไม่บังคับเลื่อนเวลาเดินทางหรือลงไปเดินลุยน้ำ</span>
+  <span>เกณฑ์หยุดการผ่าน/หยุดบริการและระดับทางยกเป็นค่าสมมติ ไม่ใช่ระดับน้ำที่ปลอดภัยสำหรับรถ คนเดิน รถเข็น หรือจักรยาน ไม่รวมกระแสน้ำ ไฟรั่ว ฝาท่อเปิด และความลื่น</span>
+  <span>“น้ำข้างเคียงแย่ลง” ตรวจทั้งจุด B–F และ S1/S2 ว่าลึกขึ้นเกิน 0.1 ซม. หรือขังเกิน 5 ซม. นานขึ้นเกิน 1 นาทีเทียบฐาน เป็นการเทียบเหตุการณ์เดียว ไม่ใช่การรับประกันทุกพายุ</span>
+  <span id="cm-ledger"></span>
+  <span><a href="https://research-information.bris.ac.uk/en/publications/the-impact-of-flooding-on-road-transport-a-depth-disruption-funct/" target="_blank" rel="noopener">งานวิจัยผลน้ำขังต่อการเดินทาง</a> · ใช้เป็นหลักคิดว่าผลกระทบเปลี่ยนตามระดับน้ำ ไม่ได้นำค่าสมรรถนะต่างประเทศมาอ้างว่าเป็นค่าที่สอบเทียบกับแจ้งวัฒนะ · <a href="https://nationalhighways.co.uk/safety/driving-advice/travelling-in-severe-weather/travelling-when-its-raining/" target="_blank" rel="noopener">ข้อมูลอันตรายจากน้ำท่วมบนถนน</a></span>
+ </div></details>
+</div>
+<style>
+#coupled-mobility {display:grid;gap:calc(var(--font-size-base)*.7);color:var(--foreground)}
+#coupled-mobility #cm-stage {width:100%}
+#coupled-mobility canvas {display:block;width:100%;height:auto}
+#coupled-mobility .cm-playback {display:grid;grid-template-columns:88px minmax(0,1fr);gap:calc(var(--font-size-base)*.75);align-items:center}
+#coupled-mobility .cm-clock {display:grid;grid-template-columns:6ch 1ch 4ch max-content;gap:.5ch;align-items:center;white-space:nowrap}
+#coupled-mobility .cm-notes {display:grid;gap:calc(var(--font-size-base)*.5);margin-top:calc(var(--font-size-base)*.5)}
+</style>
+<script>
+/*COUPLED_ENGINE*/
+</script>
+<script>
+(()=>{
+ const root=document.getElementById('coupled-mobility'),$=id=>root.querySelector('#cm-'+id),canvas=$('canvas'),ctx=canvas.getContext('2d'),E=CoupledEngine,geo=globalThis.UL_LOCAL_GEOMETRY;
+ let state={rain:80,tide:1.5,trash:25,silt:40,plan:'integrated',view:'street',minute:60},runs={},palette={},width=736,height=440,running=false,last=null,raf=0;
+ const cells={},accessCells={},clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ for(const [id,option]of Object.entries(E.options)){const row=document.createElement('tr'),th=document.createElement('th');th.scope='row';th.textContent=option.name;row.append(th);cells[id]=[];for(let i=0;i<5;i++){const td=document.createElement('td');td.className=i<4?'text-end tabular-nums':'';row.append(td);cells[id].push(td);}$('results').append(row);const ar=document.createElement('tr'),at=document.createElement('th');at.scope='row';at.textContent=option.name;ar.append(at);accessCells[id]=[];for(let i=0;i<3;i++){const td=document.createElement('td');td.className='text-end tabular-nums';ar.append(td);accessCells[id].push(td);}$('access-results').append(ar);}
+ function colors(){const p=document.createElement('span');root.append(p);for(const [key,token]of Object.entries({fg:'--foreground',bg:'--background',muted:'--muted',edge:'--border',water:'--viz-series-1',bus:'--viz-series-3',risk:'--viz-series-2',people:'--viz-series-5'})){p.style.color='var('+token+')';palette[key]=getComputedStyle(p).color;}p.remove();}
+ function label(s,x,y,align='center'){ctx.font='14px sans-serif';ctx.textAlign=align;ctx.strokeStyle=palette.bg;ctx.lineWidth=4;ctx.strokeText(s,x,y);ctx.fillStyle=palette.fg;ctx.fillText(s,x,y);}
+ function fill(x,y,w,h,color,alpha=1){ctx.globalAlpha=alpha;ctx.fillStyle=color;ctx.fillRect(x,y,w,h);ctx.globalAlpha=1;}
+ function line(points,color=palette.edge,weight=1,dash=[]){ctx.beginPath();ctx.lineWidth=weight;ctx.strokeStyle=color;ctx.setLineDash(dash);points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.stroke();ctx.setLineDash([]);}
+ function current(){return runs[state.plan].frames[clamp(Math.round(state.minute),0,runs[state.plan].frames.length-1)];}
+ function vehicle(x,y,bus=false,type=0){const w=bus?25:type===1?5:type===2?14:10,h=bus?11:type===1?4:7;fill(x-w/2,y-h/2,w,h,bus?palette.bus:palette.fg,.85);if(type===3&&!bus)line([[x-w/2,y],[x+w/2,y]],palette.bg,1);}
+ function person(x,y,chair=false){ctx.beginPath();ctx.arc(x,y-5,3,0,Math.PI*2);ctx.fillStyle=palette.people;ctx.fill();line([[x,y-2],[x,y+5]],palette.people,2);if(chair){ctx.beginPath();ctx.arc(x+2,y+7,5,0,Math.PI*2);ctx.strokeStyle=palette.people;ctx.lineWidth=1.5;ctx.stroke();}}
+ function street(f){const narrow=width<500,p=palette,mainY=narrow?250:220,left=width*.14,right=width*.87,stop=width*.68,walkY=mainY+110;
+  label('ผังฝั่งเดียว · ไม่ใช่มาตราส่วน',14,20,'left');
+  const routes=[[[left,mainY],[left,75],[right,75],[right,mainY]],[[left+28,mainY],[left+28,140],[right-28,140],[right-28,mainY]]];
+  for(let i=0;i<2;i++){line(routes[i],p.muted,18);line(routes[i],p.edge,1);if(f.soiDepth[i]>.001)line(routes[i],p.water,10);label('S'+(i+1)+' · '+(f.soiDepth[i]*100).toFixed(1)+' ซม.',width*.5,i===0?54:120);label('คิว '+f.sideQueue[i].toFixed(0),width*.5,i===0?99:164);if(runs[state.plan].option.protect){const a=routes[i][0];line([[a[0]-7,mainY-8],[a[0]+7,mainY-8]],p.risk,3);}else if(f.sideOut[i]>.01){const phase=(state.minute*.07+i*.3)%1;vehicle(left+phase*(right-left),i===0?75:140,false,i);}}
+  fill(0,mainY-24,width,70,p.muted,.8);line([[0,mainY+10],[width,mainY+10]],p.edge,1,[7,6]);
+  if(f.depth>.001)fill(width*.36,mainY-24,width*.35,70,p.water,clamp(f.depth/.18,.15,.65));
+  label('ถนน '+(f.depth*100).toFixed(1)+' ซม.',width*.55,mainY-38);
+  const count=Math.min(24,Math.ceil(f.mainQueue/12));for(let i=0;i<count;i++){const col=i%8,row=Math.floor(i/8);vehicle(width*.04+col*width*.038,mainY-12+row*17,false,i%4);}
+  if(f.mainOut>.01){for(let i=0;i<4;i++){const x=width*.72+((state.minute*.05+i*.07)%.24)*width;vehicle(x,mainY-10,false,i);}}
+  label('คิว '+f.mainQueue.toFixed(0),14,mainY+58,'left');if(f.mainHeld>0)label('รวมรอต้นทาง '+f.mainHeld.toFixed(0),14,mainY+76,'left');
+  fill(stop-37,mainY+50,74,19,p.edge,.5);label('ป้ายตัวอย่าง',stop,mainY+88);if(f.mainCap>.01)vehicle(stop,mainY+57,true);
+  line([[16,walkY],[width-16,walkY]],p.muted,14);
+  const approach=[[width*.45,walkY],[stop-30,walkY],[stop-30,mainY+69]];
+  line(approach,runs[state.plan].option.protect?p.bus:p.edge,runs[state.plan].option.protect?7:4);
+  if(!f.access[1]){fill(stop-39,mainY+75,18,30,p.water,.6);line([[stop-43,mainY+75],[stop-23,mainY+98]],p.risk,2);}
+  if(!f.access[0])fill(width*.36,walkY-7,width*.42,14,p.water,.6);
+  for(let i=0;i<Math.min(5,Math.ceil(f.waiting[0]/20));i++)person(14+i*Math.min(15,(width*.3-14)/5),walkY-17);
+  if(f.waiting[1]>0)person(width*.32,walkY-18,true);
+  label(f.access[1]?'ทางไร้ขั้นต่อเนื่อง':'ทางไร้ขั้นขาดช่วง',14,walkY+34,'left');
+  label('รอขึ้นรถ '+(f.waiting[0]+f.waiting[1]).toFixed(0)+' คน',14,walkY+55,'left');
+  if(runs[state.plan].option.protect)label('ยกทางเชื่อม + รถเมล์ผ่านคิวก่อน',14,height-17,'left');
+ }
+ function nearest(name,target){let best=null,d=Infinity;for(const feature of geo.features.filter(f=>f.properties.name===name))for(const line of feature.geometry.coordinates)for(const point of line){const x=(point[0]-target[0])**2+(point[1]-target[1])**2;if(x<d){best=point;d=x;}}return best;}
+ function map(f){if(!geo||!window.d3){label('แผนที่อ้างอิงยังไม่พร้อม',width/2,40);return;}const projection=d3.geoMercator().fitExtent([[15,45],[width-15,height-30]],{type:'MultiPoint',coordinates:[[100.541,13.873],[100.587,13.904]]});
+  for(const feature of geo.features){ctx.beginPath();d3.geoPath(projection,ctx)(feature);ctx.strokeStyle=feature.properties.kind==='water'?palette.water:palette.edge;ctx.lineWidth=feature.properties.kind==='main'?2:1;ctx.stroke();}
+  const targets=[['A','ถนนแจ้งวัฒนะ',[100.567,13.891],f.depth],['S1','ซอยแจ้งวัฒนะ 5',[100.58,13.882],f.soiDepth[0]],['S2','ซอยแจ้งวัฒนะ 10',[100.563,13.891],f.soiDepth[1]]];
+  for(const [id,name,target,depth]of targets){const point=nearest(name,target);if(!point)continue;const p=projection(point);ctx.beginPath();ctx.arc(...p,13,0,Math.PI*2);ctx.fillStyle=palette.water;ctx.globalAlpha=.3;ctx.fill();ctx.globalAlpha=1;label(id,p[0],p[1]+5);if(width>=500||id==='A')label((depth*100).toFixed(1)+' ซม.',clamp(p[0]+16,50,width-50),p[1]-18,'left');}
+  label('แผนที่จริง · จุดป้าย/ซอยเป็นจุดแทน',14,23,'left');const a=projection(nearest('ถนนแจ้งวัฒนะ',[100.567,13.891]));fill(a[0]+18,a[1]+10,20,8,palette.bus,.8);label('ป้ายเสนอ',clamp(a[0]+35,50,width-50),a[1]+39);
+ }
+ function redraw(){if(!runs[state.plan])return;const f=current();ctx.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0);ctx.clearRect(0,0,width,height);if(state.view==='map')map(f);else street(f);$('current').textContent=(f.t/60).toFixed(1);$('time').value=f.t/60;$('live').textContent='คิวถนน '+f.mainQueue.toFixed(0)+' · ซอย '+f.sideQueue.map(n=>n.toFixed(0)).join(' / ')+' หน่วยรถ · ยังรอขึ้นรถ '+(f.waiting[0]+f.waiting[1]).toFixed(0)+' คน';$('ledger').textContent='นาที '+f.t/60+' · รถเข้า '+f.produced.toFixed(1)+' = ผ่านคอขวด '+f.passed.toFixed(1)+' + ยังรอ '+(f.produced-f.passed).toFixed(1)+' หน่วยรถ · ผู้โดยสารเข้า '+f.passengerCreated.toFixed(1)+' = ขึ้นรถ '+f.boarded.toFixed(1)+' + ยังรอ '+(f.passengerCreated-f.boarded).toFixed(1)+' คน';canvas.setAttribute('aria-label',E.options[state.plan].name+' นาที '+f.t/60+' ถนนขัง '+(f.depth*100).toFixed(1)+' เซนติเมตร คิว '+f.mainQueue.toFixed(0)+' หน่วยรถ ทางไร้ขั้น'+(f.access[1]?'ต่อเนื่อง':'ขาดช่วง'));
+ }
+ function worseWater(run){const b=runs.base.water.stats,s=run.water.stats,bad=[];for(let i=1;i<6;i++)if(s.peakCm[i]>b.peakCm[i]+.1||s.floodMinutes[i]>b.floodMinutes[i]+1)bad.push(String.fromCharCode(65+i));for(let i=0;i<2;i++)if(s.soiPeakCm[i]>b.soiPeakCm[i]+.1||s.soiFloodMinutes[i]>b.soiFloodMinutes[i]+1)bad.push('S'+(i+1));return bad;}
+ function effect(){if(!runs[state.plan])return;const r=runs[state.plan],b=runs.base,bad=worseWater(r);$('effect').textContent='คนในซอยรอสะสม '+r.stats.residentDelay.toFixed(1)+' เทียบฐาน '+b.stats.residentDelay.toFixed(1)+' หน่วยรถ·ชม. · รถผ่านลัดซอย '+r.stats.diverted.toFixed(0)+' หน่วยรถ · '+(bad.length?'น้ำแย่ลงที่ '+bad.join(', '):'ไม่พบน้ำข้างเคียงแย่ลงในเหตุการณ์นี้');}
+ function compute(){const waters={};for(const [id,option]of Object.entries(E.options)){waters[option.water]??=DownstreamEngine.simulate({...state,localSois:true},option.water);runs[id]=E.simulate(state,id,waters[option.water]);}for(const id of Object.keys(E.options)){const r=runs[id],s=r.stats,c=cells[id];c[0].textContent=r.water.stats.peakCm[0].toFixed(1);c[1].textContent=s.peakMain.toFixed(0);c[2].textContent=s.diverted.toFixed(0);c[3].textContent=s.passengerWait.toFixed(1);c[4].textContent=worseWater(r).join(', ')||'ไม่พบ';accessCells[id][0].textContent=s.residentDelay.toFixed(1);accessCells[id][1].textContent=s.closedMinutes[1].toFixed(1);accessCells[id][2].textContent=s.pendingPassengers.toFixed(0);}for(const key of ['rain','tide','trash','silt'])$(key+'-value').textContent=key==='tide'?state[key].toFixed(1):state[key];effect();redraw();}
+ function resize(){width=$('stage').getBoundingClientRect().width;if(width<=0)return;height=width<500?460:440;const dpr=window.devicePixelRatio||1;canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);canvas.style.height=height+'px';colors();redraw();}
+ function stop(){running=false;last=null;cancelAnimationFrame(raf);$('play').textContent='เล่น';}
+ function save(){if(window.openai?.setWidgetState)window.openai.setWidgetState({modelContent:{coupledMobility:{...state}},privateContent:null}).catch(()=>{});}
+ function tick(ts){if(!running)return;if(last!==null)state.minute=Math.min(720,state.minute+(ts-last)/1000*10);last=ts;redraw();if(state.minute>=720){stop();save();}else raf=requestAnimationFrame(tick);}
+ for(const key of ['rain','tide','trash','silt']){$(key).addEventListener('input',()=>{stop();state[key]=Number($(key).value);compute();});$(key).addEventListener('change',save);}
+ $('plan').addEventListener('change',()=>{state.plan=$('plan').value;effect();redraw();save();});$('view').addEventListener('change',()=>{state.view=$('view').value;redraw();save();});$('time').addEventListener('input',()=>{stop();state.minute=Number($('time').value);redraw();});$('time').addEventListener('change',save);$('play').addEventListener('click',()=>{if(running){stop();save();return;}if(state.minute>=720)state.minute=0;running=true;last=null;$('play').textContent='หยุด';raf=requestAnimationFrame(tick);});
+ function restore(value){const s=value?.modelContent?.coupledMobility;if(!s)return;stop();for(const [key,max]of [['rain',150],['tide',2],['trash',100],['silt',90],['minute',720]])if(Number.isFinite(s[key]))state[key]=clamp(s[key],0,max);if(E.options[s.plan])state.plan=s.plan;if(['street','map'].includes(s.view))state.view=s.view;for(const key of ['rain','tide','trash','silt','plan','view'])$(key).value=state[key];compute();}
+ window.addEventListener('openai:set_globals',e=>restore(e.detail?.globals?.widgetState));document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});new ResizeObserver(resize).observe($('stage'));new MutationObserver(()=>{colors();redraw();}).observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-theme']});colors();compute();resize();restore(window.openai?.widgetState);
+})();
+</script>

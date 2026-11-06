@@ -1,0 +1,101 @@
+<div id="green-flood">
+ <h2>หน่วงน้ำ + คุมซอย · ประสานไฟเพิ่มได้แค่ไหน?</h2>
+ <div class="text-small">แนวคิด Green Light ในเหตุการณ์สมมติ · เปลี่ยนจังหวะประสานไฟ ไม่เพิ่มเวลาเขียวรวม ไม่ลดช่วงข้าม · ไม่ใช่ข้อมูลหรือผลดำเนินงานจริงของ Google</div>
+ <div class="viz-controls">
+  <label class="form-label" for="gf-rain">ฝน 1 ชั่วโมง · <output id="gf-rain-value">80</output> มม./ชม.<input class="form-range" id="gf-rain" type="range" min="0" max="150" step="5" value="80"></label>
+  <label class="form-label" for="gf-tide">น้ำหนุนปลายทาง · <output id="gf-tide-value">1.5</output> ม. สมมติ<input class="form-range" id="gf-tide" type="range" min="0" max="2" step=".1" value="1.5"></label>
+  <label class="form-label" for="gf-trash">ขยะลดช่องรับ · <output id="gf-trash-value">25</output>%<input class="form-range" id="gf-trash" type="range" min="0" max="100" step="5" value="25"></label>
+  <label class="form-label" for="gf-silt">ตะกอนลดกำลังท่อ · <output id="gf-silt-value">40</output>%<input class="form-range" id="gf-silt" type="range" min="0" max="90" step="5" value="40"></label>
+ </div>
+ <label class="form-label" for="gf-plan">จังหวะไฟที่ดู<select class="form-select" id="gf-plan"><option value="baseline">แบบล่าสุด · ระบุไฟสองแยก</option><option value="best" selected>เพิ่มการประสานไฟที่ผ่านเงื่อนไข</option></select></label>
+ <div class="gf-playback"><div><button class="btn btn-primary btn-block" id="gf-play" type="button">เล่น</button></div><div class="gf-clock tabular-nums" role="timer" aria-label="นาทีที่จำลองจากทั้งหมด 720 นาที"><span class="text-end" id="gf-current">60.0</span><span>/</span><span class="text-end">720</span><span>นาที</span></div></div>
+ <div class="viz-row"><button class="btn" type="button" id="gf-cross">ดูช่วงข้าม</button><span class="text-small">ข้ามคงเดิม 45 วินาที = เริ่มข้าม 10 + เคลียร์ 35</span></div>
+ <label class="form-label" for="gf-time">เวลา · ฝนหยุด 60 · เร่งด่วนถึง 120 · ตรวจคิวถึง 720 นาที</label>
+ <input class="form-range" id="gf-time" type="range" min="0" max="720" step="0.1" value="60">
+ <div id="gf-stage"><canvas id="gf-canvas" role="img" aria-label="ผังสมมติไฟสองแยก คิวต้นทาง คิวระหว่างแยก ไฟซอย และช่วงข้ามที่คงระยะเวลาเดิม"></canvas></div>
+ <div class="text-small">ผังฝั่งเดียว ไม่ใช่ตำแหน่งไฟหรือค่าตั้งจริงในแจ้งวัฒนะ · รถเมล์ผ่านคิวก่อน ทางไปป้ายยกต่อเนื่อง และคุมรถผ่านซอยเหมือนกันทั้งสองแบบ</div>
+ <div id="gf-live" class="tabular-nums"></div>
+ <div id="gf-result" aria-live="polite"></div>
+ <div id="gf-reference" class="text-small"></div>
+ <div class="table-responsive"><table class="table table-sm"><caption>เทียบสองจังหวะในแบบจำลองไฟสองแยกเดียวกัน ตลอด 12 ชั่วโมง</caption><thead><tr><th scope="col">จังหวะไฟ</th><th scope="col" class="text-end">คิวรวมสูงสุด<br>หน่วยรถ</th><th scope="col" class="text-end">คิวระหว่างไฟสูงสุด<br>หน่วยรถ</th><th scope="col" class="text-end">รถคนในซอยรอ<br>หน่วยรถ·ชม.</th><th scope="col" class="text-end">รอข้ามสูงสุด เดิน/ไร้ขั้น<br>วินาที</th></tr></thead><tbody><tr><th scope="row">ล่าสุด · สองไฟยังไม่ประสาน</th><td id="gf-base-queue" class="text-end tabular-nums"></td><td id="gf-base-between" class="text-end tabular-nums"></td><td id="gf-base-side" class="text-end tabular-nums"></td><td id="gf-base-ped" class="text-end tabular-nums"></td></tr><tr><th scope="row">ประสานไฟที่ผ่านเงื่อนไข</th><td id="gf-best-queue" class="text-end tabular-nums"></td><td id="gf-best-between" class="text-end tabular-nums"></td><td id="gf-best-side" class="text-end tabular-nums"></td><td id="gf-best-ped" class="text-end tabular-nums"></td></tr></tbody></table></div>
+ <details><summary>ตรวจข้อจำกัดและความหมายของตัวเลข</summary><div class="gf-notes text-small">
+  <span>เพิ่มไฟสองแยกและทางเชื่อมจำกัด 60 หน่วยรถในรุ่นนี้ จึงคำนวณฐานเปรียบเทียบใหม่ ตัวเลขคิวรวมจากรุ่นก่อนยังใช้เป็นข้อมูลอ้างอิง แต่ไม่ใช้คิดเปอร์เซ็นต์ลดจากการปรับไฟ</span>
+  <span>ทั้งสองแบบใช้การหน่วงเพิ่ม 20,000 ลบ.ม. และกฎปล่อยน้ำเดียวกัน ผลน้ำทุกจุดรวม S1/S2 และ B–F จึงเหมือนกัน ไม่มีการเพิ่มปั๊มหรือย้ายน้ำจากการปรับไฟ</span>
+  <span>รอบไฟคงที่ 150 วินาที: ถนนหลัก 75, เคลียร์รถ 5, รถซอย 20, เคลียร์รถ 5, เริ่มข้าม 10 และเคลียร์คนข้าม 35 วินาที ทางข้ามเป็นช่วงเฉพาะ ไม่ปล่อยรถหลักหรือรถซอยตัดผู้ข้าม</span>
+  <span>ข้ามในโมเดลใช้เวลาเดิน 20 หรือทางไร้ขั้น 30 วินาที ผู้เริ่มท้ายช่วงเริ่มข้ามยังมีเวลาเคลียร์ครบ ก่อนรถได้เขียว ระยะเวลาและระดับทางยกเป็นสมมติ ต้องสำรวจระยะข้ามและผู้ใช้จริง ไม่ใช่ข้อรับรองความปลอดภัย</span>
+  <span>จังหวะประสานเปลี่ยนเฉพาะตำแหน่งรอบไฟบนแกนเวลา ทั้งเวลาเขียว ซอย ความถี่เรียกข้าม และช่วงเคลียร์เท่าเดิม ไม่มีการให้รถแทรกช่วงคนข้ามหรือข้ามแยกที่ทางรับเต็ม</span>
+  <span>คัดแผนจาก 18 คู่จังหวะในเหตุการณ์สมมติ ตรวจคิวสูงสุดและเวลารอของซอย S1/S2 แยกกัน ระยะรอข้ามสูงสุดของคนเดิน/ผู้ใช้ทางไร้ขั้น และเวลารอรถเมล์สะสม ต้องไม่แย่ลงเทียบฐาน หากไม่มีแผนผ่าน จะคงจังหวะฐาน</span>
+  <span>การคัดแผนนี้ใช้ข้อมูลเหตุการณ์จำลองทั้งช่วงเพื่อเปรียบเทียบ ไม่ใช่ตัวควบคุมหน้างานหรือระบบ Google Green Light จริง สมมติว่าแผนตั้งไว้ก่อนเริ่มเหตุการณ์ ยังไม่จำลองขั้นตอนเปลี่ยนแผนไฟขณะมีคนอยู่บนทางข้าม</span>
+  <span>กำลังเฉลี่ยฐานถนนยังเทียบเท่า 2,200 หน่วยรถ/ชม. เมื่อไม่มีน้ำ ผลน้ำลดกำลังต่อเนื่องตามเดิม กำลังช่วงเขียวเป็นค่าก่อนเฉลี่ยตามสัดส่วนเขียว ไม่ใช่การเพิ่มช่องทางจริง</span>
+  <span>รถที่ยังรอต้นทาง คิวระหว่างแยก รถที่กำลังเดินทาง ผู้รอข้าม และผู้ยังขึ้นรถเมล์ไม่ได้ถูกนับครบ ไม่หายจากบัญชี และไม่มีรถผ่านลัดซอยทั้งสองแบบ</span>
+  <span id="gf-audit"></span>
+  <span id="gf-ledger"></span>
+  <span><a href="https://blog.google/company-news/outreach-and-initiatives/sustainability/google-ai-project-greenlight/" target="_blank" rel="noopener">แนวคิด Google Green Light</a> · <a href="https://ops.fhwa.dot.gov/publications/fhwahop08024/chapter6.htm" target="_blank" rel="noopener">การประสานไฟและเวลาข้าม FHWA</a></span>
+ </div></details>
+</div>
+<style>
+#green-flood {display:grid;gap:calc(var(--font-size-base)*.7);color:var(--foreground)}
+#green-flood #gf-stage {width:100%}
+#green-flood canvas {display:block;width:100%;height:auto}
+#green-flood .gf-playback {display:grid;grid-template-columns:88px minmax(0,1fr);gap:calc(var(--font-size-base)*.75);align-items:center}
+#green-flood .gf-clock {display:grid;grid-template-columns:6ch 1ch 4ch max-content;gap:.5ch;align-items:center;white-space:nowrap}
+#green-flood .gf-notes {display:grid;gap:calc(var(--font-size-base)*.5);margin-top:calc(var(--font-size-base)*.5)}
+</style>
+<script>
+/*COUPLED_DEPENDENCY*/
+/*GREEN_ENGINE*/
+</script>
+<script>
+(()=>{
+ const root=document.getElementById('green-flood'),$=id=>root.querySelector('#gf-'+id),canvas=$('canvas'),ctx=canvas.getContext('2d'),E=GreenFloodEngine;
+ let state={rain:80,tide:1.5,trash:25,silt:40,plan:'best',minute:60},result,water,palette={},width=736,height=460,running=false,last=null,raf=0;
+ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ function colors(){const p=document.createElement('span');root.append(p);for(const [key,token]of Object.entries({fg:'--foreground',bg:'--background',muted:'--muted',edge:'--border',main:'--viz-series-1',side:'--viz-series-3',ped:'--viz-series-5',water:'--viz-series-1',wait:'--viz-series-2'})){p.style.color='var('+token+')';palette[key]=getComputedStyle(p).color;}p.remove();}
+ function label(s,x,y,align='center'){ctx.font='14px sans-serif';ctx.textAlign=align;ctx.strokeStyle=palette.bg;ctx.lineWidth=4;ctx.strokeText(s,x,y);ctx.fillStyle=palette.fg;ctx.fillText(s,x,y);}
+ function fill(x,y,w,h,color,alpha=1){ctx.globalAlpha=alpha;ctx.fillStyle=color;ctx.fillRect(x,y,w,h);ctx.globalAlpha=1;}
+ function line(points,color=palette.edge,w=1,dash=[]){ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=w;ctx.setLineDash(dash);points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.stroke();ctx.setLineDash([]);}
+ function car(x,y,bus=false){fill(x-(bus?12:5),y-4,bus?24:10,bus?10:7,bus?palette.side:palette.fg,.85);}
+ function person(x,y,chair=false){ctx.beginPath();ctx.arc(x,y-5,3,0,Math.PI*2);ctx.fillStyle=palette.ped;ctx.fill();line([[x,y-2],[x,y+5]],palette.ped,2);if(chair){ctx.beginPath();ctx.arc(x+2,y+7,5,0,Math.PI*2);ctx.strokeStyle=palette.ped;ctx.lineWidth=1.5;ctx.stroke();}}
+ function phaseText(p){return p.main?'หลักเขียว':p.side?'ซอยเขียว':p.walk?'เริ่มข้าม':p.ped?'เคลียร์คนข้าม':'เคลียร์รถ';}
+ function current(){const r=result[state.plan];return r.frames[clamp(Math.floor(state.minute*60/E.SAMPLE),0,r.frames.length-1)];}
+ function band(x,y,w,p,title){label(title+' · '+phaseText(p),x,y-7,'left');const ranges=[[0,75,palette.main],[75,80,palette.muted],[80,100,palette.side],[100,105,palette.muted],[105,115,palette.ped],[115,150,palette.ped]];for(const [a,b,c]of ranges)fill(x+w*a/150,y,w*(b-a)/150,12,c,a===115?.4:.75);const pos=x+w*p.u/150;line([[pos,y-3],[pos,y+16]],palette.fg,2);}
+ function redraw(){if(!result)return;const r=result[state.plan],f=current(),p=palette,narrow=width<500,y=narrow?225:195,x1=width*.28,x2=width*.76;
+  ctx.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0);ctx.clearRect(0,0,width,height);
+  label('ผังสมมติ · คุมทางเข้าก่อนคิวเต็ม',14,20,'left');
+  fill(0,y-27,width,65,p.muted,.8);for(const x of [x1,x2]){fill(x-12,65,24,y+95-65,p.muted,.8);line([[x-20,y-27],[x-20,y+38]],p.edge,1);}
+  line([[0,y+6],[width,y+6]],p.edge,1,[6,5]);
+  if(f.water>.001)fill(x1+15,y-27,x2-x1-40,65,p.water,clamp(f.water/.18,.15,.6));
+  label('น้ำ '+(f.water*100).toFixed(1)+' ซม.',width*.53,y-45);
+  for(let i=0;i<Math.min(14,Math.ceil(f.up/25));i++)car(13+(i%7)*(x1-30)/7,y-12+Math.floor(i/7)*23);
+  for(let i=0;i<Math.min(6,Math.ceil(f.between/5));i++)car(x2-30-i*12,y-10);
+  if(f.entry>.01)car(x1+20+((f.t/25)%1)*(x2-x1-55),y+18,true);
+  for(let i=0;i<2;i++){const x=i?x2:x1,ph=i?f.phase2:f.phase1;fill(x-23,y-42,13,10,ph.main?p.main:p.edge,.9);label('ไฟ '+(i+1),x,52);label('ซอยรอ '+f.side[i].toFixed(0),x,90);if(ph.side)car(x,y-65);}
+  for(let k=0;k<6;k++)fill(x2+12,y-24+k*10,14,5,p.bg,.9);
+  line([[x2+19,y+43],[x2+19,y+92]],p.ped,3);
+  if(f.crossing>.01){const progress=f.phase2.ped?clamp((f.phase2.u-105)/45,0,1):0;person(x2+18,y+42-progress*62,true);}else if(f.ped[0]+f.ped[1]>.01)person(x2+18,y+72,true);
+  label('ข้ามรอ '+(f.ped[0]+f.ped[1]).toFixed(0),clamp(x2,58,width-58),y+119);
+  label('ต้นทาง '+f.up.toFixed(0),14,y+62,'left');label('ระหว่างไฟ '+f.between.toFixed(0),14,y+82,'left');
+  const by=narrow?382:350;band(16,by,width-32,f.phase1,'ไฟ 1');band(16,by+49,width-32,f.phase2,'ไฟ 2');
+  label('หลัก 75 · ซอย 20 · ข้าม 10+35 วินาที',14,height-18,'left');
+  $('current').textContent=(f.t/60).toFixed(1);$('time').value=f.t/60;
+  $('live').textContent='คิวรวม '+f.mainQueue.toFixed(0)+' = ต้นทาง '+f.up.toFixed(0)+' + ระหว่างไฟ '+f.between.toFixed(0)+' หน่วยรถ · กำลังเคลื่อนระหว่างแยก '+f.inTransit.toFixed(0)+' หน่วยรถ';
+  $('ledger').textContent='นาที '+f.t/60+' · รถเข้า '+f.generated.toFixed(1)+' − ผ่าน '+f.passed.toFixed(1)+' = ยังอยู่ในระบบ '+Math.max(0,f.generated-f.passed).toFixed(1)+' หน่วยรถ · ผู้โดยสารเข้า '+f.peopleIn.toFixed(1)+' − ขึ้นรถ '+f.boarded.toFixed(1)+' = ยังรอ/กำลังข้าม '+Math.max(0,f.peopleIn-f.boarded).toFixed(1)+' คน';
+  canvas.setAttribute('aria-label','จังหวะ'+(state.plan==='best'?'ประสาน':'ฐาน')+' นาที '+f.t/60+' คิวรวม '+f.mainQueue.toFixed(0)+' ไฟหนึ่ง '+phaseText(f.phase1)+' ไฟสอง '+phaseText(f.phase2)+' ช่วงข้ามคงเดิม 45 วินาที');
+ }
+ function compute(){water=DownstreamEngine.simulate({...state,localSois:true},'adaptive');result=E.optimize(state,water);const old=CoupledEngine.simulate(state,'integrated',water),b=result.baseline.stats,s=result.best.stats,reduction=b.peakQueue-s.peakQueue,percent=b.peakQueue>0?reduction/b.peakQueue*100:0;
+  for(const [name,r]of [['base',result.baseline],['best',result.best]]){const st=r.stats;$(name+'-queue').textContent=st.peakQueue.toFixed(0);$(name+'-between').textContent=st.peakBetween.toFixed(1);$(name+'-side').textContent=st.residentDelay.toFixed(2);$(name+'-ped').textContent=st.maxPedWait.map(n=>n.toFixed(0)).join(' / ');}
+  $('result').textContent=reduction>.1?'คิวสูงสุดลดเพิ่ม '+reduction.toFixed(0)+' หน่วยรถ ('+percent.toFixed(1)+'%) · ไม่เพิ่มคิว/เวลารอของซอยและรอข้ามตามข้อจำกัดที่ตรวจ':'ไม่พบจังหวะที่ลดคิวเพิ่มและผ่านข้อจำกัดทั้งหมด จึงคงจังหวะฐาน';
+  $('reference').textContent='คิว '+old.stats.peakMain.toFixed(0)+' จากรุ่นก่อนเป็นคิวรวม ยังไม่มีไฟรายแยก จึงไม่ใช้เป็นฐานคิดเปอร์เซ็นต์นี้ · ช่วงข้าม 45 วินาที และรถผ่านลัดซอย 0 เท่ากันทั้งคู่';
+  $('audit').textContent='ผ่านข้อจำกัด '+result.audit.filter(a=>a.accepted).length+' / '+result.audit.length+' คู่จังหวะ · เลือกตำแหน่งรอบไฟ 1 = '+result.best.upOffset+' / ไฟ 2 = '+result.best.offset+' วินาที บนรอบ 150 วินาที · เวลารอรถเมล์สะสม ฐาน '+b.passengerWait.toFixed(1)+' / ประสาน '+s.passengerWait.toFixed(1)+' คน·ชม.';
+  for(const key of ['rain','tide','trash','silt'])$(key+'-value').textContent=key==='tide'?state[key].toFixed(1):state[key];redraw();
+ }
+ function resize(){width=$('stage').getBoundingClientRect().width;if(width<=0)return;height=width<500?500:460;const dpr=window.devicePixelRatio||1;canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);canvas.style.height=height+'px';colors();redraw();}
+ function stop(){running=false;last=null;cancelAnimationFrame(raf);$('play').textContent='เล่น';}
+ function save(){if(window.openai?.setWidgetState)window.openai.setWidgetState({modelContent:{greenFlood:{...state}},privateContent:null}).catch(()=>{});}
+ function tick(ts){if(!running)return;if(last!==null)state.minute=Math.min(720,state.minute+(ts-last)/1000*10);last=ts;redraw();if(state.minute>=720){stop();save();}else raf=requestAnimationFrame(tick);}
+ for(const key of ['rain','tide','trash','silt']){$(key).addEventListener('input',()=>{stop();state[key]=Number($(key).value);compute();});$(key).addEventListener('change',save);}
+ $('plan').addEventListener('change',()=>{state.plan=$('plan').value;redraw();save();});$('time').addEventListener('input',()=>{stop();state.minute=Number($('time').value);redraw();});$('time').addEventListener('change',save);$('play').addEventListener('click',()=>{if(running){stop();save();return;}if(state.minute>=720)state.minute=0;running=true;last=null;$('play').textContent='หยุด';raf=requestAnimationFrame(tick);});$('cross').addEventListener('click',()=>{stop();const off=result[state.plan].offset,now=state.minute*60,cycle=Math.floor((now-off)/E.CYCLE);let t=cycle*E.CYCLE+off+110;if(t<now)t+=E.CYCLE;state.minute=Math.min(720,t/60);redraw();save();});
+ function restore(value){const s=value?.modelContent?.greenFlood;if(!s)return;stop();for(const [key,max]of [['rain',150],['tide',2],['trash',100],['silt',90],['minute',720]])if(Number.isFinite(s[key]))state[key]=clamp(s[key],0,max);if(['baseline','best'].includes(s.plan))state.plan=s.plan;for(const key of ['rain','tide','trash','silt','plan'])$(key).value=state[key];compute();}
+ window.addEventListener('openai:set_globals',e=>restore(e.detail?.globals?.widgetState));document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});new ResizeObserver(resize).observe($('stage'));new MutationObserver(()=>{colors();redraw();}).observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-theme']});colors();compute();resize();restore(window.openai?.widgetState);
+})();
+</script>
