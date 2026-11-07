@@ -24,6 +24,7 @@
  }
  function label(value,p){const point=project(p);ctx.font=(width<500?'12':'13')+'px system-ui,sans-serif';ctx.textAlign='center';const x=clamp(point[0],ctx.measureText(value).width/2+4,width-ctx.measureText(value).width/2-4),y=clamp(point[1],15,height-8);ctx.lineWidth=4;ctx.strokeStyle=palette.bg;ctx.strokeText(value,x,y);ctx.fillStyle=palette.fg;ctx.fillText(value,x,y);}
  function render(){if(!runs[state.plan])return;const f=current(),focus=playback?.focus,overview=state.scale==='day'&&!focus,active=state.t>=21600&&state.t<79200,green=f.phase<75&&(!f.busGrant||f.phase>=f.busLeadSeconds),busGreen=f.phase<75,side=f.phase>=80&&f.phase<100,ped=f.phase>=105,risk=DayPlayback.flags(f,runs[state.plan].pondCap),marked=[...new Set([...risk,...(focus?.types||[])])],showCut=state.cut||focus?.types.includes('storage');faces=[];setupProjection();
+  if(!globalThis.DayDetailed?.active){
   box(-88,-43,-1,177,90,1,palette.ground,.42);
   if(f.snow>0)box(-85,-37,.1,150,75,.4,'#edf4f5',.75);
   box(-85,-9,0,155,18,1,palette.edge,state.cut?.55:.95);box(-7,-41,0,14,82,1,palette.edge,state.cut?.45:.9);
@@ -63,6 +64,8 @@
   for(const key of marked){if(key==='storage'&&!showCut)continue;ctx.beginPath();regions[key].map(project).forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.strokeStyle=palette.delivery;ctx.lineWidth=3;ctx.stroke();label(key==='queue'?'A':key==='access'?'B':'C',regions[key][0]);}
   label(T('ถนน','Road'),[-77,-6,8]);label(T('ป้ายรถเมล์','Bus stop'),[35,22,19]);
   if(showCut){label(T('บ่อพัก','Storage'),[-48,35,-22]);label(T('ท่อ','Pipe'),[0,31,-20]);label(T('คลอง','Canal'),[55,-23,-2]);label(T('ปั๊ม','Pump'),[69,29,-1]);if(width>=500)label(T('แม่น้ำ → ทะเล','River → sea'),[96,52,0]);}
+  }
+  if(globalThis.DayDetailed)DayDetailed.render({frame:f,state:{...state},pondCap:runs[state.plan].pondCap,visualTime,overview,risk:marked,exposure:globalThis.DayExposureView?.sample(state.t)||null,context:globalThis.DayExposureView?.context?.()||null});
   const hour=Math.floor(state.t/3600),minute=Math.floor(state.t%3600/60);$('clock').textContent=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');$('time').value=state.t/60;
   $('mode').textContent=focus?T('ชะลออัตโนมัติ · แล้วกลับภาพรวม','Automatic slow window · then resume overview'):overview?T('ภาพรวม · การเคลื่อนเป็นตัวแทน','Overview · representative motion'):T('ดูเหตุการณ์ช้า · จังหวะไฟตามโมเดล','Event detail · model signal timing');
   $('alerts').textContent=marked.length?marked.map(key=>riskNames[key]).join(' · '):T('A คิว / B ทางไปป้าย / C บ่อ · ยังไม่ถึงเกณฑ์เน้นภาพ','A Queue / B Stop access / C Storage · below highlight thresholds');
@@ -87,5 +90,5 @@
  eventNames.snow=T('03:00 หิมะตก','03:00 Snowfall');eventNames.melt=T('12:00 หิมะละลาย','12:00 Snowmelt');
  for(const event of [...DayModel.simulate({},'detain').events,{t:3*3600,key:'snow'},{t:12*3600,key:'melt'}]){const button=document.createElement('button');button.className='btn';button.type='button';button.dataset.event=event.key;button.textContent=eventNames[event.key];button.addEventListener('click',()=>{stop();state.t=event.t;state.scale='detail';$('scale').value='detail';sessionReady=false;playback.seek(state.t);visualTime=state.t/600;$('status').textContent=eventNames[event.key]+T(' · กดเล่นเพื่อดูช่วงนี้ช้าลง',' · Play to inspect this window slowly');render();});$('events').append(button);}
  function resize(){width=canvas.getBoundingClientRect().width||736;height=width<500?410:450;const dpr=window.devicePixelRatio||1;canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);canvas.style.height=height+'px';colors();render();}
- document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});new ResizeObserver(resize).observe(canvas);new ResizeObserver(()=>{if(window.parent!==window)window.parent.postMessage({type:'ts-day-height',height:document.body.scrollHeight},location.origin==='null'?'*':location.origin);}).observe(document.body);new MutationObserver(()=>{colors();render();}).observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-theme']});colors();compute();resize();
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});new ResizeObserver(resize).observe(canvas);new ResizeObserver(()=>{if(window.parent!==window)window.parent.postMessage({type:'ts-day-height',height:document.body.scrollHeight},location.origin==='null'?'*':location.origin);}).observe(document.body);new MutationObserver(()=>{colors();render();}).observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-theme']});colors();compute();resize();if(globalThis.DayDetailed)DayDetailed.connect(render);
 })();
