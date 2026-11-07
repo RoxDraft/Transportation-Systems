@@ -40,10 +40,10 @@
    const busSlot=active?Math.floor((t-6*3600)/420):-1;if(active&&busSlot!==lastBus){buses+=2.5;generated+=2.5;lastBus=busSlot;}
    const pedestrianRate=(rush?.075:active?.025:.001),newPeople=pedestrianRate*DT;people+=newPeople;peopleIn+=newPeople;
    walking+=(rush?.08:active?.03:.002)*DT;cycling+=(rush?.035:active?.015:.001)*DT;running+=(h>=5&&h<7||h>=19&&h<21?.025:.001)*DT;
-   const capacity=depth>=.17?0:Math.max(0,1-(depth/.17)**1.5),service=(t-DT/2)%150<75?4400/3600*(rain+melt>0?.9:1)*capacity*DT:0;
-   let budget=service;const busPass=Math.min(buses,budget);buses-=busPass;budget-=busPass;passed+=busPass;completedBus+=busPass;
+   const capacity=depth>=.17?0:Math.max(0,1-(depth/.17)**1.5),service=p.freeFlow&&depth<.17?cars+deliveries+buses:(t-DT/2)%150<75?4400/3600*(rain+melt>0?.9:1)*capacity*DT:0;
+   let budget=service;const busPass=Math.min(buses,p.busPriority===false?budget*buses/Math.max(1e-9,cars+deliveries+buses):budget);buses-=busPass;budget-=busPass;passed+=busPass;completedBus+=busPass;
    while(completedBus>=2.5-1e-8){completedBus-=2.5;const time=t+60;if(!stops.has(time))stops.set(time,0);stops.set(time,stops.get(time)+1);}
-   const deliveryPass=Math.min(deliveries,budget*.25);deliveries-=deliveryPass;budget-=deliveryPass;passed+=deliveryPass;const carPass=Math.min(cars,budget);cars-=carPass;passed+=carPass;
+   const deliveryPass=p.freeFlow&&depth<.17?deliveries:Math.min(deliveries,budget*.25);deliveries-=deliveryPass;budget-=deliveryPass;passed+=deliveryPass;const carPass=Math.min(cars,budget);cars-=carPass;passed+=carPass;
    if(stops.has(t)){const board=depth<.12?Math.min(people,40*stops.get(t)):0;people-=board;boarded+=board;stops.delete(t);}
    peakQueue=Math.max(peakQueue,cars+deliveries+buses);delay+=(cars+deliveries+buses)*DT/3600;peopleDelay+=people*DT/3600;
    maxWaterError=Math.max(maxWaterError,Math.abs(waterError()));maxTrafficError=Math.max(maxTrafficError,Math.abs(generated-passed-cars-deliveries-buses));
