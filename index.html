@@ -29,6 +29,18 @@
   @media(max-width:680px){.nav{gap:10px}.language-switch button{min-height:38px}html[lang="en"] h1{font-size:42px}.project-bottom{gap:12px}}
   @media(max-width:370px){.topbar{gap:8px}.nav{gap:8px}.source-link{gap:5px}.language-switch button{min-width:36px;padding:6px 7px}html[lang="en"] h1{font-size:36px}}
   @media(pointer:coarse){.language-switch button{min-width:44px;min-height:44px}}
+
+  /* Clear rounded navigation actions */
+  .nav a,.hero-action,.open-project{box-sizing:border-box;min-height:44px;border-radius:12px;font-weight:650;transition:background .18s,border-color .18s,box-shadow .18s}
+  .nav a{display:inline-flex;align-items:center;justify-content:center;padding:10px 15px;border:1px solid #73958b;background:rgba(255,255,255,.82);color:#244c43}
+  .nav a:hover{background:#e0eee7;border-color:#426e60}
+  .hero-action,.open-project{display:inline-flex;align-items:center;justify-content:center;padding:11px 17px;border:1px solid #244c43;background:#244c43;color:#fff;box-shadow:0 3px 9px rgba(25,66,53,.12);text-decoration:none}
+  .hero-action:hover,.project:hover .open-project{background:#183d34;border-color:#183d34}
+  .open-project{min-width:142px;font-size:13px;gap:12px;white-space:normal}
+  .arrow-circle{width:28px;height:28px;flex:none;border-radius:8px;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28)}
+  .language-switch{border-radius:12px;border-color:#8eaca1;background:rgba(255,255,255,.82)}
+  .language-switch button{min-height:44px;min-width:44px;border-radius:8px}
+  .project:focus-visible .open-project{box-shadow:0 0 0 3px #fff,0 0 0 6px #176659}
  </style>
 </head>
 <body>
