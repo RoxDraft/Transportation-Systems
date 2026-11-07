@@ -1,4 +1,4 @@
-importScripts('./day-model.js?v=0.9.0','./heat-model.js?v=1.3.0','./atmosphere-model.js?v=1.4.0');
+importScripts('./day-model.js?v=0.9.0','./heat-model.js?v=1.3.0','./atmosphere-model.js?v=1.4.1');
 self.onmessage=event=>{
  const {id,input}=event.data;
  try{
