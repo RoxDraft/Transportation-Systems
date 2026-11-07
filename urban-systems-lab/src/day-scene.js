@@ -65,7 +65,7 @@
   label(T('ถนน','Road'),[-77,-6,8]);label(T('ป้ายรถเมล์','Bus stop'),[35,22,19]);
   if(showCut){label(T('บ่อพัก','Storage'),[-48,35,-22]);label(T('ท่อ','Pipe'),[0,31,-20]);label(T('คลอง','Canal'),[55,-23,-2]);label(T('ปั๊ม','Pump'),[69,29,-1]);if(width>=500)label(T('แม่น้ำ → ทะเล','River → sea'),[96,52,0]);}
   }
-  if(globalThis.DayDetailed)DayDetailed.render({frame:f,state:{...state},pondCap:runs[state.plan].pondCap,visualTime,overview,risk:marked,exposure:globalThis.DayExposureView?.sample(state.t)||null,context:globalThis.DayExposureView?.context?.()||null});
+  if(globalThis.DayDetailed)DayDetailed.render({frame:f,state:{...state},pondCap:runs[state.plan].pondCap,samples:runs[state.plan].observations,playing:running,visualTime,overview,risk:marked,exposure:globalThis.DayExposureView?.sample(state.t)||null,context:globalThis.DayExposureView?.context?.()||null});
   const hour=Math.floor(state.t/3600),minute=Math.floor(state.t%3600/60);$('clock').textContent=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');$('time').value=state.t/60;
   $('mode').textContent=focus?T('ชะลออัตโนมัติ · แล้วกลับภาพรวม','Automatic slow window · then resume overview'):overview?T('ภาพรวม · การเคลื่อนเป็นตัวแทน','Overview · representative motion'):T('ดูเหตุการณ์ช้า · จังหวะไฟตามโมเดล','Event detail · model signal timing');
   $('alerts').textContent=marked.length?marked.map(key=>riskNames[key]).join(' · '):T('A คิว / B ทางไปป้าย / C บ่อ · ยังไม่ถึงเกณฑ์เน้นภาพ','A Queue / B Stop access / C Storage · below highlight thresholds');
