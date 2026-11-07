@@ -1,11 +1,11 @@
 (()=>{
  const NX=30,NY=20,DX=40,DT=1,STEPS=1200,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),es=t=>.6108*Math.exp(17.27*t/(t+237.3));
  const plans=['base','canal','pond','shade','combined'];
- function environment(p={},plan='base'){
+ function environment(p={},plan='base',features={}){
   p={climate:'humid',wind:1.5,direction:0,sun:1,sourceCut:50,wait:20,...p};
   const ta=p.air??(p.climate==='humid'?35:39),rh=p.rh??(p.climate==='humid'?.75:.30),angle=p.direction*Math.PI/180;
-  const corridor=plan==='shade'||plan==='combined',shade=corridor,water=['canal','pond','combined'].includes(plan),cut=plan==='combined'?p.sourceCut/100:0;
-  const field=(x,y)=>{const corridorWeight=Math.exp(-(((y-10)/2.4)**2));return [p.wind*Math.cos(angle)*(corridor?1+.65*corridorWeight:1),p.wind*Math.sin(angle)];};
+  const corridor=features.corridor??(plan==='shade'||plan==='combined'),shade=features.shade??corridor,water=features.water??['canal','pond','combined'].includes(plan),cut=plan==='combined'?p.sourceCut/100:0;
+  const field=features.field||((x,y)=>{const corridorWeight=Math.exp(-(((y-10)/2.4)**2));return [p.wind*Math.cos(angle)*(corridor?1+.65*corridorWeight:1),p.wind*Math.sin(angle)];});
   function thermal(x,y,stop=false){const f=field(x,y),speed=Math.hypot(...f),fetch=plan==='pond'?Math.hypot(x-8,y-7):Math.abs(y-7),downwind=plan==='pond'?Math.max(0,(x-8)*Math.cos(angle)+(y-7)*Math.sin(angle)):Math.max(0,(y-7)*Math.sin(angle));
    const cool=water?Math.min(3,(ta-15)*(1-rh)*.16)*Math.exp(-fetch/7)*(downwind>0?1:.35)*Math.min(1,p.wind):0;
    const air=ta-cool,w0=.622*(es(ta)*rh)/(101.3-es(ta)*rh),w=w0+1.006*cool/2501,vp=101.3*w/(.622+w),humidity=clamp(vp/es(air),0,1);

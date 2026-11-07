@@ -1,4 +1,4 @@
-import {createAtmosphereOverlay} from './atmosphere-webgl.mjs?v=1.2.2';
+import {createAtmosphereOverlay} from './atmosphere-webgl.mjs?v=1.3.0';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'https://unpkg.com/three@0.184.0/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { OrbitControls } from 'https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js';
@@ -65,7 +65,7 @@ export function createScene(host,{T,onInspect,onLost,onManual=()=>{}}){
  renderer.domElement.addEventListener('pointerup',e=>{pointers.delete(e.pointerId);const start=down;down=null;if(!start||start.moved||Math.hypot(e.clientX-start.x,e.clientY-start.y)>5)return;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(pickables,true).find(h=>{let a=h.object;while(a){if(!a.visible)return false;a=a.parent;}return true;});if(hit){let a=hit.object;while(a&&!a.userData.inspect)a=a.parent;if(a){picked=a;onInspect(a.userData.inspect);}}});
  controls.addEventListener('change',()=>{if(!disposed)renderer.render(scene,camera);});renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();cancelCamera();onLost();});
  function preset(name,snapshot,smooth=false){
-  cancelCamera();const presets={city:[[135,130,145],[-3,-2,5]],queue:[[-63,20,38],[-32,2,0]],street:[[-34,14,35],[-4,3,0]],stop:[[55,3.4,39],[34,2,22]],water:[[-28,5,1],[-48,-11,32]]},[position,target]=presets[name]||presets.city;
+  cancelCamera();const presets={city:[[135,130,145],[-3,-2,5]],north:[[-18,18,-48],[4.4,2,-21.6]],south:[[28,16,55],[4.4,2,27.75]],queue:[[-63,20,38],[-32,2,0]],street:[[-34,14,35],[-4,3,0]],stop:[[55,3.4,39],[34,2,22]],water:[[-28,5,1],[-48,-11,32]]},[position,target]=presets[name]||presets.city;
   if(snapshot)lastCameraKey=[snapshot.state.yaw,snapshot.state.tilt,snapshot.state.zoom].join('|');
   const endPosition=new THREE.Vector3(...position),endTarget=new THREE.Vector3(...target);
   if(!smooth||window.matchMedia('(prefers-reduced-motion: reduce)').matches){camera.position.copy(endPosition);controls.target.copy(endTarget);controls.update();return;}
