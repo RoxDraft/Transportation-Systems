@@ -1,10 +1,10 @@
 {
  "name":"urban-systems-lab",
  "private":true,
- "version":"0.8.0",
+ "version":"0.9.0",
  "description":"Conceptual Thai flood, mobility and protected signal simulation",
  "scripts":{
-  "test":"node tools/validate.cjs && node tools/validate-coupled.cjs && node tools/validate-green-flood.cjs && node tools/validate-reactive.cjs && node tools/validate-en.cjs && node tools/validate-day.cjs && node tools/validate-playback.cjs && node tools/validate-heat.cjs && node tools/validate-day-exposure.cjs"
+  "test":"node tools/validate.cjs && node tools/validate-coupled.cjs && node tools/validate-green-flood.cjs && node tools/validate-reactive.cjs && node tools/validate-en.cjs && node tools/validate-day.cjs && node tools/validate-playback.cjs && node tools/validate-heat.cjs && node tools/validate-day-exposure.cjs && node tools/validate-bus-signal.cjs"
  },
  "devDependencies":{"@napi-rs/canvas":"0.1.80"}
 }
