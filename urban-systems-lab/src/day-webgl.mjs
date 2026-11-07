@@ -1,4 +1,4 @@
-import {createAtmosphereOverlay} from './atmosphere-webgl.mjs?v=1.2.1';
+import {createAtmosphereOverlay} from './atmosphere-webgl.mjs?v=1.2.2';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'https://unpkg.com/three@0.184.0/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { OrbitControls } from 'https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js';
