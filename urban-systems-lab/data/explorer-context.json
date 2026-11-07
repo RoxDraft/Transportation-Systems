@@ -1,0 +1,208 @@
+{
+ "areas": [
+  {
+   "id": "network",
+   "th": "ทั้งเครือข่ายถึงเจ้าพระยา",
+   "en": "Network to Chao Phraya",
+   "profile": "open"
+  },
+  {
+   "id": "cw",
+   "th": "แจ้งวัฒนะ · หลักสี่",
+   "en": "Chaeng Watthana · Lak Si",
+   "profile": "street"
+  },
+  {
+   "id": "middle",
+   "th": "คลองเปรมฯ · จตุจักร",
+   "en": "Middle Prem canal · Chatuchak",
+   "profile": "canyon"
+  },
+  {
+   "id": "lower",
+   "th": "คลองเปรมฯ · บางซื่อ–ดุสิต",
+   "en": "Lower Prem canal · Bang Sue–Dusit",
+   "profile": "dense"
+  },
+  {
+   "id": "talat",
+   "th": "คลองบางตลาด · ปากเกร็ด",
+   "en": "Bang Talat canal · Pak Kret",
+   "profile": "open"
+  },
+  {
+   "id": "TH-10",
+   "th": "กทม.",
+   "en": "Bangkok",
+   "profile": "dense"
+  },
+  {
+   "id": "TH-11",
+   "th": "สมุทรปราการ",
+   "en": "Samut Prakan",
+   "profile": "coast"
+  },
+  {
+   "id": "TH-14",
+   "th": "อยุธยา · บางบาล",
+   "en": "Ayutthaya · Bang Ban",
+   "profile": "plain"
+  },
+  {
+   "id": "TH-57",
+   "th": "เชียงราย · แม่สาย",
+   "en": "Chiang Rai · Mae Sai",
+   "profile": "valley"
+  },
+  {
+   "id": "TH-34",
+   "th": "อุบลฯ · วารินชำราบ",
+   "en": "Ubon · Warin Chamrap",
+   "profile": "plain"
+  },
+  {
+   "id": "TH-90",
+   "th": "สงขลา · หาดใหญ่",
+   "en": "Songkhla · Hat Yai",
+   "profile": "valley"
+  }
+ ],
+ "layers": [
+  {
+   "id": "water",
+   "th": "การระบายน้ำ",
+   "en": "Drainage"
+  },
+  {
+   "id": "transport",
+   "th": "ถนนและการเดินทาง",
+   "en": "Streets and mobility"
+  },
+  {
+   "id": "climate",
+   "th": "ความร้อน ลม และฝุ่น",
+   "en": "Heat, wind and pollution"
+  },
+  {
+   "id": "coupled",
+   "th": "น้ำ + การเดินทาง + อากาศ",
+   "en": "Water + mobility + atmosphere"
+  }
+ ],
+ "cases": [
+  {
+   "id": "day-3d",
+   "th": "3D Day · ถนนและน้ำตลอดวัน",
+   "en": "3D Day · Streets and water throughout the day",
+   "layer": "coupled"
+  },
+  {
+   "id": "heat-wind",
+   "th": "ความร้อน ลม ฝุ่น และชุมชน",
+   "en": "Heat, wind, pollution and neighbors",
+   "layer": "climate"
+  },
+  {
+   "id": "reactive-signal",
+   "th": "ไฟตามคิวรถและระดับน้ำ",
+   "en": "Queue- and water-responsive signals",
+   "layer": "coupled"
+  },
+  {
+   "id": "green-flood",
+   "th": "Green Light · หน่วงน้ำและคุมซอย",
+   "en": "Green Light · Detention and local streets",
+   "layer": "coupled"
+  },
+  {
+   "id": "coupled",
+   "th": "น้ำขัง + ถนน ป้าย และซอย",
+   "en": "Flooding + streets, stops and local roads",
+   "layer": "coupled"
+  },
+  {
+   "id": "street",
+   "th": "ถนน 32 ม. · Universal design",
+   "en": "32 m street · Universal design",
+   "layer": "transport"
+  },
+  {
+   "id": "junction",
+   "th": "แยกและป้ายกลางฝน",
+   "en": "Rainy junction and bus stop",
+   "layer": "transport"
+  },
+  {
+   "id": "greenlight",
+   "th": "Green Light · ไฟกับแบบถนน",
+   "en": "Green Light · Signals and street design",
+   "layer": "transport"
+  },
+  {
+   "id": "crossing",
+   "th": "ทางข้ามไปป้าย",
+   "en": "Bus-stop crossing",
+   "layer": "transport"
+  },
+  {
+   "id": "system",
+   "th": "ถนน–ท่อ–คลอง–ทะเล",
+   "en": "Street–pipe–canal–sea",
+   "layer": "water"
+  },
+  {
+   "id": "location",
+   "th": "พักน้ำก่อนหรือหลังท่อ",
+   "en": "Storage before or after pipe",
+   "layer": "water"
+  },
+  {
+   "id": "inlet",
+   "th": "ช่องรับแยกและทางสำรอง",
+   "en": "Separate inlet and backup",
+   "layer": "water"
+  },
+  {
+   "id": "pipe",
+   "th": "ขยายท่อ ลอกท่อ เพิ่มปั๊ม",
+   "en": "Larger pipe, cleaning or pump",
+   "layer": "water"
+  },
+  {
+   "id": "prerain",
+   "th": "พร่องคลองก่อนฝน",
+   "en": "Pre-rain canal drawdown",
+   "layer": "water"
+  },
+  {
+   "id": "adjacent",
+   "th": "คลองร่วมและพื้นที่ข้างเคียง",
+   "en": "Shared canals and neighbors",
+   "layer": "water"
+  },
+  {
+   "id": "national",
+   "th": "หกกรณีศึกษาในไทย",
+   "en": "Six Thai case studies",
+   "layer": "water"
+  },
+  {
+   "id": "network",
+   "th": "คลองถึงปลายทาง",
+   "en": "Canal network to receiver",
+   "layer": "water"
+  },
+  {
+   "id": "reference",
+   "th": "หลักฐานกรณีพื้นที่",
+   "en": "Area case references",
+   "layer": "water"
+  },
+  {
+   "id": "roads",
+   "th": "ถนนและจุดเชื่อมต่อ",
+   "en": "Roads and connections",
+   "layer": "transport"
+  }
+ ]
+}

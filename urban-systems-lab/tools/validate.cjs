@@ -39,14 +39,14 @@ global.document={documentElement:new Element(),hidden:false,getElementById:id=>{
 let saved;
 global.window={devicePixelRatio:1,d3,matchMedia:()=>({matches:true}),openai:{setWidgetState:s=>{saved=s;return Promise.resolve();}},addEventListener(){},removeEventListener(){}};
 global.requestAnimationFrame=f=>{const id=nextRaf++;rafs.set(id,f);return id;};global.cancelAnimationFrame=id=>rafs.delete(id);global.ResizeObserver=class{observe(){}disconnect(){}};global.MutationObserver=class{observe(){}disconnect(){}};
-global.localStorage={getItem(){return null;},setItem(){}};
+global.localStorage={getItem(){return null;},setItem(){}};global.location={href:'https://example.com/urban-systems-lab/index.html',origin:'https://example.com'};
 const colors={'--background':'#ffffff','--foreground':'#253043','--muted':'#e9edf1','--muted-foreground':'#697789','--border':'#bdc5cf','--viz-series-1':'#2176b3','--viz-series-2':'#aa5e1d','--viz-series-3':'#287d60','--viz-series-4':'#8255ac','--viz-series-5':'#a34673','--viz-series-6':'#777020'};
 global.getComputedStyle=e=>({color:colors[(e.style.color||'').replace('var(','').replace(')','')]||'#253043'});
 const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
 new Function(scripts.at(-1)[1].replace(/\}\)\(\);\s*$/,'globalThis.UQA={state,runs,areas,legacyCases,region,country,sites,resize,renderSelection,snapshot};})();'))();
 function select(id,value){const e=elements.get('ul-'+id);e.value=value;e.fire('change');}
 function image(name){const source=elements.get('ul-map').surface,c=createCanvas(source.width,source.height),ctx=c.getContext('2d');ctx.fillStyle=colors['--background'];ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(source,0,0);fs.writeFileSync(base+'/'+name+'.png',c.toBuffer('image/png'));}
-for(const area of ['network','cw','middle','lower','talat','TH-90']){select('area',area);image('qa-'+area);assert.equal(UQA.state.area,area);}
+for(const area of ['network','cw','middle','lower','talat','TH-90']){select('area',area);image('qa-'+area);assert.equal(UQA.state.area,area);for(const focus of ['area','layer','case']){const url=new URL(elements.get('ul-3d-'+focus).href);assert.equal(url.searchParams.get('area'),area);assert.equal(url.searchParams.get('focus'),focus);}}
 select('area','network');select('method','outlet');assert(elements.get('ul-selected').textContent.includes('F'),'Missing receiver warning');select('method','adaptive');assert(elements.get('ul-selected').textContent.includes(english?'No worsening':'ไม่พบ'),'No-worsening state');
 for(const c of UQA.legacyCases){select('layer',c.layer);select('case',c.id);assert.equal(UQA.state.case,c.id);assert(!elements.get('ul-legacy').hidden);console.log('Mounted',c.id);}
 select('layer','water');select('case','network');viewport=320;UQA.resize();image('qa-mobile');select('area','cw');image('qa-mobile-cw');

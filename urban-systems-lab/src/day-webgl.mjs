@@ -1,3 +1,4 @@
+import {createAtmosphereOverlay} from './atmosphere-webgl.mjs?v=1.2.0';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'https://unpkg.com/three@0.184.0/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { OrbitControls } from 'https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js';
@@ -52,6 +53,7 @@ export function createScene(host,{T,onInspect,onLost,onManual=()=>{}}){
  const vehicles=[];for(let i=0;i<24;i++)vehicles.push(vehicle(i%8===0?'auto':i%7===0?'delivery':i%3===0?'motor':'car',i));const bus=vehicle('bus',0),bikes=[];for(let i=0;i<5;i++)bikes.push(vehicle('bike',i));const walkers=[];for(let i=0;i<6;i++)walkers.push(person(activity,0,15,i===0));const crossing=[];for(let i=0;i<3;i++)crossing.push(person(activity,11,0,i===0));
  const rainGeo=own(new THREE.BufferGeometry()),rainPositions=new Float32Array(150*3);rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));const rainMat=new THREE.PointsMaterial({color:0xbadce9,size:.23,transparent:true,opacity:.5});materials.add(rainMat);const rain=new THREE.Points(rainGeo,rainMat);scene.add(rain);
  const queueZone=box(scene,-38,.4,-1,56,.4,14,material(0xf1b54a,{transparent:true,opacity:.19,depthWrite:false}));queueZone.visible=false;
+ const atmosphere=createAtmosphereOverlay(scene,{T});
  const selection=new THREE.BoxHelper(stop,0xe6bb73);scene.add(selection);own(selection.geometry);materials.add(selection.material);const inspectObjects={queue:queueZone,stop,signal:signalRoot,tank,pipe:pipes,bus,vehicles:vehicles[0]};
  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down=null;const pointers=new Set();
  function cancelCamera(){cancelAnimationFrame(cameraRaf);cameraRaf=0;}
@@ -84,12 +86,12 @@ export function createScene(host,{T,onInspect,onLost,onManual=()=>{}}){
   vehicles.forEach((g,i)=>{g.visible=i<count;let x=-79+((overview?v*.15+i/count:s.t/36+i/count)%1)*140;if(!overview&&!phase.mainGreen&&x>-18&&x<14)x=-18-i%6*6;if(f.depth>=.17&&x>-26)x=-28-i%8*5;g.position.set(x,g.userData.vehicleType==='motor'?.055:-.075,i%2?-5:3);});
   let bx=overview?-70+(v*.08%1)*120:s.t%420<60?24:-72+(s.t%60)/60*120;if(f.depth>=.17)bx=-72;else if(!overview&&!phase.busGreen&&bx>-18&&bx<14)bx=-18;bus.visible=active;bus.position.set(bx,.055,6);
   bikes.forEach((g,i)=>{g.visible=active||i===0;g.position.set(-70+((v*.06+i*.19)%1)*125,.43,-12);});walkers.forEach((g,i)=>{g.visible=active||i===0;g.position.x=-73+((v*.035+i*.17)%1)*130;g.position.y=i===0?.625:.525;});waiting.forEach((g,i)=>g.visible=i<Math.min(12,Math.ceil(f.people/10)));crossing.forEach((g,i)=>{g.visible=f.depth<.12&&(overview||phase.walk||phase.pedClearance);g.position.z=overview?-5+i*5:-8+Math.max(0,Math.min(1,(f.phase-105-i*2)/30))*25;const floor=Math.abs(g.position.z)>12.5?.625:Math.abs(g.position.z)>9.8?.45:.075;g.position.y=floor-(i===0?0:.1);});generalLamp.material=phase.mainGreen?goMat:redMat;busLamp.material=phase.busGreen?goMat:redMat;
-  heat.visible=options.layers.heat&&!!e&&options.camera!=='water';heat.material.opacity=Math.min(.65,(e?.stopLoad||0)/180);dust.forEach((g,i)=>{g.visible=options.layers.dust&&!!e&&i<Math.min(28,Math.floor((e?.stopC||0)*4))&&options.camera!=='water';});
-  const angle=(context?.direction||0)*Math.PI/180;for(const arrow of wind){arrow.visible=options.layers.wind&&(context?.wind||0)>.01&&options.camera!=='water';arrow.setDirection(new THREE.Vector3(Math.cos(angle),0,Math.sin(angle)));arrow.setLength(4+(context?.wind||0)*3,1.6,.7);}
+  heat.visible=!options.atmosphere&&options.layers.heat&&!!e&&options.camera!=='water';heat.material.opacity=Math.min(.65,(e?.stopLoad||0)/180);dust.forEach((g,i)=>{g.visible=!options.atmosphere&&options.layers.dust&&!!e&&i<Math.min(28,Math.floor((e?.stopC||0)*4))&&options.camera!=='water';});
+  const angle=(context?.direction||0)*Math.PI/180;for(const arrow of wind){arrow.visible=!options.atmosphere&&options.layers.wind&&(context?.wind||0)>.01&&options.camera!=='water';arrow.setDirection(new THREE.Vector3(Math.cos(angle),0,Math.sin(angle)));arrow.setLength(4+(context?.wind||0)*3,1.6,.7);}
   rain.visible=f.rain>0||f.snowfall>0;rainMat.color.set(f.snowfall>0?0xffffff:0xbadce9);rainMat.size=f.snowfall>0?.45:.23;for(let i=0;i<150;i++){rainPositions[i*3]=-95+(i*31%185);rainPositions[i*3+1]=30-((v*(f.snowfall>0?3:18)+i*.71)%28);rainPositions[i*3+2]=-45+(i*19%90);}rainGeo.attributes.position.needsUpdate=true;
   queueZone.visible=options.inspect==='queue'&&options.camera!=='water';
-  let chosen=picked?.userData.inspect===options.inspect?picked:inspectObjects[options.inspect],shown=!!chosen;for(let a=chosen;a;a=a.parent)if(!a.visible)shown=false;selection.visible=shown&&(options.camera!=='water'||['tank','pipe'].includes(options.inspect));if(selection.visible)selection.setFromObject(chosen);renderer.render(scene,camera);
+  let chosen=picked?.userData.inspect===options.inspect?picked:inspectObjects[options.inspect],shown=!!chosen;for(let a=chosen;a;a=a.parent)if(!a.visible)shown=false;selection.visible=shown&&(options.camera!=='water'||['tank','pipe'].includes(options.inspect));if(selection.visible)selection.setFromObject(chosen);atmosphere.render(options.atmosphere);renderer.render(scene,camera);
  }
- function dispose(){if(disposed)return;disposed=true;cancelCamera();controls.dispose();for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures)t.dispose();renderer.dispose();host.replaceChildren();}
+ function dispose(){if(disposed)return;disposed=true;cancelCamera();atmosphere.dispose();controls.dispose();for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures)t.dispose();renderer.dispose();host.replaceChildren();}
  preset('city');resize();return {render,resize,preset,dispose,cancelCamera};
 }

@@ -1,0 +1,15 @@
+const assert=require('assert/strict');require('../src/heat-model.js');require('../src/atmosphere-model.js');require('../src/day-model.js');const H=AtmosphereModel;
+let runs=0,pass=0,fail=0;
+function check(p,context){const r=H.simulate(p,context);runs++;assert(r.maxError<1e-6);for(const f of r.frames){for(const grid of [f.fine,f.coarse])assert(grid.every(v=>Number.isFinite(v)&&v>=-1e-8));assert(Math.abs(f.totals.error)<1e-6);for(const row of f.bySource)for(const k of ['emitted','imported','remaining','exported','deposited'])assert(row[k]>=-1e-8);assert(f.dose.every(v=>v>=0));}return r;}
+for(const season of ['sw','ne','hot','calm'])for(const profile of ['street','canyon']){const p={...H.seasons[season],profile,hour:14},a=check({...p,plan:'base'});for(const plan of ['shade','combined']){const b=check({...p,plan});if(H.guard(b,a))pass++;else fail++;}}
+assert(pass>0&&fail>0,'Neighbor screening cannot always pass');
+const off=Object.fromEntries(H.origins.map(k=>[k,false])),zero=check({sources:off});assert.equal(zero.stats.totals.emitted,0);assert.equal(zero.stats.totals.imported,0);assert.equal(zero.stats.totals.remaining,0);
+for(const origin of H.origins){const a=check({sources:{...off,[origin]:true}});for(let i=0;i<H.origins.length;i++)if(H.origins[i]!==origin)assert.equal(a.stats.bySource[i].emitted+a.stats.bySource[i].imported,0);assert(a.stats.totals.remaining>0);if(origin==='regional'){assert.equal(a.stats.totals.emitted,0);assert(a.stats.totals.imported>0);}else assert.equal(a.stats.totals.imported,0);}
+const base=check({}),canal=check({plan:'canal'});assert.deepEqual(canal.stats.fine,base.stats.fine,'Open water magically removed fine particles');assert.deepEqual(canal.stats.coarse,base.stats.coarse);
+const regional=check({sources:{...off,regional:true},plan:'shade'}),regionalCut=check({sources:{...off,regional:true},plan:'combined',sourceCut:90});assert.deepEqual(regionalCut.stats.fine,regional.stats.fine,'Local controls removed imported background');
+const dry=check({hour:18.5,rain:0}),wet=check({hour:18.5,rain:150});assert(wet.stats.totals.deposited>dry.stats.totals.deposited);assert(wet.stats.totals.remaining<dry.stats.totals.remaining);
+const max=check({wind:4,direction:45,plan:'combined',sourceCut:0}),calm=H.velocity(H.params({wind:0}),8,6,0);assert.equal(calm[0],0);assert.equal(calm[1],0);
+const context=Array.from({length:41},(_,i)=>({t:i*30,roadQueue:400,depth:0})),queued=check({},context);assert(queued.stats.bySource[0].emitted>base.stats.bySource[0].emitted);assert.equal(queued.stats.bySource[2].emitted,base.stats.bySource[2].emitted);
+assert(H.velocity(H.params(H.seasons.sw),9,6,0)[0]>0&&H.velocity(H.params(H.seasons.sw),9,6,0)[1]<0,'SW from/to convention reversed');assert(H.velocity(H.params(H.seasons.ne),9,6,0)[0]<0&&H.velocity(H.params(H.seasons.ne),9,6,0)[1]>0);
+const day=DayModel.simulate({sampleSeconds:30},'detain');assert(day.frames[2220].hour===18.5);assert(day.pondCap===20000);
+console.log('PASS:',{runs,neighborPass:pass,neighborFail:fail,ledgerError:max.maxError,regionalConserved:true,wetDeposition:true,queueSourceLink:true});

@@ -1,7 +1,7 @@
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict'),root=path.resolve(__dirname,'..'),code=fs.readFileSync(root+'/shared/project-language.js','utf8');
 function navigate(href,{saved,blocked=false,bilingual=false}={}){
  const url=new URL(href),events={},nav=[],head=[],state={};
- const element=()=>({dataset:{},setAttribute(){},append(...nodes){this.children=nodes;}});
+ const element=()=>({dataset:{},children:[],setAttribute(){},addEventListener(){},append(...nodes){this.children.push(...nodes);}});
  const window={addEventListener(k,f){events[k]=f;}};window.self=window;window.top=window;
  const document={currentScript:{dataset:{bilingual:String(bilingual)}},documentElement:{lang:'th'},createElement:element,head:{append(v){head.push(v);}},body:{prepend(v){nav.push(v);}},addEventListener(k,f){events[k]=f;}};
  const location={href:url.href,pathname:url.pathname,replace(v){state.redirect=v;},reload(){state.reloaded=true;}};
