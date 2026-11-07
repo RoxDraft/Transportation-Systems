@@ -231,3 +231,8 @@ Explorer ใช้ WebGL/Three.js เดิมพร้อมมวลอาก�
 อ้างอิงประเภทกลไก (ไม่ใช่ค่าปรับเทียบ): [กรมอุตุนิยมวิทยา · มรสุม](https://www.tmd.go.th/info/ลมมรสุม), [EPA · ที่มา PM](https://www.epa.gov/pm-pollution/particulate-matter-pm-basics), [Environment Agency · ต้นกำเนิดถึงผู้รับ](https://www.gov.uk/guidance/monitoring-ambient-air-particulate-matter)
 
 การตรวจใหม่: `validate-render-switch.cjs` รวม simultaneous risks, เลือกบน minimap และ resume priority; `validate-language.cjs` ตรวจปุ่มหน้าย่อย routing, snapshot เวลา, iframe propagation และ cross-tab; `validate-atmosphere.cjs` ตรวจ 39 runs รวมมวล/ค่าบวก การเปิดทีละแหล่ง/ปิดหมด น้ำเปิดไม่ลบฝุ่น ลมสงบ ฝนพาฝุ่นตก การลดแหล่งไม่ลบ background และคิวเพิ่มเฉพาะแหล่งจราจร ใช้ worker แยกการคำนวณจากการวาด มี job ID/terminate ป้องกันผลเก่าทับค่าที่เลือกใหม่
+
+
+### 1.2.1 · ตรวจใช้งานจริงและปรับจังหวะ UI
+
+การกรอกตัวเลขอากาศรับ input พร้อม debounce และ change ไม่รอการ blur อย่างเดียว ข้าม error ของ worker งานเก่าที่ถูกยกเลิก และมีทางคำนวณบนหน้าเมื่อ worker ใช้ไม่ได้ เก็บบริบทล่าสุดใน URL และรอ restore ค่าฟอร์มของหน้าย่อยที่โหลดแบบ asynchronous ก่อนคืนเวลา/มุมกล้อง/กริด 2D การสลับภาษาใน iframe ตรวจแล้วว่าทั้ง parent และ child เปลี่ยนพร้อมกัน และยังคงเวลา 19:00 มุมบ่อ และตัวเลขเดิม แผนที่ย่อแสดงจุดเสี่ยงทั้งสามขณะเลือกดูบ่อเองได้

@@ -7,6 +7,7 @@ function page({lang='th',href='https://site.test/Transportation-Systems/urban-sy
 }
 let p=page();p.ready();let nav=p.doc.body.children[0],group=nav.children.at(-1);assert.equal(group.children.length,2);assert.equal(group.children[0].attrs['aria-pressed'],'true');group.children[1].click();assert(p.assigned.includes('lang=en'));assert.equal(store.get('transportation-systems.language'),'en');assert([...session.values()].some(v=>v.includes('1110')));
 p=page({lang:'en'});p.fields[1].value='420';p.ready();assert.equal(p.fields[1].value,'1110','Language reload lost timeline');assert.equal(p.doc.documentElement.lang,'en');
+p=page();p.ready();p.context.ProjectLanguage.set('en');p=page({lang:'en'});const delayed=p.fields.splice(0);delayed[1].value='420';p.ready();p.fields.push(...delayed);p.context.ProjectLanguage.restoreView();assert.equal(p.fields[1].value,'1110','Async submenu lost deferred timeline restore');
 p=page({lang:'en',href:'https://site.test/Transportation-Systems/urban-systems-lab/index.html?area=cw',bilingual:false});assert(p.replaced.includes('index.en.html')&&p.replaced.includes('area=cw'),'Static page routing lost context');
 p=page({embedded:true});p.ready();p.doc.body.children[0].children[0].children[1].click();assert.equal(p.assigned,'top:en','Submenu language did not propagate to parent');
 p=page();p.ready();p.events.storage({key:'transportation-systems.language',newValue:'en'});assert(p.assigned.includes('lang=en'));

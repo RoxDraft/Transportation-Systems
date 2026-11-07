@@ -1,11 +1,11 @@
-import {createAtmosphereOverlay} from './atmosphere-webgl.mjs?v=1.2.0';
+import {createAtmosphereOverlay} from './atmosphere-webgl.mjs?v=1.2.1';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'https://unpkg.com/three@0.184.0/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { OrbitControls } from 'https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js';
 
 export function createScene(host,{T,onInspect,onLost,onManual=()=>{}}){
  const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
- renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
  renderer.domElement.setAttribute('aria-label',T('ฉากรายละเอียดสามมิติ ใช้เมาส์หรือมุมกล้องด้านบนสำรวจ','Detailed 3D scene; explore with pointer or camera presets'));renderer.domElement.setAttribute('role','img');host.replaceChildren(renderer.domElement);
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(43,1,.1,900),controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=false;controls.minDistance=9;controls.maxDistance=380;controls.maxPolarAngle=Math.PI*.92;
  const hemi=new THREE.HemisphereLight(0xc9e4ff,0x465b44,2.3);scene.add(hemi);const sun=new THREE.DirectionalLight(0xffe1b5,3.3);sun.position.set(-75,100,-45);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-130,right:130,top:100,bottom:-100,near:1,far:320});sun.shadow.bias=-.0004;sun.shadow.normalBias=.3;scene.add(sun);
