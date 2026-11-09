@@ -67,6 +67,15 @@ select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);backgrou
 .chk{display:flex;gap:8px;align-items:center;font-size:14px}
 .stage{display:grid;gap:12px;min-width:0}
 .track-card{background:var(--panel);border:1px solid var(--line);padding:12px}
+[hidden]{display:none!important}
+.views{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.views button{font:600 13px var(--f-body);padding:7px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.views button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.views button:disabled{opacity:.45;cursor:not-allowed}
+.v3wrap{position:relative}
+#v3 canvas{display:block;width:100%;border-radius:6px;background:#0a1018}
+.v3tag{position:absolute;left:10px;top:10px;font:600 12px var(--f-mono);color:#fff;background:rgba(10,16,24,.62);padding:3px 9px;border-radius:999px;pointer-events:none}
+.viewcap{font-size:13px;color:var(--muted);margin:8px 0 0}
 canvas{display:block;width:100%;height:auto;border-radius:6px;background:var(--curb)}
 .hud{display:flex;flex-wrap:wrap;gap:6px 18px;font:600 13px var(--f-mono);margin-top:8px;font-variant-numeric:tabular-nums}
 .hud span{color:var(--muted);font-weight:400}
@@ -140,7 +149,10 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
 
   <div class="stage">
    <div class="track-card">
+    <div class="views" id="views" role="group" aria-label="View"></div>
     <canvas id="cv" width="900" height="300" aria-label="Simulation view"></canvas>
+    <div class="v3wrap" id="v3wrap" hidden><div id="v3"></div><span class="v3tag" id="v3tag"></span></div>
+    <p class="viewcap" id="viewcap"></p>
     <div class="hud" id="hud"></div>
     <div class="btns">
      <button class="btn" type="button" id="run" data-i="run"></button>
@@ -182,6 +194,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
  <footer data-i="foot"></footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const BOARD_URL="./index.html";
 const T={
@@ -206,7 +219,14 @@ const T={
  pathHuman:{th:"คน",en:"Human"},pathSys:{th:"ระบบขับเอง",en:"Self-driving system"},
  foot:{th:"ตัวเลขทั้งหมดในตัวจำลองเป็นค่าสมมติเพื่อการเรียนรู้หลักการ ได้แก่ เวลาตอบสนอง โอกาสตรวจจับ การเบรก และระยะมองเห็น ไม่ใช่ผลทดสอบของระบบหรือผลิตภัณฑ์จริงตัวใด ฟิสิกส์การเบรกใช้ระยะหยุด = v·t + v²/2a",en:"Every number in this simulator is a teaching assumption: reaction times, detection rates, braking and sight distances. None are test results for a real system or product. Braking physics uses stopping distance = v·t + v²/2a."},
  phase:{idle:{th:"พร้อม",en:"Ready"},cruise:{th:"วิ่งปกติ",en:"Cruising"},caution:{th:"ชะลอระวัง",en:"Slowing as a precaution"},react:{th:"กำลังตอบสนอง",en:"Reacting"},brake:{th:"เบรก",en:"Braking"},stop:{th:"หยุดแล้ว",en:"Stopped"},hit:{th:"ชน",en:"Impact"},clear:{th:"ผ่านไปแล้ว",en:"Passed"},mrc:{th:"ไม่ออกเดินทาง",en:"Not departing"}},
- hSpeed:{th:"ความเร็ว",en:"Speed"},hDist:{th:"ระยะถึงอันตราย",en:"To hazard"},hPhase:{th:"สถานะ",en:"Phase"}
+ hSpeed:{th:"ความเร็ว",en:"Speed"},
+ vTop:{th:"2D มุมบน",en:"2D top-down"},vChase:{th:"3D มุมติดตาม",en:"3D chase"},vDriver:{th:"มุมคนขับ",en:"Driver's view"},vDriverRail:{th:"มุมพนักงานขับ",en:"Train driver's view"},
+ vOther:{ped:{th:"มุมคนข้ามถนน",en:"Pedestrian's view"},side:{th:"มุมรถที่ฝ่าไฟแดง",en:"Red-light runner's view"},lead:{th:"มุมคนข้างทาง",en:"Roadside view"},stall:{th:"มุมคนข้างทาง",en:"Roadside view"},signal:{th:"มุมข้างราง",en:"Trackside view"},obst:{th:"มุมรถที่ติดบนราง",en:"From the stuck car"}},
+ no3d:{th:"เบราว์เซอร์นี้แสดง 3D ไม่ได้ จึงใช้มุมบนแบบ 2D",en:"This browser can't show 3D, so the 2D top view is used."},
+ capTop:{th:"มุมบนเห็นทุกอย่าง ซึ่งเป็นภาพที่คนขับจริงไม่มีวันได้เห็น",en:"The top view shows everything, which real drivers never get to see."},
+ capChase:{th:"3D จากด้านหลังรถ ช่วยดูระยะห่างและจังหวะการเบรก แถบจางหน้ารถคือระยะที่ต้องใช้หยุดในตอนนั้น",en:"3D from behind the vehicle, for judging gaps and braking. The faint band ahead is the distance needed to stop right now."},
+ capDriver:{th:"เห็นเท่าที่คนขับเห็นจริง หมอกจำลองระยะมองเห็นตามแสงและสภาพถนน สิ่งที่ถูกบังจะโผล่มาเมื่อสายเกินไปแล้ว",en:"Only what the driver can see. Fog stands in for sight distance in this light and weather; hidden hazards appear late."},
+ capOther:{ped:{th:"คนเดินก็มองไม่เห็นรถเหมือนกัน รถเมล์บังทั้งสองฝั่ง จึงควรชะเง้อดูก่อนก้าวออกจากหลังรถใหญ่",en:"The pedestrian can't see the car either; the bus blocks both ways. Peek out before stepping past a large vehicle."},side:{th:"รถที่ฝ่าไฟแดงเห็นรถเราช้าเพราะมุมตึกบัง เป็นเหตุผลที่ระบบและคนขับที่ดีชะลอเมื่อเข้าทางแยก",en:"The red-light runner sees us late because buildings block the corner, which is why good drivers and systems ease off into junctions."},lead:{th:"มองจากข้างทาง จะเห็นว่าระยะห่างที่ดูเหมือนพอ หายไปเร็วแค่ไหนเมื่อคันหน้าเบรก",en:"From the roadside you can see how fast a gap that looked fine disappears when the car ahead brakes."},stall:{th:"รถเสียกะพริบไฟฉุกเฉิน แต่กลางคืนคนขับจะเห็นได้แค่ในระยะไฟหน้า",en:"The stalled car flashes its hazard lights, but at night a driver only sees as far as the headlights reach."},signal:{th:"สัญญาณเหลืองก่อนหน้าคือคำเตือนให้เริ่มเบรก เพราะรถไฟต้องใช้ระยะหยุดหลายร้อยเมตร",en:"The earlier yellow signal is the cue to start braking, because a train needs hundreds of metres to stop."},obst:{th:"จากรถที่ติดบนราง รถไฟปรากฏให้เห็นแต่ไกล แต่ก็ยังหยุดไม่ทัน ทางรอดคือออกจากรถแล้วเดินออกห่างจากราง",en:"From the stuck car the train is visible from far away and still can't stop. The way out is to leave the car and move away from the track."}},hDist:{th:"ระยะถึงอันตราย",en:"To hazard"},hPhase:{th:"สถานะ",en:"Phase"}
 };
 const VEH={
  car:{th:"รถยนต์",en:"Car",a:7.0,len:4.6,w:1.8,v:[20,130,60],kind:"road"},
@@ -249,7 +269,7 @@ let lang=(globalThis.ProjectLanguage&&ProjectLanguage.language)==="en"?"en":"th"
 const tx=o=>typeof o==="string"?o:(o[lang]??o.en);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
-const st={veh:"car",scn:"ped",surf:"dry",light:"day",ctrl:"human",spd:60,exp:40,atpfail:false,seed:7};
+const st={veh:"car",scn:"ped",surf:"dry",light:"day",ctrl:"human",spd:60,exp:40,atpfail:false,seed:7,view:"top"};
 
 /* ---------- random ---------- */
 function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
@@ -311,6 +331,7 @@ function trial(cfg,e,seed,record){
  if(s.obst){reveal=(night?U(r,150,250):U(r,300,500));hazPos=Math.max(900,reveal+300);}
  if(p.range&&s.obst) reveal=Math.min(reveal,p.range);
  out.hazard={pos:hazPos,kind:s.ped?"ped":s.side?"side":s.hw?"lead":s.hwy?"stall":s.signal?"signal":"obst",present};
+ out.clearT=clearT; out.reveal=reveal;
  // decide detection for this trial
  let sysSees = p.sys? r()<p.det : false;
  let distracted = !p.sys && r()<(p.distract||0);
@@ -394,7 +415,8 @@ function monte(cfg,e,n){
 const cv=$("cv"),ctx=cv.getContext("2d");
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
 function sizeCanvas(){const w=cv.clientWidth||800;const h=Math.round(Math.min(300,Math.max(180,w*.34)));const d=Math.min(2,window.devicePixelRatio||1);cv.width=w*d;cv.height=h*d;ctx.setTransform(d,0,0,d,0,0);cv._w=w;cv._h=h;}
-function draw(fr,run){
+function draw(fr,run){ if(st.view!=="top"&&has3D()){draw3d(fr,run);return;} draw2d(fr,run); }
+function draw2d(fr,run){
  const W=cv._w,H=cv._h, cfg=cfgNow(), s=SCN[cfg.scn], V=VEH[cfg.veh], rail=V.kind==="rail";
  const view=rail?Math.max(500,cfg.v*4):(s.hwy?Math.max(160,cfg.v*2):120);
  const ex=fr?fr.x:(run?run.start:0), left=ex-view*.18, k=W/view;
@@ -431,6 +453,142 @@ function draw(fr,run){
  if(fr){const a=VEH[cfg.veh].a*SURF[cfg.surf].m;const d=fr.v*fr.v/(2*a);ctx.fillStyle=css("--accent");ctx.globalAlpha=.15;ctx.fillRect(egoX,ey,d*k,rail?Wd:Math.max(Wd,10));ctx.globalAlpha=1;}
  // scale bar
  ctx.fillStyle=css("--muted");ctx.font="11px "+css("--f-mono");const sb=rail?100:20;ctx.fillRect(12,H-16,sb*k,2);ctx.fillText(sb+" m",12+sb*k+6,H-11);
+}
+
+/* ---------- 3D view (Three.js) ---------- */
+let R3=null;
+function has3D(){ if(R3===false) return false; if(R3) return true;
+ try{ if(!window.THREE) {R3=false;return false;} const c=document.createElement("canvas"); if(!(c.getContext("webgl")||c.getContext("experimental-webgl"))){R3=false;return false;} }catch(e){R3=false;return false;}
+ const renderer=new THREE.WebGLRenderer({antialias:true});
+ renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+ document.getElementById("v3").appendChild(renderer.domElement);
+ R3={renderer,scene:null,camera:new THREE.PerspectiveCamera(65,16/9,.1,4000),run:null,obj:{}};
+ return true;
+}
+function size3d(){ if(!R3) return; const w=document.getElementById("v3wrap").clientWidth||800, h=Math.round(Math.min(440,Math.max(220,w*.56)));
+ R3.renderer.setSize(w,h,false); R3.renderer.domElement.style.height=h+"px"; R3.camera.aspect=w/h; R3.camera.updateProjectionMatrix(); }
+const C3=k=>new THREE.Color(css(k)||"#888");
+function box(w,h,d,color,opts={}){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color,emissive:opts.emissive||0x000000})); return m; }
+function vehicleMesh(kind,color,train){
+ const g=new THREE.Group();
+ if(kind==="train"){ for(let i=0;i<3;i++){const b=box(24,3.6,3,color);b.position.set(-12-i*25,2.1,0);g.add(b);const w=box(23.6,.8,3.05,0x1d2a36);w.position.set(-12-i*25,2.7,0);g.add(w);} return g; }
+ if(kind==="bus"){ const b=box(12,2.8,2.5,color);b.position.set(-6,1.7,0);g.add(b);const w=box(11.6,.9,2.55,0x1d2a36);w.position.set(-6,2.2,0);g.add(w);return g; }
+ if(kind==="moto"){ const b=box(2.1,.7,.45,color);b.position.set(-1.05,.6,0);g.add(b);
+  const r=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.9,10),new THREE.MeshLambertMaterial({color:0x2b3642}));r.position.set(-1.2,1.3,0);r.name="rider";g.add(r);
+  const hh=new THREE.Mesh(new THREE.SphereGeometry(.2,12,10),new THREE.MeshLambertMaterial({color:0xf2f2f2}));hh.position.set(-1.2,1.85,0);hh.name="rider";g.add(hh);return g; }
+ const b=box(4.6,.85,1.8,color);b.position.set(-2.3,.6,0);g.add(b);const c=box(2.4,.65,1.6,color);c.position.set(-2.5,1.3,0);g.add(c);
+ const gl=box(2.42,.4,1.62,0x1d2a36);gl.position.set(-2.5,1.35,0);g.add(gl);
+ const bl=box(.05,.2,1.5,0x551111);bl.position.set(-4.62,.75,0);bl.name="brake";g.add(bl);
+ return g;
+}
+function person(color){ const g=new THREE.Group();
+ const b=new THREE.Mesh(new THREE.CylinderGeometry(.22,.24,1.1,10),new THREE.MeshLambertMaterial({color}));b.position.y=.95;g.add(b);
+ const h=new THREE.Mesh(new THREE.SphereGeometry(.19,12,10),new THREE.MeshLambertMaterial({color:0xe9c9a8}));h.position.y=1.68;g.add(h);
+ const l=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,.45,8),new THREE.MeshLambertMaterial({color:0x2b3642}));l.position.y=.22;g.add(l);return g; }
+function rngB(seed){let x=seed;return()=>{x=(x*16807)%2147483647;return x/2147483647;};}
+function build3d(run){
+ const cfg=cfgNow(), V=VEH[cfg.veh], rail=V.kind==="rail", night=cfg.light==="night", sf=SURF[cfg.surf];
+ const sc=new THREE.Scene(); const O={};
+ const sky=night?0x0a1018:(cfg.surf==="dry"?0xbcd3e6:0x9fb0bd);
+ sc.background=new THREE.Color(sky);
+ const far=rail?(night?450:1600)*(cfg.surf==="dry"?1:.75):(night?95:(cfg.surf==="dry"?650:cfg.surf==="wet"?230:160));
+ sc.fog=new THREE.Fog(sky,far*.25,far);
+ sc.add(new THREE.HemisphereLight(0xffffff,0x445566,night?.22:.85));
+ const sun=new THREE.DirectionalLight(0xffffff,night?.05:.7);sun.position.set(-50,120,60);sc.add(sun);
+ const hz=run.hazard, x0=(run.start||0)-80, x1=Math.max(hz.pos,run.trace.length?run.trace[run.trace.length-1].lx||0:0)+(rail?400:220), L=x1-x0, xc=(x0+x1)/2;
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(L,260),new THREE.MeshPhongMaterial({shininess:2,color:night?0x1b232c:(rail?0x9aa77f:0xd3d9df)}));ground.rotation.x=-Math.PI/2;ground.position.set(xc,-.01,0);sc.add(ground);
+ const lane=rail?0:1.75; O.lane=lane;
+ if(rail){
+  const bal=new THREE.Mesh(new THREE.PlaneGeometry(L,4.2),new THREE.MeshPhongMaterial({shininess:2,color:0x8a8178}));bal.rotation.x=-Math.PI/2;bal.position.set(xc,0,0);sc.add(bal);
+  [-.72,.72].forEach(z=>{const r=box(L,.16,.08,0xb8c0c8);r.position.set(xc,.2,z);sc.add(r);});
+  const n=Math.floor(L/.65),slg=new THREE.BoxGeometry(.25,.12,2.6),slm=new THREE.MeshLambertMaterial({color:0x6b5a48});const sl=new THREE.InstancedMesh(slg,slm,n);const mm=new THREE.Matrix4();
+  for(let i=0;i<n;i++){mm.makeTranslation(x0+i*.65,.08,0);sl.setMatrixAt(i,mm);}sc.add(sl);
+ } else {
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(L,10.5),new THREE.MeshPhongMaterial({shininess:2,color:night?0x232c36:0x5d6873}));road.rotation.x=-Math.PI/2;road.position.set(xc,0,1.75);sc.add(road);
+  [[-6.5,-3.5],[7,10]].forEach(([a,b])=>{const sw=box(L,.15,b-a,night?0x2b3642:0xc9cfd5);sw.position.set(xc,.075,(a+b)/2);sc.add(sw);});
+  const cl=box(L,.02,.15,0xe0b23a);cl.position.set(xc,.012,0);sc.add(cl);
+  const n=Math.floor(L/12),dg=new THREE.BoxGeometry(5,.02,.15),dm=new THREE.MeshLambertMaterial({color:0xf2f2f2});const ds=new THREE.InstancedMesh(dg,dm,n);const mm=new THREE.Matrix4();
+  for(let i=0;i<n;i++){mm.makeTranslation(x0+i*12,.012,3.5);ds.setMatrixAt(i,mm);}sc.add(ds);
+ }
+ // buildings / trees for depth
+ const rb=rngB(91);const bm=new THREE.MeshLambertMaterial({color:night?0x26303b:0xaab4bf});const tm=new THREE.MeshLambertMaterial({color:night?0x1d2a20:0x6f8f5a});
+ for(let x=x0;x<x1;x+=rail?40:22){[-1,1].forEach(side=>{ if(rb()<.25) return;
+  if(rail){const t=new THREE.Mesh(new THREE.ConeGeometry(2+rb()*2,6+rb()*6,8),tm);t.position.set(x+rb()*20,4,side*(14+rb()*30));sc.add(t);}
+  else {const h=5+rb()*22,w=10+rb()*8,d=8+rb()*8;const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),bm);b.position.set(x+w/2,h/2,side<0?-12-d/2:13+d/2);sc.add(b);}});}
+ // ego
+ const ego=vehicleMesh(cfg.veh,C3("--accent"));ego.position.set(0,0,lane);sc.add(ego);O.ego=ego;
+ const sd=new THREE.Mesh(new THREE.PlaneGeometry(1,rail?3:1.8),new THREE.MeshBasicMaterial({color:C3("--accent"),transparent:true,opacity:.28,depthWrite:false}));sd.rotation.x=-Math.PI/2;sd.position.y=.03;sc.add(sd);O.stopBand=sd;
+ if(night){const hl=new THREE.SpotLight(0xfff2d0,4,rail?420:120,.45,.55,1);hl.position.set(0,1.2,lane);sc.add(hl);sc.add(hl.target);O.head=hl;}
+ // hazards
+ const tVis=(run.trace.find(f=>f.vis)||{t:Infinity}).t; O.tVis=tVis;
+ if(hz.kind==="ped"){
+  for(let i=0;i<7;i++){const st_=box(3,.02,.55,0xf2f2f2);st_.position.set(hz.pos,.015,.4+i*.95);sc.add(st_);}
+  const bus=vehicleMesh("bus",0x7c8a99);bus.position.set(hz.pos-2,0,5.25);sc.add(bus);
+  const pd=person(C3("--warn"));pd.position.set(hz.pos,0,hz.present?5.4:8.6);sc.add(pd);O.ped=pd;
+ }
+ if(hz.kind==="side"){
+  const cr=new THREE.Mesh(new THREE.PlaneGeometry(8,240),new THREE.MeshPhongMaterial({shininess:2,color:night?0x232c36:0x5d6873}));cr.rotation.x=-Math.PI/2;cr.position.set(hz.pos,.005,1.75);sc.add(cr);
+  const sc_=vehicleMesh("car",C3("--c-l3"));sc_.rotation.y=-Math.PI/2;sc_.position.set(hz.pos+1.5,0,60);sc.add(sc_);O.side=sc_;
+  const pole=box(.2,4,.2,0x2b3642);pole.position.set(hz.pos-6,2,-4.2);sc.add(pole);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.28,12,10),new THREE.MeshBasicMaterial({color:0x2ecc40}));lamp.position.set(hz.pos-6,4.2,-4.2);sc.add(lamp);
+ }
+ if(hz.kind==="lead"){const ld=vehicleMesh("car",0x8a96a3);ld.position.set(0,0,lane);sc.add(ld);O.lead=ld;}
+ if(hz.kind==="stall"){const sc_=vehicleMesh("car",0x8a96a3);sc_.position.set(hz.pos+4.6,0,lane);sc.add(sc_);O.stall=sc_;
+  O.blink=[-1,1].map(s=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.14,8,8),new THREE.MeshBasicMaterial({color:0xffa31a}));m.position.set(hz.pos+.02,.8,lane+s*.75);sc.add(m);return m;});}
+ if(hz.kind==="signal"){
+  const mk=(x,col)=>{const p=box(.25,5,.25,0x2b3642);p.position.set(x,2.5,2.6);sc.add(p);const h=box(.5,1.2,.5,0x111111);h.position.set(x,5.4,2.6);sc.add(h);const l=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),new THREE.MeshBasicMaterial({color:col}));l.position.set(x-.27,5.4,2.6);sc.add(l);};
+  mk(hz.pos,0xff3030); mk(hz.pos-(run.reveal||300),0xffc400);
+ }
+ if(hz.kind==="obst"){
+  const cr=new THREE.Mesh(new THREE.PlaneGeometry(8,240),new THREE.MeshPhongMaterial({shininess:2,color:night?0x232c36:0x5d6873}));cr.rotation.x=-Math.PI/2;cr.position.set(hz.pos,.01,0);sc.add(cr);
+  const car=vehicleMesh("car",0xc23b2a);car.rotation.y=-Math.PI/2;car.position.set(hz.pos,.2,-2.3);sc.add(car);O.stuck=car;
+  [-5,5].forEach(z=>{const arm=box(.12,.12,4,0xffffff);arm.position.set(hz.pos+(z<0?-5:5),1.1,z+(z<0?2:-2));sc.add(arm);});
+ }
+ R3.scene=sc;R3.obj=O;R3.run=run;
+}
+function draw3d(fr,run){
+ if(!has3D()){draw2d(fr,run);return;}
+ if(R3.run!==run) build3d(run);
+ const cfg=cfgNow(),V=VEH[cfg.veh],rail=V.kind==="rail",O=R3.obj,hz=run.hazard,cam=R3.camera;
+ const f=fr||run.trace[0]||{t:0,x:run.start||0,v:cfg.v/3.6,lx:hz.pos,vis:false};
+ const x=f.x,t=f.t;
+ O.ego.position.x=x; O.ego.visible=st.view!=="driver";
+ O.ego.children.forEach(c=>{ if(c.name==="rider") c.visible=st.view!=="driver"; if(c.name==="brake") c.material.color.set(f.phase==="brake"||f.phase==="stop"?0xff2a2a:0x551111); });
+ const a=V.a*SURF[cfg.surf].m, sd=f.v*f.v/(2*a);
+ O.stopBand.visible=sd>.5&&st.view!=="driver"; O.stopBand.scale.x=Math.max(.01,sd); O.stopBand.position.set(x+sd/2,.03,O.lane);
+ if(O.head){O.head.position.set(x+.2,1.1,O.lane);O.head.target.position.set(x+40,0,O.lane);}
+ if(O.ped){ let z=hz.present?5.4:8.6; if(hz.present&&t>=O.tVis) z=Math.max(O.lane,5.4-(t-O.tVis)*1.6); O.ped.position.z=z; O.ped.visible=st.view!=="other"; }
+ if(O.side){ const ct=run.clearT||1.5, vz=14/ct; O.side.position.z = isFinite(O.tVis)? 8-(t-O.tVis)*vz : 60; if(O.side.position.z>60)O.side.position.z=60; }
+ if(O.side) O.side.visible=st.view!=="other"; if(O.stuck) O.stuck.visible=st.view!=="other";
+ if(O.lead){ O.lead.position.x=f.lx; O.lead.children.forEach(c=>{if(c.name==="brake")c.material.color.set(f.vis?0xff2a2a:0x551111);}); }
+ if(O.blink) O.blink.forEach(m=>m.visible=Math.floor(t*2)%2===0);
+ // cameras
+ const L=V.len;
+ if(st.view==="chase"){ const back=rail?95:(cfg.veh==="bus"?L+10:L+9), up=rail?12:(cfg.veh==="bus"?7:5);
+  cam.fov=60; cam.position.set(x-back,up,O.lane-(rail?12:7)); cam.lookAt(x+(rail?70:30),0,O.lane); }
+ else if(st.view==="driver"){ const eye={car:[1.9,1.15],moto:[1.2,1.55],bus:[.8,2.5],train:[1.6,3.1]}[cfg.veh];
+  cam.fov=70; cam.position.set(x-eye[0]+1.5,eye[1],O.lane+(cfg.veh==="car"?-.35:0)); cam.lookAt(x+60,eye[1]-.25,O.lane); }
+ else { // the other road user
+  cam.fov=72;
+  if(hz.kind==="ped"){const pz=O.ped?O.ped.position.z:5.4;cam.position.set(hz.pos+.2,1.6,pz);cam.lookAt(hz.pos-40,1.1,1.75);}
+  else if(hz.kind==="side"){const sz=O.side.position.z;cam.position.set(hz.pos+1.5,1.2,sz+1.2);cam.lookAt(hz.pos-14,1,sz-20);}
+  else if(hz.kind==="lead"){cam.position.set(f.lx+12,1.6,10);cam.lookAt(x-6,1,O.lane);}
+  else if(hz.kind==="stall"){cam.position.set(hz.pos+14,1.6,10);cam.lookAt(x,1,O.lane);}
+  else if(hz.kind==="signal"){cam.position.set(hz.pos+8,1.7,4.5);cam.lookAt(x-20,2,0);}
+  else {cam.position.set(hz.pos+.4,1.15,-1.6);cam.lookAt(hz.pos-120,2.2,0);}
+ }
+ cam.updateProjectionMatrix();
+ R3.renderer.render(R3.scene,cam);
+ document.getElementById("v3tag").textContent=`${(f.v*3.6).toFixed(0)} km/h · ${esc(viewLabel(st.view))}`;
+}
+function viewLabel(v){ const s=SCN[st.scn]; const k=lastRun&&lastRun.hazard?lastRun.hazard.kind:(s.ped?"ped":s.side?"side":s.hw?"lead":s.hwy?"stall":s.signal?"signal":"obst");
+ if(v==="top")return tx(T.vTop); if(v==="chase")return tx(T.vChase); if(v==="driver")return tx(VEH[st.veh].kind==="rail"?T.vDriverRail:T.vDriver); return tx(T.vOther[k]); }
+function hazKind(){const s=SCN[st.scn];return s.ped?"ped":s.side?"side":s.hw?"lead":s.hwy?"stall":s.signal?"signal":"obst";}
+function syncViews(){
+ const ok=has3D(); if(!ok&&st.view!=="top") st.view="top";
+ document.getElementById("views").innerHTML=["top","chase","driver","other"].map(v=>`<button type="button" id="view-${v}" data-view="${v}" aria-pressed="${st.view===v}" ${v!=="top"&&!ok?"disabled":""}>${esc(viewLabel(v))}</button>`).join("");
+ const is3=st.view!=="top"; document.getElementById("cv").hidden=is3; document.getElementById("v3wrap").hidden=!is3;
+ const k=hazKind(); document.getElementById("viewcap").textContent=!ok?tx(T.no3d):st.view==="top"?tx(T.capTop):st.view==="chase"?tx(T.capChase):st.view==="driver"?tx(T.capDriver):tx(T.capOther[k]);
+ if(is3) size3d();
 }
 
 /* ---------- animation ---------- */
@@ -530,14 +688,15 @@ function render(){
  document.title=tx(T.title);
  $("board-link").href=BOARD_URL;
  syncSetup();info();path();outcomes();curves();
- sizeCanvas();const run=trial(cfgNow(),st.exp/100,st.seed,true);lastRun=run;draw(run.trace[0]||null,run);hud(run.trace[0]||null,run);
+ syncViews();sizeCanvas();const run=trial(cfgNow(),st.exp/100,st.seed,true);lastRun=run;draw(run.trace[0]||null,run);hud(run.trace[0]||null,run);
  $("one").className="result";$("one").textContent=lang==="th"?"กด ▶ เพื่อดูการวิ่งหนึ่งครั้ง":"Press ▶ to watch one run.";
 }
-function update(full){syncSetup();info();path();outcomes();if(full)curves();sizeCanvas();const run=trial(cfgNow(),st.exp/100,st.seed,true);lastRun=run;cancelAnimationFrame(anim);draw(run.trace[0]||null,run);hud(run.trace[0]||null,run);$("one").className="result";$("one").textContent=lang==="th"?"กด ▶ เพื่อดูการวิ่งหนึ่งครั้ง":"Press ▶ to watch one run.";}
+function update(full){syncSetup();info();path();outcomes();if(full)curves();syncViews();sizeCanvas();const run=trial(cfgNow(),st.exp/100,st.seed,true);lastRun=run;cancelAnimationFrame(anim);draw(run.trace[0]||null,run);hud(run.trace[0]||null,run);$("one").className="result";$("one").textContent=lang==="th"?"กด ▶ เพื่อดูการวิ่งหนึ่งครั้ง":"Press ▶ to watch one run.";}
 let curveTimer=null;function laterCurves(){clearTimeout(curveTimer);curveTimer=setTimeout(curves,120);}
 document.addEventListener("click",ev=>{
  const b=ev.target.closest("button");if(!b)return;
  if(b.dataset.veh){st.veh=b.dataset.veh;update(true);$("veh-"+st.veh)?.focus();}
+ else if(b.dataset.view){st.view=b.dataset.view;syncViews();if(lastRun)draw(lastRun.trace[0]||null,lastRun);document.getElementById("view-"+st.view)?.focus();}
  else if(b.id==="run")play();
  else if(b.id==="reroll"){st.seed=(st.seed*48271)%2147483647||7;play();}
 });
@@ -552,7 +711,7 @@ document.addEventListener("input",ev=>{
  if(t.id==="spd"){st.spd=+t.value;update(false);laterCurves();}
  if(t.id==="exp"){st.exp=+t.value;update(false);laterCurves();}
 });
-window.addEventListener("resize",()=>{sizeCanvas();if(lastRun)draw(lastRun.trace[0]||null,lastRun);});
+window.addEventListener("resize",()=>{sizeCanvas();size3d();if(lastRun)draw(lastRun.trace[0]||null,lastRun);});
 render();
 </script>
 </body>
