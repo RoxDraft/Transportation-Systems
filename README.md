@@ -5,7 +5,8 @@ Collection of transportation design models.
 | Project | Description |
 |---|---|
 | [Autonomous E-Bus Model](./Autonomous%20E-Bus%20Model/) | Interactive 3D autonomous electric bus with materials, costs, charging, maintenance and street simulation |
-| [Transport Safety Board](./safety-board/) | Bilingual case board: how air, sea, rail and helicopter accidents are investigated, the organisations involved, and turning points that changed standards, with sources |
+| [Transport Safety Board](./safety-board/) | Bilingual case board across road, rail, sea, air and space: investigators, licences, SAE automation levels, how driverless cars decide under uncertainty, and turning points, with sources |
+| [Safe Driving Simulator](./safety-board/simulator.html) | Choose car, motorcycle, bus or train; compare human drivers, Level 2–4 systems, ATP and GoA4 across randomised scenarios, with learning curves (teaching assumptions) |
 
 _Created by Claude (Anthropic)._
 

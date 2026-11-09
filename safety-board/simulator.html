@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="../shared/project-language.js?v=1.4.2" data-bilingual="true"></script>
+<title>Safe Driving Simulator</title>
+<meta name="description" content="ตัวจำลองเทียบคนขับกับระบบช่วยขับและระบบขับเองในสถานการณ์ไม่แน่นอน สำหรับรถยนต์ มอเตอร์ไซค์ รถเมล์ และรถไฟ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+*{box-sizing:border-box}body{margin:0}
+/* Layout: simulator console — setup column (vehicle, scenario, conditions, controller, training) beside the live track, outcomes, learning curves and training path below */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#16202b; --muted:#5a6878; --line:#d5dce4; --tag-bg:#e8edf2;
+  --accent:#e2640f; --accent-ink:#ffffff;
+  --ok:#2e7d32; --warn:#b3261e; --amber:#b07a00; --info:#2a6fb5;
+  --c-human:#e2640f; --c-l2:#2a6fb5; --c-l3:#7b4fbf; --c-l4:#2e7d32; --c-atp:#2a6fb5; --c-goa:#2e7d32;
+  --asphalt:#cfd6de; --curb:#eef1f4; --stripe:#ffffff; --sleeper:#a9937a;
+  --f-display:"Barlow Condensed","IBM Plex Sans Thai",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f151c; --panel:#17202a; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2a3644; --tag-bg:#1f2a36;
+  --accent:#ff8a3d; --accent-ink:#1a0f05; --ok:#6fcf73; --warn:#ff7b72; --amber:#e0ad3a; --info:#6aa8ec;
+  --c-human:#ff8a3d; --c-l2:#6aa8ec; --c-l3:#a988e6; --c-l4:#6fcf73; --c-atp:#6aa8ec; --c-goa:#6fcf73;
+  --asphalt:#2b3642; --curb:#1c252f; --stripe:#cfd6de; --sleeper:#5e5244; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151c; --panel:#17202a; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2a3644; --tag-bg:#1f2a36;
+  --accent:#ff8a3d; --accent-ink:#1a0f05; --ok:#6fcf73; --warn:#ff7b72; --amber:#e0ad3a; --info:#6aa8ec;
+  --c-human:#ff8a3d; --c-l2:#6aa8ec; --c-l3:#a988e6; --c-l4:#6fcf73; --c-atp:#6aa8ec; --c-goa:#6fcf73;
+  --asphalt:#2b3642; --curb:#1c252f; --stripe:#cfd6de; --sleeper:#5e5244; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:28px}
+.wrap>*{min-width:0}
+header.top{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--ink);padding-bottom:14px}
+header.top>div{min-width:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-size:clamp(32px,5.5vw,52px);line-height:1.05;margin:6px 0 8px;text-wrap:balance}
+.lede{color:var(--muted);max-width:66ch;margin:0}
+h2{font-family:var(--f-display);font-size:26px;line-height:1.1;margin:0 0 10px}
+.lbl{font:600 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;display:block}
+.lang{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden}
+.lang button{font:600 14px var(--f-mono);padding:7px 16px;background:transparent;color:var(--ink);border:0;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.back{font-size:13.5px;color:var(--ink)}
+.console{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.console{grid-template-columns:1fr}}
+.setup{background:var(--panel);border:1px solid var(--line);padding:16px;display:grid;gap:16px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.seg button{font:600 13.5px var(--f-body);padding:9px 4px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ctrls{display:grid;gap:6px}
+.ctrl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;cursor:pointer;background:var(--bg)}
+.ctrl input{margin-top:4px;accent-color:var(--cc)}
+.ctrl b{font-size:14px}
+.ctrl span{grid-column:2;font-size:12.5px;color:var(--muted);line-height:1.4}
+.ctrl:has(input:checked){border-color:var(--cc);box-shadow:inset 4px 0 0 var(--cc)}
+.range{display:grid;gap:2px}
+.range output{font:600 15px var(--f-mono);font-variant-numeric:tabular-nums}
+.range input{width:100%;accent-color:var(--accent)}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px}
+.stage{display:grid;gap:12px;min-width:0}
+.track-card{background:var(--panel);border:1px solid var(--line);padding:12px}
+canvas{display:block;width:100%;height:auto;border-radius:6px;background:var(--curb)}
+.hud{display:flex;flex-wrap:wrap;gap:6px 18px;font:600 13px var(--f-mono);margin-top:8px;font-variant-numeric:tabular-nums}
+.hud span{color:var(--muted);font-weight:400}
+.phase{padding:1px 8px;border-radius:999px;background:var(--tag-bg)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{font:600 14px var(--f-body);padding:9px 16px;border-radius:8px;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.result{font-size:14px;padding:10px 12px;border-left:4px solid var(--muted);background:var(--tag-bg);margin-top:10px}
+.result.ok{border-left-color:var(--ok)} .result.bad{border-left-color:var(--warn)} .result.mid{border-left-color:var(--amber)}
+.mc{background:var(--panel);border:1px solid var(--line);padding:14px;display:grid;gap:10px}
+.stack{display:flex;height:28px;border-radius:5px;overflow:hidden;background:var(--tag-bg)}
+.stack span{display:block;height:100%}
+.keys{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.keys b{color:var(--ink);font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.keys i{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px;background:var(--k);font-style:normal}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.facts div{border-left:3px solid var(--line);padding-left:10px;font-size:13px;color:var(--muted)}
+.facts b{display:block;font:700 22px var(--f-display);color:var(--ink);font-variant-numeric:tabular-nums}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);padding:16px;min-width:0}
+.card h3{margin:0 0 6px;font-size:17px}
+.card p{margin:0 0 8px;font-size:14px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.code{font:12.5px var(--f-mono);background:var(--tag-bg);padding:2px 7px;border-radius:4px}
+.pl{display:grid;gap:5px;margin:0;padding:0;list-style:none;font-size:14px}
+.pl li{display:grid;grid-template-columns:16px 1fr;gap:6px}
+.pl li::before{content:"!";color:var(--warn);font:700 13px var(--f-mono)}
+.chart svg{display:block;width:100%;height:auto}
+.chart text{font-family:var(--f-mono);fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;margin-top:6px}
+.legend span::before{content:"";display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:4px;background:var(--k)}
+.path{display:grid;gap:14px}
+.ptrack{display:grid;gap:6px}
+.steps{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:4px}
+.steps div{font-size:12.5px;padding:8px 8px 6px;border-top:4px solid var(--line);color:var(--muted);min-width:0}
+.steps div.done{border-top-color:var(--pc);color:var(--ink)}
+.steps div.now{border-top-color:var(--pc);color:var(--ink);background:var(--tag-bg);font-weight:600}
+.steps small{display:block;font:11px var(--f-mono);color:var(--muted);font-weight:400}
+@media (max-width:640px){.steps{grid-template-columns:1fr 1fr}}
+.note{font-size:12.5px;color:var(--muted)}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+ <header class="top">
+  <div>
+   <div class="eyebrow" data-i="eyebrow"></div>
+   <h1 data-i="title"></h1>
+   <p class="lede" data-i="lede"></p>
+  </div>
+  <div style="display:grid;gap:8px;justify-items:end">
+   <a class="back" id="board-link" href="./index.html" data-i="backBoard"></a>
+  </div>
+ </header>
+
+ <div class="console">
+  <div class="setup">
+   <div><span class="lbl" data-i="lVeh"></span><div class="seg" id="veh" role="group"></div></div>
+   <div><label class="lbl" for="scn" data-i="lScn"></label><select id="scn"></select><p class="note" id="scn-desc" style="margin:6px 0 0"></p></div>
+   <div class="row2">
+    <div><label class="lbl" for="surf" data-i="lSurf"></label><select id="surf"></select></div>
+    <div><label class="lbl" for="light" data-i="lLight"></label><select id="light"></select></div>
+   </div>
+   <label class="chk" id="atp-row"><input type="checkbox" id="atpfail"><span data-i="atpFail"></span></label>
+   <div class="range"><label class="lbl" for="spd" data-i="lSpd" style="margin:0"></label><output id="spd-o"></output><input type="range" id="spd"></div>
+   <div><span class="lbl" data-i="lCtrl"></span><div class="ctrls" id="ctrls"></div></div>
+   <div class="range"><label class="lbl" for="exp" id="exp-l" style="margin:0"></label><output id="exp-o"></output><input type="range" id="exp" min="0" max="100" step="1" value="40"></div>
+  </div>
+
+  <div class="stage">
+   <div class="track-card">
+    <canvas id="cv" width="900" height="300" aria-label="Simulation view"></canvas>
+    <div class="hud" id="hud"></div>
+    <div class="btns">
+     <button class="btn" type="button" id="run" data-i="run"></button>
+     <button class="btn ghost" type="button" id="reroll" data-i="reroll"></button>
+    </div>
+    <div class="result" id="one"></div>
+   </div>
+   <div class="mc">
+    <h2 style="margin:0" data-i="mcH"></h2>
+    <p class="note" style="margin:0" data-i="mcP"></p>
+    <div class="stack" id="stack"></div>
+    <div class="keys" id="mckeys"></div>
+    <div class="facts" id="facts"></div>
+   </div>
+  </div>
+ </div>
+
+ <section class="grid2">
+  <div class="card">
+   <h3 id="ctrl-h"></h3>
+   <p id="ctrl-learn"></p>
+   <span class="lbl" data-i="std"></span><div class="chips" id="ctrl-std" style="margin-bottom:12px"></div>
+   <span class="lbl" data-i="probs"></span><ul class="pl" id="ctrl-prob"></ul>
+  </div>
+  <div class="card chart">
+   <h3 data-i="curveH"></h3>
+   <p data-i="curveP"></p>
+   <div id="curve"></div>
+   <div class="legend" id="curve-leg"></div>
+  </div>
+ </section>
+
+ <section class="card path">
+  <div><h2 data-i="pathH"></h2><p class="note" style="margin:0" data-i="pathP"></p></div>
+  <div class="ptrack"><span class="lbl" data-i="pathHuman"></span><div class="steps" id="path-h"></div></div>
+  <div class="ptrack"><span class="lbl" data-i="pathSys"></span><div class="steps" id="path-s"></div></div>
+ </section>
+
+ <footer data-i="foot"></footer>
+</div>
+
+<script>
+const BOARD_URL="./index.html";
+const T={
+ eyebrow:{th:"ตัวจำลอง · ประกอบบอร์ดความปลอดภัย",en:"Simulator · companion to the safety board"},
+ title:{th:"ห้องจำลองการขับขี่ปลอดภัย",en:"Safe Driving Simulator"},
+ lede:{th:"เลือกยานพาหนะ สถานการณ์ และผู้ควบคุม ตั้งแต่คนขับมือใหม่ ระบบช่วยขับ (copilot) ไปจนถึงระบบขับเอง แล้วดูว่าแต่ละแบบรับมือความไม่แน่นอนอย่างไร ทั้งในการวิ่งครั้งเดียว และเมื่อสุ่มซ้ำหลายร้อยครั้ง",en:"Pick a vehicle, a situation and a controller, from a learner driver through driver assistance (copilot) to self-driving systems, and see how each handles uncertainty, in one run and across hundreds of randomised runs."},
+ backBoard:{th:"← กลับไปบอร์ดความปลอดภัย",en:"← Back to the safety board"},
+ lVeh:{th:"ยานพาหนะ",en:"Vehicle"},lScn:{th:"สถานการณ์",en:"Situation"},lSurf:{th:"ผิวทาง",en:"Surface"},lLight:{th:"แสง",en:"Light"},lSpd:{th:"ความเร็วตั้งต้น",en:"Starting speed"},lCtrl:{th:"ผู้ควบคุม",en:"Controller"},
+ atpFail:{th:"ระบบสัญญาณ/ATP ขัดข้อง (แบบเหตุ Toledo)",en:"Signalling / ATP failure (like Toledo)"},
+ expHuman:{th:"ประสบการณ์คนขับ",en:"Driver experience"},expSys:{th:"ระดับการฝึกของระบบ (ข้อมูล + การทดสอบ)",en:"System training (data + testing)"},
+ hours:{th:"ชม.",en:"h"},mkm:{th:"ล้าน กม. เทียบเท่า",en:"million km equivalent"},
+ run:{th:"▶ เล่นจำลอง",en:"▶ Run"},reroll:{th:"สุ่มสถานการณ์ใหม่",en:"New random run"},
+ mcH:{th:"สุ่มซ้ำ 400 ครั้ง",en:"400 randomised runs"},
+ mcP:{th:"ทุกครั้งสุ่มระยะที่โผล่ เวลาตอบสนอง การเสียสมาธิ และการตรวจจับพลาด ตามค่าสมมติของผู้ควบคุมที่เลือก",en:"Each run randomises reveal distance, reaction time, distraction and missed detections, using the selected controller's assumed values."},
+ oSafe:{th:"หยุด/ผ่านได้ปลอดภัย",en:"Safe"},oNear:{th:"เฉียดฉิว (< 2 ม.)",en:"Near miss (< 2 m)"},oLight:{th:"ชนเบา (< 15 กม./ชม.)",en:"Light impact (< 15 km/h)"},oSerious:{th:"ชนรุนแรง (≥ 15 กม./ชม.)",en:"Serious impact (≥ 15 km/h)"},oMrc:{th:"ระบบจอดเอง / ไม่ออกเดินทาง",en:"System stopped / trip not started"},
+ fReact:{th:"เวลาตอบสนองเฉลี่ย",en:"Mean reaction"},fImpact:{th:"ความเร็วชนเฉลี่ย (เมื่อชน)",en:"Mean impact speed (if hit)"},fLost:{th:"เวลาที่เสียไปจากการระวัง",en:"Time spent being cautious"},fMiss:{th:"ตรวจจับพลาด / ไม่ได้มอง",en:"Missed / not looking"},
+ std:{th:"มาตรฐานอ้างอิง",en:"Standards"},probs:{th:"ปัญหาที่อาจเกิดขึ้น",en:"What can go wrong"},
+ curveH:{th:"เส้นการเรียนรู้: ฝึกมากขึ้น ปลอดภัยขึ้นแค่ไหน",en:"Learning curves: how much safer with training"},
+ curveP:{th:"แกนนอนคือระดับการฝึก (คน: ชั่วโมงขับ, ระบบ: ข้อมูลและการทดสอบ) แกนตั้งคือ % ที่ไม่ชน ในสถานการณ์และสภาพที่เลือกอยู่ เส้นประแนวตั้งคือระดับที่ตั้งไว้",en:"Horizontal: training level (people: hours driven; systems: data and testing). Vertical: % of runs with no impact in the current situation and conditions. The dashed line marks the current setting."},
+ pathH:{th:"เส้นทางสู่การขับขี่อย่างปลอดภัย",en:"The road to driving safely"},
+ pathP:{th:"ขั้นตอนของคนอิงข้อกำหนดใบขับขี่ไทย ขั้นตอนของระบบอิงแนวทางที่บริษัทรถไร้คนขับใช้ ระยะทางในแต่ละขั้นเป็นค่าประกอบภาพ",en:"The human steps follow Thai licensing rules; the system steps follow the path driverless-car companies use. Distances per step are illustrative."},
+ pathHuman:{th:"คน",en:"Human"},pathSys:{th:"ระบบขับเอง",en:"Self-driving system"},
+ foot:{th:"ตัวเลขทั้งหมดในตัวจำลองเป็นค่าสมมติเพื่อการเรียนรู้หลักการ ได้แก่ เวลาตอบสนอง โอกาสตรวจจับ การเบรก และระยะมองเห็น ไม่ใช่ผลทดสอบของระบบหรือผลิตภัณฑ์จริงตัวใด ฟิสิกส์การเบรกใช้ระยะหยุด = v·t + v²/2a",en:"Every number in this simulator is a teaching assumption: reaction times, detection rates, braking and sight distances. None are test results for a real system or product. Braking physics uses stopping distance = v·t + v²/2a."},
+ phase:{idle:{th:"พร้อม",en:"Ready"},cruise:{th:"วิ่งปกติ",en:"Cruising"},caution:{th:"ชะลอระวัง",en:"Slowing as a precaution"},react:{th:"กำลังตอบสนอง",en:"Reacting"},brake:{th:"เบรก",en:"Braking"},stop:{th:"หยุดแล้ว",en:"Stopped"},hit:{th:"ชน",en:"Impact"},clear:{th:"ผ่านไปแล้ว",en:"Passed"},mrc:{th:"ไม่ออกเดินทาง",en:"Not departing"}},
+ hSpeed:{th:"ความเร็ว",en:"Speed"},hDist:{th:"ระยะถึงอันตราย",en:"To hazard"},hPhase:{th:"สถานะ",en:"Phase"}
+};
+const VEH={
+ car:{th:"รถยนต์",en:"Car",a:7.0,len:4.6,w:1.8,v:[20,130,60],kind:"road"},
+ moto:{th:"มอเตอร์ไซค์",en:"Motorcycle",a:6.0,len:2.1,w:0.8,v:[20,130,50],kind:"road"},
+ bus:{th:"รถเมล์",en:"Bus",a:5.0,len:12,w:2.5,v:[20,100,50],kind:"road"},
+ train:{th:"รถไฟ",en:"Train",a:1.2,len:120,w:3,v:[40,250,100],kind:"rail"}
+};
+const SCN={
+ ped:{kind:"road",th:"คนเดินออกมาจากหลังรถเมล์ที่จอดอยู่",en:"Pedestrian steps out from behind a stopped bus",d:{th:"มองเห็นรถเมล์ได้ไกล แต่คนจะโผล่มาให้เห็นเมื่อเหลือ 12–25 ม. และมีคนออกมาจริงราว 4 ใน 10 ครั้ง",en:"The bus is visible from afar, but a person appears only at 12–25 m, and does so in about 4 of 10 runs."},ped:1},
+ lead:{kind:"road",th:"รถคันหน้าเบรกกะทันหัน",en:"Car ahead brakes hard",d:{th:"ระยะห่างขึ้นกับผู้ควบคุม คันหน้าเบรกเต็มที่ในเวลาสุ่ม",en:"Following gap depends on the controller; the car ahead brakes fully at a random moment."},hw:1},
+ junc:{kind:"road",th:"รถฝ่าไฟแดงตัดหน้าที่ทางแยก",en:"Red-light runner at a junction",d:{th:"รถจากด้านข้างโผล่ให้เห็นที่ 25–45 ม. (กลางคืนสั้นกว่า) และผ่านจุดตัดภายใน 1.2–1.8 วินาที",en:"A side car becomes visible at 25–45 m (less at night) and clears the conflict point within 1.2–1.8 s."},side:1},
+ stall:{kind:"road",th:"รถเสียจอดนิ่งบนทางหลวง",en:"Stalled car on the highway",d:{th:"กลางวันเห็นได้ 150–250 ม. กลางคืนตาคนเห็นได้แค่ระยะไฟหน้า 60–90 ม. ส่วนลิดาร์และเรดาร์ไม่ต้องใช้แสง ฝนลดระยะลงอีก",en:"Visible at 150–250 m by day; at night eyes see only as far as headlights, 60–90 m, while lidar and radar don't need light; rain cuts range further."},hwy:1},
+ sig:{kind:"rail",th:"สัญญาณไฟแดงข้างหน้า",en:"Red signal ahead",d:{th:"สัญญาณเหลืองก่อนหน้าเตือนให้เริ่มเบรกตั้งแต่ไกล คนขับอาจพลาดไม่เห็น (SPAD) ส่วน ATP บังคับเบรกให้หยุดก่อนไฟแดงเสมอ",en:"An earlier yellow signal warns the driver to start braking far ahead. A driver can miss it (SPAD); ATP always enforces a stop before the red."},signal:1},
+ lx:{kind:"rail",th:"รถติดค้างบนจุดตัดทางรถไฟ",en:"Vehicle stuck on a level crossing",d:{th:"มองเห็นได้ 300–500 ม. กลางวัน กลางคืนสั้นลง ATP มองไม่เห็นสิ่งกีดขวาง",en:"Visible at 300–500 m by day, less at night. ATP can't see obstacles."},obst:1}
+};
+const CTRL={
+ human:{kind:"road",cc:"--c-human",th:"คนขับ",en:"Human driver",s:{th:"ตาและประสบการณ์ ระยะห่างและการระวังดีขึ้นตามชั่วโมงขับ",en:"Eyes and experience; gaps and caution improve with hours driven"},learner:"human"},
+ l2:{kind:"road",cc:"--c-l2",th:"Copilot · ระดับ 2",en:"Copilot · Level 2",s:{th:"ACC + รักษาเลน + AEB คนต้องเฝ้าถนนตลอด",en:"ACC + lane centring + AEB; the human must watch"},learner:"sys"},
+ l3:{kind:"road",cc:"--c-l3",th:"Autopilot ตามเงื่อนไข · ระดับ 3",en:"Conditional autopilot · Level 3",s:{th:"ขับเองบนทางหลวงช่วงกลางวันและถนนแห้ง นอกนั้นส่งคืนให้คน",en:"Drives itself on dry highways by day; otherwise hands back"},learner:"sys"},
+ l4:{kind:"road",cc:"--c-l4",th:"Autonomous · ระดับ 4",en:"Autonomous · Level 4",s:{th:"ไม่มีคนขับในพื้นที่ที่กำหนด ถ้าเกินขอบเขต จะจอดเอง",en:"No driver inside its area; beyond its limits it stops itself"},learner:"sys"},
+ rhuman:{kind:"rail",cc:"--c-human",th:"พนักงานขับ",en:"Train driver",s:{th:"มองสัญญาณข้างทางและทางข้างหน้าเอง",en:"Reads lineside signals and the track ahead"},learner:"human"},
+ atp:{kind:"rail",cc:"--c-atp",th:"พนักงานขับ + ATP / ETCS",en:"Driver + ATP / ETCS",s:{th:"ATP บังคับไม่ให้ฝ่าสัญญาณ แต่ไม่เห็นสิ่งกีดขวาง",en:"ATP won't let the train pass a red, but can't see obstacles"},learner:"human"},
+ goa4:{kind:"rail",cc:"--c-goa",th:"ไร้คนขับ · GoA4",en:"Driverless · GoA4",s:{th:"ระบบควบคุมเต็มรูป มีเซนเซอร์ตรวจสิ่งกีดขวางระยะจำกัด",en:"Fully automatic, with limited-range obstacle detection"},learner:"sys"}
+};
+const INFO={
+ human:{learn:{th:"เรียนจากอบรมและสอบใบขับขี่ แล้วสะสมประสบการณ์ ทักษะสำคัญที่สุดคือการคาดการณ์อันตราย (hazard perception) ซึ่งมือใหม่ยังทำได้น้อย หลายประเทศจึงมีข้อสอบเรื่องนี้โดยเฉพาะ และใช้ใบขับขี่แบบเลื่อนขั้น",en:"Learns through lessons and the licence test, then experience. The key skill is hazard perception, which learners lack; many countries test it directly and use graduated licences."},std:["Vienna Convention 1968","EU Directive 2006/126/EC","UK hazard perception test",{th:"ข้อสอบ ขบ. 50 ข้อ",en:"Thai DLT 50-question test"}],prob:[{th:"มือใหม่มองไม่ออกว่าอันตรายจะมาจากไหน เว้นระยะสั้น",en:"Learners miss where danger will come from and follow too closely"},{th:"คนมีประสบการณ์มักมั่นใจเกินและขับเร็ว",en:"Experienced drivers get overconfident and speed"},{th:"เสียสมาธิกับโทรศัพท์ ง่วง เมา ได้ทุกระดับประสบการณ์",en:"Phones, fatigue and alcohol affect any experience level"}]},
+ l2:{learn:{th:"วิศวกรออกแบบกฎควบคุม ส่วนการรับรู้ (กล้อง เรดาร์) ฝึกด้วย machine learning ทดสอบในสนามตามโปรโตคอล NCAP ระบบไม่ได้คาดการณ์คนที่ซ่อนอยู่ มันตอบสนองเมื่อเห็นแล้วเท่านั้น และคนต้องรับผิดชอบการขับ",en:"Engineers design the control rules; perception (camera, radar) is trained with machine learning and tested on tracks under NCAP protocols. It reacts only to what it sees and doesn't anticipate hidden people; the human remains responsible."},std:["SAE J3016 L2","UN R79","UN R152 (AEB)","UN R171 (DCAS)","ISO 26262","Euro NCAP"],prob:[{th:"คนวางใจเกิน (complacency) แล้วละสายตา ตอบสนองช้ากว่าขับเอง",en:"Complacency: people look away and react slower than when driving themselves"},{th:"ชื่อการตลาดอย่าง Autopilot ทำให้เข้าใจว่าขับเองได้",en:"Marketing names like 'Autopilot' suggest it drives itself"},{th:"เปิดใช้นอกสภาพที่ออกแบบไว้ อ่อนกับรถตัดข้างและวัตถุจอดนิ่ง",en:"Used outside its design conditions; weak on crossing traffic and stationary objects"},{th:"เบรกเองโดยไม่มีเหตุ (phantom braking)",en:"Phantom braking"}]},
+ l3:{learn:{th:"ระบบต้องพิสูจน์ความปลอดภัยใน ODD แคบ เช่น ทางหลวง กลางวัน ถนนแห้ง ทดสอบตามสถานการณ์มาตรฐาน และต้องขอให้คนรับช่วงล่วงหน้าหลายวินาที",en:"Must prove safety inside a narrow ODD such as dry highways by day, be tested against standard scenarios, and request a takeover several seconds ahead."},std:["SAE J3016 L3","UN R157 (ALKS)","ISO 26262","ISO 21448 (SOTIF)","ISO 34502"],prob:[{th:"การรับช่วงต่อใช้เวลาหลายวินาที คนอาจไม่พร้อม",en:"Takeovers take seconds and people may not be ready"},{th:"ใช้ได้ในเงื่อนไขแคบ ฝนตกหรือออกจากทางหลวงต้องคืนให้คน",en:"Narrow conditions: rain or leaving the highway hands control back"},{th:"คำถามว่าใครรับผิดชอบเมื่อเกิดเหตุระหว่างส่งต่อ",en:"Unclear liability during handovers"}]},
+ l4:{learn:{th:"ฝึกจากข้อมูลขับจริงหลายล้านกิโลเมตร แล้วจำลองซ้ำหลายพันล้านกิโลเมตรรวมเหตุหายาก ทดสอบในสนามปิด ขับจริงโดยมีคนคุม แล้วจึงไร้คนขับใน ODD พร้อมเอกสารยืนยันความปลอดภัย (safety case)",en:"Trains on millions of real kilometres, then billions of simulated ones including rare events; closed-course testing, supervised public driving, then driverless inside the ODD with a documented safety case."},std:["SAE J3016 L4","UL 4600","ISO 21448","ISO 26262",{th:"ใบอนุญาตรัฐ (เช่น CA DMV)",en:"State permits (e.g. CA DMV)"},"NHTSA crash reporting"],prob:[{th:"เหตุหายากที่ไม่เคยเห็นในข้อมูล (long tail)",en:"Rare events never seen in the data (long tail)"},{th:"ฝนหนักและน้ำท่วมลดประสิทธิภาพเซนเซอร์",en:"Heavy rain and flooding degrade sensors"},{th:"ระวังเกินจนกีดขวางจราจร หรือจอดในจุดไม่ปลอดภัย",en:"Over-caution that blocks traffic, or stopping somewhere unsafe"},{th:"ผู้ช่วยทางไกลตอบช้า",en:"Slow remote assistance"}]},
+ rhuman:{learn:{th:"ฝึกเป็นพนักงานขับ ได้ใบอนุญาตและใบรับรองเฉพาะเส้นทางและรุ่นรถ ต้องจำเส้นทาง จุดสัญญาณ และโค้ง",en:"Trains for a driver licence plus certificates for each route and train type, learning the route, signals and curves."},std:["EU Directive 2007/59/EC","49 CFR 240 (US)"],prob:[{th:"ฝ่าสัญญาณไฟแดง (SPAD) จากความเหนื่อยล้าหรือเสียสมาธิ",en:"Passing signals at danger (SPAD) through fatigue or distraction"},{th:"รถไฟใช้ระยะหยุดหลายร้อยเมตร มองเห็นแล้วก็มักหยุดไม่ทัน",en:"Trains need hundreds of metres to stop; seeing a hazard often isn't enough"}]},
+ atp:{learn:{th:"ATP เป็นระบบวิศวกรรม ไม่ได้เรียนรู้จากข้อมูล รู้ตำแหน่งและสัญญาณจากราง แล้วคำนวณเส้นโค้งเบรก ถ้าคนขับไม่เบรก ระบบเบรกเอง ต้องผ่านมาตรฐานความปลอดภัยระดับสูงสุด (SIL 4)",en:"ATP is engineered, not learned from data. It knows position and signal aspects from the track, computes a braking curve and brakes if the driver doesn't. It must meet the highest safety integrity level (SIL 4)."},std:["ETCS / ERTMS","EN 50126 · 50128 · 50129","SIL 4","PTC (US)"],prob:[{th:"ไม่เห็นรถหรือคนบนราง",en:"Can't see vehicles or people on the track"},{th:"เมื่อระบบล่ม การสั่งการด้วยคนเสี่ยงผิดพลาด เช่นเหตุ Toledo",en:"When it fails, manual operation invites errors, as at Toledo"}]},
+ goa4:{learn:{th:"ระบบเดินรถอัตโนมัติ (ATO) ทำงานบน ATP และ CBTC ส่วนการตรวจสิ่งกีดขวางเป็นส่วนเสริมที่ยังจำกัดระยะ จึงต้องพึ่งรั้วกั้นและประตูกั้นชานชาลา",en:"Automatic train operation (ATO) runs on ATP and CBTC. Obstacle detection is an add-on with limited range, so it relies on fencing and platform screen doors."},std:["IEC 62290 (GoA)","IEEE 1474 (CBTC)","EN 50126 · 50128 · 50129"],prob:[{th:"ระยะตรวจจับสั้นกว่าระยะหยุดที่ความเร็วสูง",en:"Detection range is shorter than stopping distance at speed"},{th:"ใช้ได้ดีในระบบปิด เช่น รถไฟฟ้าในเมือง มากกว่าเส้นทางที่มีจุดตัดถนน",en:"Works best on closed systems like metros, not lines with road crossings"}]}
+};
+const SURF={dry:{th:"แห้ง",en:"Dry",m:1,vis:1,rm:1},wet:{th:"ฝนตก / เปียก",en:"Rain / wet",m:.65,vis:.75,rm:.8},flood:{th:"น้ำขัง",en:"Standing water",m:.35,vis:.65,rm:.75}};
+const LIGHT={day:{th:"กลางวัน",en:"Day"},night:{th:"กลางคืน",en:"Night"}};
+const PATH_H=[{th:"ตรวจร่างกาย สายตา ปฏิกิริยา",en:"Medical, vision and reaction checks",h:0},{th:"อบรม 5 ชม. + สอบข้อเขียน/ปฏิบัติ",en:"5 h training + written and practical tests",h:5},{th:"ใบขับขี่ชั่วคราว 2 ปี",en:"2-year temporary licence",h:60},{th:"ใบขับขี่ 5 ปี",en:"5-year licence",h:300},{th:"ขับเชิงป้องกัน มองอันตรายล่วงหน้า",en:"Defensive driving, anticipating hazards",h:900}];
+const PATH_S=[{th:"เก็บและติดป้ายข้อมูล",en:"Collect and label data",k:0.1},{th:"ทดสอบในโลกจำลอง",en:"Simulation testing",k:1},{th:"สนามทดสอบปิด",en:"Closed-course testing",k:3},{th:"ถนนจริงมีคนคุม",en:"Public roads with safety driver",k:10},{th:"ไร้คนขับในพื้นที่จำกัด",en:"Driverless in a limited area",k:30},{th:"ขยายพื้นที่และสภาพอากาศ",en:"Expand area and weather",k:100}];
+
+let lang=(globalThis.ProjectLanguage&&ProjectLanguage.language)==="en"?"en":"th";
+const tx=o=>typeof o==="string"?o:(o[lang]??o.en);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=id=>document.getElementById(id);
+const st={veh:"car",scn:"ped",surf:"dry",light:"day",ctrl:"human",spd:60,exp:40,atpfail:false,seed:7};
+
+/* ---------- random ---------- */
+function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+const U=(r,a,b)=>a+(b-a)*r();
+const N=(r,m,sd)=>{let u=r()||1e-9,v=r();return m+sd*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+
+/* ---------- controller model (teaching assumptions) ---------- */
+function inODD(c,cfg){
+ const s=SCN[cfg.scn];
+ if(c==="l3") return (s.hwy||s.hw) && cfg.surf==="dry" && cfg.light==="day" && cfg.v<=95;
+ if(c==="l4") return cfg.surf!=="flood";
+ if(c==="goa4") return true;
+ return true;
+}
+function profile(c,e,cfg,r){
+ const s=SCN[cfg.scn], night=cfg.light==="night";
+ const human=(eh,extra=0)=>({react:Math.max(.7,N(r,(s.hw?1.6-.6*eh:2.0-.8*eh),.25))+(night&&!s.hw?.3:0)+extra,distract:.12-.07*eh,antic:.1+.7*eh,hw:Math.max(.6,N(r,.9+1.2*eh,.2)),brk:(cfg.veh==="moto"?.7+.3*eh:.85+.15*eh),miss:0,late:.35,sensor:"eye"});
+ if(c==="human"||c==="rhuman"){const p=human(e);if(c==="rhuman"){p.miss=s.signal?.06-.05*e:0;p.hw=2;}return p;}
+ if(c==="atp"){const p=human(e);p.miss=s.signal?.06-.05*e:0;p.atp=!cfg.atpfail;return p;}
+ if(c==="l2"){
+  let det=s.ped?(night?.6+.3*e:.85+.12*e):s.side?.5+.4*e:s.hwy?.6+.3*e:.97+.02*e;
+  if(cfg.surf!=="dry")det*=.9;
+  return {sys:1,react:N(r,.45,.08),det,antic:0,hw:1.8,brk:1,fallback:{react:Math.max(1,N(r,2.6,.4)),distract:.2,late:.35},late:.35,sensor:"cam"};
+ }
+ if(c==="l3"){
+  if(!inODD("l3",cfg)) return {...human(.5),handback:1};
+  return {sys:1,react:N(r,.3,.05),det:.9+.09*e,antic:.4+.4*e,hw:2.0,brk:1,fallback:{react:U(r,4,8),distract:0,late:.35},sensor:"cam"};
+ }
+ if(c==="l4"){
+  if(!inODD("l4",cfg)) return {mrc:1};
+  let det=.93+.069*e; if(cfg.surf==="wet")det-=.03;
+  return {sys:1,react:N(r,.25,.04),det,antic:.6+.39*e,hw:2.2,brk:1,fallback:null,late:.3,sensor:"lidar"};
+ }
+ if(c==="goa4"){
+  if(cfg.atpfail) return {mrc:1};
+  return {sys:1,react:.5,det:.85+.14*e,antic:0,hw:2,brk:1,atp:1,range:night?120:250,fallback:null,late:.0};
+ }
+}
+
+/* ---------- one trial ---------- */
+function trial(cfg,e,seed,record){
+ const r=rng(seed), s=SCN[cfg.scn], V=VEH[cfg.veh], sf=SURF[cfg.surf], night=cfg.light==="night";
+ const p=profile(cfg.ctrl,e,cfg,r);
+ const a=V.a*sf.m*(cfg.veh==="train"?(cfg.surf==="dry"?1:.8):1);
+ const v0=cfg.v/3.6;
+ const out={outcome:"safe",impact:0,react:null,miss:false,lost:0,gapMin:1e9,trace:[],hazard:null,start:0};
+ if(p.mrc){out.outcome="mrc";return out;}
+ // scenario geometry
+ let hazPos, reveal, present=true, clearT=Infinity, leadV=null, leadBrakeT=null, gap0=0, visKnown=null;
+ // what each sensor can see: eyes rely on headlights at night; cameras lose some range; lidar/radar don't need light but lose a little in rain
+ const sen=p.sensor||"eye";
+ const rainMul=sen==="lidar"?1-(1-sf.vis)*.5:sf.vis;
+ const nightMul=!night?1:sen==="eye"?.7:sen==="cam"?.8:1;
+ if(s.ped){reveal=U(r,12,25);present=r()<.4;hazPos=110;visKnown=80;}
+ if(s.side){reveal=U(r,25,45)*nightMul*rainMul;hazPos=110;clearT=U(r,1.2,1.8);visKnown=60;}
+ if(s.hwy){reveal=(night&&sen==="eye"?U(r,60,90):U(r,150,250)*nightMul)*rainMul;hazPos=Math.max(220,v0*v0/(2*a)+v0*3+60);}
+ if(s.hw){gap0=Math.max(4,p.hw*v0);leadV=v0;leadBrakeT=U(r,2,5);hazPos=gap0;}
+ if(s.signal){reveal=v0*v0/(2*a*.7)+200;hazPos=reveal+v0*4+200;}
+ if(s.obst){reveal=(night?U(r,150,250):U(r,300,500));hazPos=Math.max(900,reveal+300);}
+ if(p.range&&s.obst) reveal=Math.min(reveal,p.range);
+ out.hazard={pos:hazPos,kind:s.ped?"ped":s.side?"side":s.hw?"lead":s.hwy?"stall":s.signal?"signal":"obst",present};
+ // decide detection for this trial
+ let sysSees = p.sys? r()<p.det : false;
+ let distracted = !p.sys && r()<(p.distract||0);
+ let missSignal = s.signal && r()<(p.miss||0);
+ let anticip = (s.ped||s.side) && r()<(p.antic||0);
+ let reactT;
+ if(p.sys && sysSees) reactT=p.react;
+ else if(p.sys && p.fallback){ reactT=p.fallback.react + (r()<(p.fallback.distract||0)?U(r,1,2):0); }
+ else if(p.sys && !p.fallback){ reactT=null; } // no human: late detection only
+ else reactT=p.react+(distracted?U(r,1,2.5):0);
+ out.miss = (p.sys&&!sysSees) || distracted || missSignal;
+ // precaution: slow so we can stop within a margin before the hidden area
+ let vTarget=v0;
+ if(anticip&&s.ped){const d=Math.max(6,10),t=(p.sys?p.react:p.react*.8);vTarget=Math.min(v0,a*p.brk*(-t+Math.sqrt(t*t+2*d/(a*p.brk))) + 2);}
+ if(anticip&&s.side){vTarget=v0*.85;if(reactT)reactT=Math.max(.3,reactT-.3);}
+ // simulate
+ const dt=.02; let x=0,v=v0,t=0,phase="cruise",detT=null,braking=false,brakeA=a*p.brk, lx=hazPos, lv=leadV, tEnd=60;
+ if(s.hw){x=0;}
+ const startPos=s.hw?0:(s.ped||s.side?hazPos-100:s.signal?0:hazPos-Math.max(reveal+150,v0*6));
+ x=s.hw?0:startPos; out.start=startPos;
+ let hitDone=false, hazardVisibleT=null, cautious=false;
+ for(t=0;t<tEnd;t+=dt){
+  // hazard visibility / onset
+  let dist = lx - x - (s.hw?V.len:0);
+  if(s.hw){ if(t>=leadBrakeT){lv=Math.max(0,lv-a*.95*dt);} lx+=lv*dt; dist=lx-x-V.len; }
+  const visibleNow = s.hw ? t>=leadBrakeT : (present && dist<=reveal);
+  if(visibleNow && hazardVisibleT===null) hazardVisibleT=t;
+  // atp enforcement for signals
+  if(p.atp && s.signal && !braking){ const need=v*v/(2*a*.9); if(dist<=need+v*.5+20){braking=true;brakeA=a*.95;phase="brake";if(detT===null)detT=t;} }
+  // detection
+  if(detT===null && hazardVisibleT!==null){
+   let rt=reactT;
+   if(rt===null){ // driverless miss: notices late at a fraction of the reveal distance
+     if(dist <= reveal*(p.late||.3)) {detT=t; rt=.3;}
+   } else if(missSignal){ if(dist<=reveal*.3){detT=t;} }
+   else if(t-hazardVisibleT>=rt) detT=t;
+   if(detT!==null){braking=true;phase="brake";out.react=(missSignal||reactT===null)?(t-hazardVisibleT):rt;}
+   else phase="react";
+  }
+  // precautionary slowing
+  if(!braking && vTarget<v0 && dist<visKnown+40 && dist>0 && (s.ped||s.side)){ if(v>vTarget){v=Math.max(vTarget,v-a*.45*dt);} cautious=true; phase="caution"; out.lost+=dt*(1-v/v0); }
+  if(braking) v=Math.max(0,v-brakeA*dt);
+  x+=v*dt;
+  dist = s.hw? lx-x-V.len : lx-x;
+  if(record && Math.round(t/dt)%2===0) out.trace.push({t,x,v,lx,phase,vis:hazardVisibleT!==null,haz:present});
+  // collision checks
+  if(s.side){
+   const inZone = hazardVisibleT!==null && (t-hazardVisibleT)<clearT;
+   if(dist<=0 && dist>-V.len && !hitDone){ if(inZone){out.outcome="hit";out.impact=v*3.6;hitDone=true;phase="hit";} else if(hazardVisibleT!==null && (t-hazardVisibleT)<clearT+.5) out.sideNear=1; }
+   if(record&&hitDone)out.trace.push({t,x,v,lx,phase,vis:true,haz:true});
+   if(hitDone)break;
+   if(dist<=-V.len){phase="clear";break;}
+   if(v<=0.01&&braking){phase="stop";if(record)out.trace.push({t,x,v:0,lx,phase,vis:hazardVisibleT!==null,haz:true});break;}
+   continue;
+  }
+  if(present && dist<=0){out.outcome="hit";out.impact=Math.max(0,(v-(lv||0))*3.6);phase="hit";if(record)out.trace.push({t,x,v,lx,phase,vis:true,haz:present});break;}
+  if(present) out.gapMin=Math.min(out.gapMin,dist);
+  if(v<=0.01 && (braking||!present)){phase="stop";if(record)out.trace.push({t,x,v:0,lx,phase,vis:hazardVisibleT!==null,haz:present});break;}
+  if(!present && x>hazPos+10){phase="clear";break;}
+  if(s.hw && lv===0 && v===0)break;
+ }
+ if(out.outcome!=="hit"&&present&&!s.side&&out.gapMin<2&&out.gapMin>=0&&!s.signal) out.outcome="near";
+ if(s.side&&out.outcome!=="hit"&&out.sideNear) out.outcome="near";
+ if(s.signal&&out.outcome==="hit"){out.impact=0;out.outcome="spad";}
+ if(p.handback) out.handback=1;
+ return out;
+}
+function cfgNow(){return {veh:st.veh,scn:st.scn,surf:st.surf,light:st.light,ctrl:st.ctrl,v:st.spd,atpfail:st.atpfail};}
+function monte(cfg,e,n){
+ const res={safe:0,near:0,light:0,serious:0,mrc:0,spad:0,react:0,rc:0,imp:0,ic:0,lost:0,miss:0,handback:0};
+ for(let i=0;i<n;i++){const o=trial(cfg,e,1000+i*7919);
+  if(o.outcome==="hit"){o.impact<15?res.light++:res.serious++;res.imp+=o.impact;res.ic++;}
+  else if(o.outcome==="spad")res.serious++;
+  else res[o.outcome]++;
+  if(o.react!=null){res.react+=o.react;res.rc++;}
+  res.lost+=o.lost; if(o.miss)res.miss++; if(o.handback)res.handback++;}
+ return res;
+}
+
+/* ---------- drawing ---------- */
+const cv=$("cv"),ctx=cv.getContext("2d");
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function sizeCanvas(){const w=cv.clientWidth||800;const h=Math.round(Math.min(300,Math.max(180,w*.34)));const d=Math.min(2,window.devicePixelRatio||1);cv.width=w*d;cv.height=h*d;ctx.setTransform(d,0,0,d,0,0);cv._w=w;cv._h=h;}
+function draw(fr,run){
+ const W=cv._w,H=cv._h, cfg=cfgNow(), s=SCN[cfg.scn], V=VEH[cfg.veh], rail=V.kind==="rail";
+ const view=rail?Math.max(500,cfg.v*4):(s.hwy?Math.max(160,cfg.v*2):120);
+ const ex=fr?fr.x:(run?run.start:0), left=ex-view*.18, k=W/view;
+ const X=wx=>(wx-left)*k;
+ ctx.fillStyle=css("--curb");ctx.fillRect(0,0,W,H);
+ const top=H*.28,bot=H*.78,mid=(top+bot)/2;
+ if(rail){
+  ctx.fillStyle=css("--asphalt");ctx.fillRect(0,mid-22,W,44);
+  ctx.fillStyle=css("--sleeper");const step=Math.max(6,2.5*k);for(let gx=-((left*k)%step);gx<W;gx+=step)ctx.fillRect(gx,mid-20,Math.max(2,.6*k),40);
+  ctx.strokeStyle=css("--muted");ctx.lineWidth=2;[mid-10,mid+10].forEach(y=>{ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();});
+ } else {
+  ctx.fillStyle=css("--asphalt");ctx.fillRect(0,top,W,bot-top);
+  ctx.strokeStyle=css("--stripe");ctx.lineWidth=2;ctx.setLineDash([14,12]);ctx.lineDashOffset=(left*k)%26;ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(W,mid);ctx.stroke();ctx.setLineDash([]);
+ }
+ const hz=run&&run.hazard;
+ if(hz){
+  const hx=X(fr&&hz.kind==="lead"?fr.lx:hz.pos);
+  if(hz.kind==="ped"){
+   ctx.fillStyle=css("--stripe");for(let i=0;i<6;i++)ctx.fillRect(hx-6*k,top+i*(bot-top)/6+2,4*k,(bot-top)/6-4);
+   ctx.fillStyle=css("--muted");ctx.fillRect(X(hz.pos-14),mid+4,12*k,(bot-mid)-8);
+   if(hz.present&&(!fr||fr.vis)){ctx.fillStyle=css("--warn");ctx.beginPath();ctx.arc(hx,mid+8,Math.max(5,.5*k),0,7);ctx.fill();}
+  }
+  if(hz.kind==="side"){ctx.fillStyle=css("--muted");ctx.fillRect(hx-4*k,0,8*k,top);ctx.fillRect(hx-4*k,bot,8*k,H-bot);ctx.fillStyle=css("--asphalt");ctx.fillRect(hx-4*k,top-1,8*k,bot-top+2);
+   if(fr&&fr.vis){ctx.fillStyle=css("--c-l3");ctx.fillRect(hx-1*k,top+4,Math.max(8,1.8*k),Math.max(16,4.5*k));}}
+  if(hz.kind==="lead"||hz.kind==="stall"){ctx.fillStyle=css("--muted");ctx.fillRect(hx,mid+6,4.6*k,Math.max(10,1.8*k));if(fr&&fr.vis){ctx.fillStyle=css("--warn");ctx.fillRect(hx,mid+6,Math.max(3,.4*k),Math.max(10,1.8*k));}}
+  if(hz.kind==="signal"){ctx.fillStyle=css("--ink");ctx.fillRect(hx,mid-60,4,46);ctx.fillStyle=css("--warn");ctx.beginPath();ctx.arc(hx+2,mid-62,7,0,7);ctx.fill();}
+  if(hz.kind==="obst"){ctx.fillStyle=css("--stripe");ctx.fillRect(hx-3*k,top-20,6*k,bot-top+40);ctx.fillStyle=css("--warn");ctx.fillRect(hx-2.3*k,mid-6,4.6*k,12);}
+ }
+ // ego
+ const L=V.len*k, Wd=Math.max(8,V.w*k*1.6), ey=rail?mid-Wd/2:mid+6;
+ const egoX=X(ex);
+ ctx.fillStyle=css("--accent");ctx.fillRect(egoX-L,ey,Math.max(L,10),rail?Wd:Math.max(Wd,10));
+ // stopping-distance shadow
+ if(fr){const a=VEH[cfg.veh].a*SURF[cfg.surf].m;const d=fr.v*fr.v/(2*a);ctx.fillStyle=css("--accent");ctx.globalAlpha=.15;ctx.fillRect(egoX,ey,d*k,rail?Wd:Math.max(Wd,10));ctx.globalAlpha=1;}
+ // scale bar
+ ctx.fillStyle=css("--muted");ctx.font="11px "+css("--f-mono");const sb=rail?100:20;ctx.fillRect(12,H-16,sb*k,2);ctx.fillText(sb+" m",12+sb*k+6,H-11);
+}
+
+/* ---------- animation ---------- */
+let anim=null,lastRun=null;
+function play(){
+ cancelAnimationFrame(anim);
+ const cfg=cfgNow();const run=trial(cfg,st.exp/100,st.seed,true);lastRun=run;
+ if(run.outcome==="mrc"){draw(null,run);hud(null,run);result(run);return;}
+ const tr=run.trace;let i=0,t0=null;const speed=SCN[cfg.scn].kind==="rail"?3:1;
+ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+ if(reduce){draw(tr[tr.length-1],run);hud(tr[tr.length-1],run);result(run);return;}
+ function step(ts){if(t0===null)t0=ts;const simT=(ts-t0)/1000*speed;while(i<tr.length-1&&tr[i+1].t<=simT)i++;draw(tr[i],run);hud(tr[i],run);
+  if(i<tr.length-1)anim=requestAnimationFrame(step);else result(run);}
+ $("one").className="result";$("one").textContent="…";anim=requestAnimationFrame(step);
+}
+function hud(fr,run){
+ const P=T.phase, ph=run.outcome==="mrc"?"mrc":fr?fr.phase:"idle";
+ const dist=fr?Math.max(0,(run.hazard.kind==="lead"?fr.lx-fr.x-VEH[st.veh].len:run.hazard.pos-fr.x)):null;
+ $("hud").innerHTML=`<div><span>${esc(tx(T.hSpeed))}</span> ${fr?(fr.v*3.6).toFixed(0):"–"} km/h</div><div><span>${esc(tx(T.hDist))}</span> ${dist!=null?dist.toFixed(0)+" m":"–"}</div><div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P[ph]))}</span></div>`;
+}
+function result(run){
+ const el=$("one"),L=lang==="th";let cls="ok",m;
+ const rt=run.react!=null?` ${L?"ตอบสนองใน":"reaction"} ${run.react.toFixed(1)} ${L?"วิ":"s"}.`:"";
+ const hb=run.handback?(L?" ระบบระดับ 3 ใช้ไม่ได้ในสภาพนี้ จึงส่งคืนให้คนขับ.":" Level 3 isn't available in these conditions, so the human drives."):"";
+ if(run.outcome==="mrc"){cls="mid";m=L?"สภาพเกินขอบเขตที่ระบบออกแบบไว้ ระบบจึงไม่ออกเดินทางหรือจอดในที่ปลอดภัย ปลอดภัย แต่ไม่ถึงปลายทาง":"Conditions are outside the system's design limits, so it won't depart or pulls over. Safe, but the trip doesn't happen.";}
+ else if(run.outcome==="spad"){cls="bad";m=(L?"ฝ่าสัญญาณไฟแดง (SPAD) ในสถานการณ์จริงอาจชนขบวนข้างหน้า":"Passed the red signal (SPAD); in reality this can mean a collision ahead.")+rt;}
+ else if(run.outcome==="hit"){cls="bad";m=(L?`ชนที่ ${run.impact.toFixed(0)} กม./ชม.`:`Impact at ${run.impact.toFixed(0)} km/h.`)+rt+(run.miss?(L?" ครั้งนี้ตรวจจับพลาดหรือไม่ได้มองถนน.":" This run had a missed detection or an inattentive moment."):"");}
+ else if(run.outcome==="near"){cls="mid";m=(L?`หยุดทัน แต่เหลือระยะไม่ถึง 2 ม.`:`Stopped, with under 2 m to spare.`)+rt;}
+ else if(!run.hazard.present){m=L?"ครั้งนี้ไม่มีใครเดินออกมา":"Nobody stepped out this time.";if(run.lost>0.05)m+=L?` เสียเวลาไป ${run.lost.toFixed(1)} วิ จากการชะลอระวัง`:` Caution cost ${run.lost.toFixed(1)} s.`;}
+ else m=(L?"หยุดหรือผ่านได้อย่างปลอดภัย":"Stopped or passed safely.")+rt;
+ el.className="result "+cls;el.textContent=m+hb;
+}
+
+/* ---------- outcomes, curves, info, path ---------- */
+function outcomes(){
+ const cfg=cfgNow(),n=400,r=monte(cfg,st.exp/100,n);
+ const segs=[["safe","--ok"],["near","--amber"],["light","--c-l3"],["serious","--warn"],["mrc","--info"]];
+ $("stack").innerHTML=segs.map(([k,c])=>`<span style="width:${(r[k]/n*100).toFixed(2)}%;background:var(${c})" title="${k}"></span>`).join("");
+ const lab={safe:T.oSafe,near:T.oNear,light:T.oLight,serious:T.oSerious,mrc:T.oMrc};
+ $("mckeys").innerHTML=segs.map(([k,c])=>`<span><i style="--k:var(${c})"></i>${esc(tx(lab[k]))} <b>${(r[k]/n*100).toFixed(0)}%</b></span>`).join("");
+ const s=lang==="th"?" วิ":" s";
+ $("facts").innerHTML=[[T.fReact,r.rc?(r.react/r.rc).toFixed(1)+s:"–"],[T.fImpact,r.ic?(r.imp/r.ic).toFixed(0)+" km/h":"–"],[T.fLost,(r.lost/n).toFixed(1)+s],[T.fMiss,(r.miss/n*100).toFixed(0)+"%"]].map(([a,b])=>`<div><b>${b}</b>${esc(tx(a))}</div>`).join("");
+}
+function curves(){
+ const cfg=cfgNow(),list=Object.keys(CTRL).filter(c=>CTRL[c].kind===VEH[cfg.veh].kind);
+ const W=520,H=260,pl=48,pr=14,pt=12,pb=32,iw=W-pl-pr,ih=H-pt-pb;
+ const xs=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1];
+ let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Learning curves">`;
+ [0,25,50,75,100].forEach(y=>{const yy=pt+ih*(1-y/100);svg+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" style="stroke:var(--line)"/><text x="${pl-6}" y="${yy+4}" font-size="13" text-anchor="end">${y}%</text>`;});
+ [0,.5,1].forEach(x=>{svg+=`<text x="${pl+iw*x}" y="${H-8}" font-size="13" text-anchor="${x===0?"start":x===1?"end":"middle"}">${x===0?(lang==="th"?"เริ่มต้น":"none"):x===1?(lang==="th"?"สูงสุด":"max"):"50%"}</text>`;});
+ const cx=pl+iw*st.exp/100;svg+=`<line x1="${cx}" x2="${cx}" y1="${pt}" y2="${pt+ih}" style="stroke:var(--ink)" stroke-dasharray="4 4"/>`;
+ list.forEach(c=>{const pts=xs.map(x=>{const r=monte({...cfg,ctrl:c},x,160);const ok=(r.safe+r.near+r.mrc)/160*100;return [pl+iw*x,pt+ih*(1-ok/100)];});
+  const col=`var(${CTRL[c].cc})`,dash=(c==="l3"&&!inODD("l3",cfg))?' stroke-dasharray="6 5"':"";
+  svg+=`<polyline points="${pts.map(p=>p.map(v=>v.toFixed(1)).join(",")).join(" ")}" fill="none" style="stroke:${col}" stroke-width="${c===st.ctrl?3.2:1.8}"${dash}/>`;
+  const last=pts[pts.length-1];svg+=`<circle cx="${last[0]}" cy="${last[1]}" r="3.5" style="fill:${col}"/>`;});
+ svg+="</svg>";$("curve").innerHTML=svg;
+ $("curve-leg").innerHTML=list.map(c=>`<span style="--k:var(${CTRL[c].cc})">${esc(tx(CTRL[c]))}${c==="l3"&&!inODD("l3",cfg)?(lang==="th"?" (นอก ODD → คนขับ)":" (outside ODD → human)"):""}</span>`).join("");
+}
+function info(){
+ const c=st.ctrl,I=INFO[c];
+ $("ctrl-h").textContent=tx(CTRL[c]);$("ctrl-learn").textContent=tx(I.learn);
+ $("ctrl-std").innerHTML=I.std.map(x=>`<span class="code">${esc(tx(x))}</span>`).join("");
+ $("ctrl-prob").innerHTML=I.prob.map(x=>`<li>${esc(tx(x))}</li>`).join("");
+}
+function hoursOf(e){return Math.round(Math.pow(10,3*e)-1);}
+function mkmOf(e){return Math.pow(10,3*e)/10;}
+function path(){
+ const e=st.exp/100,h=hoursOf(e),k=mkmOf(e);
+ const row=(arr,val,key,unit,pc)=>{let now=-1;arr.forEach((s,i)=>{if(val>=s[key])now=i;});return arr.map((s,i)=>`<div class="${i<now?"done":i===now?"now":""}" style="--pc:${pc}">${esc(tx(s))}<small>${s[key]>0?(key==="h"?"≥ "+s[key]+" "+tx(T.hours):"≥ "+s[key]+" "+(lang==="th"?"ล้าน กม.":"M km")):""}</small></div>`).join("");};
+ $("path-h").style.setProperty("--n",PATH_H.length);$("path-s").style.setProperty("--n",PATH_S.length);
+ const learner=CTRL[st.ctrl].learner;
+ $("path-h").innerHTML=row(PATH_H,learner==="human"?h:-1,"h","","var(--c-human)");
+ $("path-s").innerHTML=row(PATH_S,learner==="sys"?k:-1,"k","","var(--c-l4)");
+}
+
+/* ---------- UI ---------- */
+function syncSetup(){
+ const V=VEH[st.veh];
+ $("veh").innerHTML=Object.keys(VEH).map(k=>`<button type="button" id="veh-${k}" data-veh="${k}" aria-pressed="${k===st.veh}">${esc(tx(VEH[k]))}</button>`).join("");
+ const scs=Object.keys(SCN).filter(k=>SCN[k].kind===V.kind);if(!scs.includes(st.scn))st.scn=scs[0];
+ $("scn").innerHTML=scs.map(k=>`<option value="${k}">${esc(tx(SCN[k]))}</option>`).join("");$("scn").value=st.scn;
+ $("scn-desc").textContent=tx(SCN[st.scn].d);
+ const sfs=V.kind==="rail"?["dry","wet"]:["dry","wet","flood"];if(!sfs.includes(st.surf))st.surf="dry";
+ $("surf").innerHTML=sfs.map(k=>`<option value="${k}">${esc(V.kind==="rail"&&k==="wet"?(lang==="th"?"รางเปียก / ใบไม้":"Wet rail / leaves"):tx(SURF[k]))}</option>`).join("");$("surf").value=st.surf;
+ $("light").innerHTML=Object.keys(LIGHT).map(k=>`<option value="${k}">${esc(tx(LIGHT[k]))}</option>`).join("");$("light").value=st.light;
+ $("atp-row").hidden=V.kind!=="rail";
+ const sp=$("spd");sp.min=V.v[0];sp.max=V.v[1];sp.step=5;if(st.spd<V.v[0]||st.spd>V.v[1])st.spd=V.v[2];sp.value=st.spd;$("spd-o").textContent=st.spd+(lang==="th"?" กม./ชม.":" km/h");
+ const cl=Object.keys(CTRL).filter(c=>CTRL[c].kind===V.kind);if(!cl.includes(st.ctrl))st.ctrl=cl[0];
+ $("ctrls").innerHTML=cl.map(c=>`<label class="ctrl" style="--cc:var(${CTRL[c].cc})"><input type="radio" name="ctrl" id="ctrl-${c}" value="${c}" ${c===st.ctrl?"checked":""}><b>${esc(tx(CTRL[c]))}</b><span>${esc(tx(CTRL[c].s))}</span></label>`).join("");
+ const learner=CTRL[st.ctrl].learner,e=st.exp/100;
+ $("exp-l").textContent=tx(learner==="human"?T.expHuman:T.expSys);
+ $("exp-o").textContent=learner==="human"?`${hoursOf(e)} ${tx(T.hours)}`:`${mkmOf(e).toFixed(mkmOf(e)<1?1:0)} ${tx(T.mkm)}`;
+}
+function render(){
+ document.documentElement.lang=lang;
+ document.querySelectorAll("[data-i]").forEach(el=>{el.textContent=tx(T[el.dataset.i])});
+ document.title=tx(T.title);
+ $("board-link").href=BOARD_URL;
+ syncSetup();info();path();outcomes();curves();
+ sizeCanvas();const run=trial(cfgNow(),st.exp/100,st.seed,true);lastRun=run;draw(run.trace[0]||null,run);hud(run.trace[0]||null,run);
+ $("one").className="result";$("one").textContent=lang==="th"?"กด ▶ เพื่อดูการวิ่งหนึ่งครั้ง":"Press ▶ to watch one run.";
+}
+function update(full){syncSetup();info();path();outcomes();if(full)curves();sizeCanvas();const run=trial(cfgNow(),st.exp/100,st.seed,true);lastRun=run;cancelAnimationFrame(anim);draw(run.trace[0]||null,run);hud(run.trace[0]||null,run);$("one").className="result";$("one").textContent=lang==="th"?"กด ▶ เพื่อดูการวิ่งหนึ่งครั้ง":"Press ▶ to watch one run.";}
+let curveTimer=null;function laterCurves(){clearTimeout(curveTimer);curveTimer=setTimeout(curves,120);}
+document.addEventListener("click",ev=>{
+ const b=ev.target.closest("button");if(!b)return;
+ if(b.dataset.veh){st.veh=b.dataset.veh;update(true);$("veh-"+st.veh)?.focus();}
+ else if(b.id==="run")play();
+ else if(b.id==="reroll"){st.seed=(st.seed*48271)%2147483647||7;play();}
+});
+document.addEventListener("change",ev=>{
+ const t=ev.target;
+ if(t.id==="scn")st.scn=t.value;else if(t.id==="surf")st.surf=t.value;else if(t.id==="light")st.light=t.value;else if(t.id==="atpfail")st.atpfail=t.checked;
+ else if(t.name==="ctrl")st.ctrl=t.value;else return;
+ update(true);
+});
+document.addEventListener("input",ev=>{
+ const t=ev.target;
+ if(t.id==="spd"){st.spd=+t.value;update(false);laterCurves();}
+ if(t.id==="exp"){st.exp=+t.value;update(false);laterCurves();}
+});
+window.addEventListener("resize",()=>{sizeCanvas();if(lastRun)draw(lastRun.trace[0]||null,lastRun);});
+render();
+</script>
+</body>
+</html>
