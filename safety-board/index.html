@@ -10,6 +10,14 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
 *{box-sizing:border-box}body{margin:0}
+.modesw{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--ink);border-radius:12px;overflow:hidden}
+.modesw>*{display:grid;gap:2px;padding:12px 16px;color:var(--ink);text-decoration:none;min-width:0}
+.modesw>*+*{border-left:2px solid var(--ink)}
+.modesw small{font:600 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.modesw b{font:700 21px var(--f-display);line-height:1.15}
+.modesw .on{background:var(--ink);color:var(--bg)} .modesw .on small{color:var(--bg);opacity:.75}
+.modesw a:hover{background:var(--tag-bg)} .modesw a.fwd b::after{content:" →";color:var(--accent)} .modesw a.bwd b::before{content:"← ";color:var(--accent)}
+@media (max-width:560px){.modesw b{font-size:17px}.modesw>*{padding:10px 12px}}
 /* Layout: investigator's case board — header + jump index, recap tiles, loop, org matrix, timeline, road / space / autonomy / licensing sections, layers, sources */
 :root{
   --bg:#f3f5f7; --panel:#ffffff; --ink:#16202b; --muted:#5a6878; --line:#d5dce4;
@@ -275,6 +283,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
       <p class="lede" data-i="lede"></p>
     </div>
   </header>
+  <nav class="modesw" aria-label="Simulations"><a class="fwd" id="cta-sim" href="./simulator.html"><small data-i="swStep1"></small><b data-i="swSim"></b></a><a class="fwd" id="cta-resp" href="./response.html"><small data-i="swStep2"></small><b data-i="swResp"></b></a></nav>
   <nav class="jump" id="jump" aria-label="Sections"></nav>
 
   <section id="recap-sec">
@@ -469,7 +478,7 @@ const T={
  trainHead:{th:"ฝึกและทดสอบอย่างไร",en:"How it is trained and tested"},
  simH:{th:"เปิดห้องจำลองการขับขี่ปลอดภัย",en:"Open the Safe Driving Simulator"},
  simP:{th:"เลือกรถยนต์ มอเตอร์ไซค์ รถเมล์ หรือรถไฟ เทียบคนขับกับ copilot, autopilot และระบบขับเอง ในสถานการณ์ไม่แน่นอน พร้อมเส้นการเรียนรู้",en:"Pick a car, motorcycle, bus or train and compare human drivers with copilot, autopilot and self-driving systems under uncertainty, with learning curves."},
- jSim:{th:"ห้องจำลอง ↗",en:"Simulator ↗"},jResp:{th:"แผนช่วยเหลือ 3D ↗",en:"Response in 3D ↗"},
+ jSim:{th:"ห้องจำลอง ↗",en:"Simulator ↗"},swStep1:{th:"เข้าสู่การจำลอง · ขั้น 1 ก่อนเกิดเหตุ",en:"Enter the simulation · Step 1, before the crash"},swSim:{th:"ตัวจำลองการขับขี่ 3D",en:"3D driving simulator"},swStep2:{th:"ขั้น 2 · หลังเกิดเหตุ",en:"Step 2 · After the crash"},swResp:{th:"แผนช่วยเหลือ 3D",en:"Response in 3D"},jResp:{th:"แผนช่วยเหลือ 3D ↗",en:"Response in 3D ↗"},
  sLic:{th:"ใบอนุญาตขับขี่ยานพาหนะทุกประเภท",en:"Licences for every kind of vehicle"},
  sLicSub:{th:"ทุกโหมดมีกรอบระหว่างประเทศให้แต่ละประเทศออกใบอนุญาตตาม ยกเว้นอวกาศและรถอัตโนมัติ ที่ตัวยานหรือผู้ให้บริการต้องได้รับอนุญาตแทนคนขับ",en:"Each mode has an international framework that countries license against. Space and automated vehicles are the exceptions: the vehicle or operator is licensed instead of a driver."},
  thFrame:{th:"กรอบระหว่างประเทศ",en:"International framework"},thClass:{th:"ประเภทใบอนุญาตหลัก",en:"Main licence types"},thTh:{th:"ในไทย",en:"In Thailand"},

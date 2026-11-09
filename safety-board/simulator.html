@@ -73,6 +73,29 @@ select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);backgrou
 .views button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .views button:disabled{opacity:.45;cursor:not-allowed}
 .v3wrap{position:relative}
+#v3 canvas{touch-action:none;cursor:grab}
+#v3 canvas:active{cursor:grabbing}
+.orb{position:absolute;right:10px;bottom:10px;display:grid;gap:6px}
+.orb button{width:40px;height:40px;border-radius:10px;border:0;background:rgba(10,16,24,.72);color:#fff;font:700 20px var(--f-mono);cursor:pointer;line-height:1}
+.orb button:hover{background:rgba(10,16,24,.9)}
+.orbhint{position:absolute;left:10px;bottom:10px;right:60px;font:12px var(--f-body);color:#fff;pointer-events:none}
+.orbhint span{background:rgba(10,16,24,.55);padding:3px 9px;border-radius:999px}
+.jumps{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.jumps button{font:600 13.5px var(--f-body);padding:8px 12px;border-radius:8px;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);cursor:pointer}
+.jumps button.crash{border-color:var(--warn);color:var(--warn)}
+.tl{width:100%;accent-color:var(--accent);margin-top:8px}
+.btn.go{font-size:16px;padding:12px 22px;background:var(--accent);border-color:var(--accent);color:#fff}
+.modesw{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--ink);border-radius:12px;overflow:hidden}
+.modesw>*{display:grid;gap:2px;padding:12px 16px;color:var(--ink);text-decoration:none;min-width:0}
+.modesw>*+*{border-left:2px solid var(--ink)}
+.modesw small{font:600 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.modesw b{font:700 21px var(--f-display);line-height:1.15}
+.modesw .on{background:var(--ink);color:var(--bg)} .modesw .on small{color:var(--bg);opacity:.75}
+.modesw a:hover{background:var(--tag-bg)} .modesw a.fwd b::after{content:" →";color:var(--accent)} .modesw a.bwd b::before{content:"← ";color:var(--accent)}
+@media (max-width:560px){.modesw b{font-size:17px}.modesw>*{padding:10px 12px}}
+.v3info{position:absolute;left:10px;top:42px;max-width:calc(100% - 70px);font:12px/1.5 var(--f-mono);color:#fff;background:rgba(10,16,24,.62);padding:6px 10px;border-radius:8px;pointer-events:none}
+.v3info b{color:#ffd28a;font-weight:600}
+
 .v3dark{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
 #v3 canvas{display:block;width:100%;border-radius:6px;background:#0a1018}
 .v3tag{position:absolute;left:10px;top:10px;font:600 12px var(--f-mono);color:#fff;background:rgba(10,16,24,.62);padding:3px 9px;border-radius:999px;pointer-events:none}
@@ -131,9 +154,9 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
   </div>
   <div style="display:grid;gap:8px;justify-items:end">
    <a class="back" id="board-link" href="./index.html" data-i="backBoard"></a>
-   <a class="back" id="resp-link" href="./response.html" data-i="toResp"></a>
   </div>
  </header>
+ <nav class="modesw" aria-label="Before / after the crash"><span class="on" aria-current="page"><small data-i="swStep1"></small><b data-i="swSim"></b></span><a class="fwd" id="sw-resp" href="./response.html"><small data-i="swStep2"></small><b data-i="swResp"></b></a></nav>
 
  <div class="console">
   <div class="setup">
@@ -161,11 +184,13 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
    <div class="track-card">
     <div class="views" id="views" role="group" aria-label="View"></div>
     <canvas id="cv" width="900" height="300" aria-label="Simulation view"></canvas>
-    <div class="v3wrap" id="v3wrap" hidden><div id="v3"></div><div class="v3dark" id="v3dark"></div><span class="v3tag" id="v3tag"></span></div>
+    <div class="v3wrap" id="v3wrap" hidden><div id="v3"></div><div class="v3dark" id="v3dark"></div><span class="v3tag" id="v3tag"></span><div class="v3info" id="v3info" hidden></div><div class="orb"><button type="button" data-orb="in" aria-label="Zoom in">+</button><button type="button" data-orb="out" aria-label="Zoom out">−</button><button type="button" data-orb="reset" aria-label="Reset view">⟲</button></div><div class="orbhint" id="orbhint"><span></span></div></div>
     <p class="viewcap" id="viewcap"></p>
     <div class="hud" id="hud"></div>
+    <input class="tl" type="range" id="tl" min="0" max="1000" value="0" aria-label="Timeline">
+    <div class="jumps" role="group"><button type="button" data-jump="pre" data-i="jPre"></button><button type="button" class="crash" data-jump="crash" data-i="jCrash"></button><button type="button" data-jump="post" data-i="jPost"></button></div>
     <div class="btns">
-     <button class="btn" type="button" id="run" data-i="run"></button>
+     <button class="btn go" type="button" id="run" data-i="run"></button>
      <button class="btn ghost" type="button" id="reroll" data-i="reroll"></button>
     </div>
     <div class="result" id="one"></div>
@@ -206,6 +231,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+const RESP_URL="./response.html";
+const RMAP={ped:"ped",lead:"multi",uph:"multi",junc:"multi",stall:"multi",sig:"tunnel",lx:"lx",ship_cross:"ship",ship_small:"ship",air_rwy:"rwy",air_mid:"rwy",inf_bridge:"bridge",inf_road:"multi"};
 const BOARD_URL="./index.html";
 const T={
  eyebrow:{th:"ตัวจำลอง · ประกอบบอร์ดความปลอดภัย",en:"Simulator · companion to the safety board"},
@@ -222,7 +249,7 @@ const T={
  atpFail:{th:"ระบบสัญญาณ/ATP ขัดข้อง (แบบเหตุ Toledo)",en:"Signalling / ATP failure (like Toledo)"},
  expHuman:{th:"ประสบการณ์คนขับ",en:"Driver experience"},expSys:{th:"ระดับการฝึกของระบบ (ข้อมูล + การทดสอบ)",en:"System training (data + testing)"},
  hours:{th:"ชม.",en:"h"},mkm:{th:"ล้าน กม. เทียบเท่า",en:"million km equivalent"},
- run:{th:"▶ เล่นจำลอง",en:"▶ Run"},reroll:{th:"สุ่มสถานการณ์ใหม่",en:"New random run"},
+ run:{th:"▶ เริ่มจำลอง",en:"▶ Start simulation"},jPre:{th:"⏮ ก่อนเกิดเหตุ",en:"⏮ Before"},jCrash:{th:"⚠ จังหวะเกิดเหตุ",en:"⚠ The critical moment"},jPost:{th:"หลังเกิดเหตุ ⏭",en:"After ⏭"},scrub:{th:"กำลังดูทีละช่วง ลากแถบเวลาได้ กด ▶ เพื่อเล่นใหม่",en:"Scrubbing: drag the time bar, or press ▶ to play again."},swStep1:{th:"ขั้น 1 · ก่อนเกิดเหตุ",en:"Step 1 · Before the crash"},swSim:{th:"ตัวจำลองการขับขี่",en:"Driving simulator"},swStep2:{th:"ขั้น 2 · หลังเกิดเหตุ",en:"Step 2 · After the crash"},swResp:{th:"แผนช่วยเหลือ 3D",en:"Response in 3D"},orbHint:{th:"ลากเพื่อหมุน · ล้อเมาส์/บีบนิ้วเพื่อซูม · ดับเบิลคลิกเพื่อรีเซ็ต",en:"Drag to rotate · wheel or pinch to zoom · double-click to reset"},reroll:{th:"สุ่มสถานการณ์ใหม่",en:"New random run"},
  mcH:{th:"สุ่มซ้ำ 400 ครั้ง",en:"400 randomised runs"},
  mcP:{th:"ทุกครั้งสุ่มระยะที่โผล่ เวลาตอบสนอง การเสียสมาธิ และการตรวจจับพลาด ตามค่าสมมติของผู้ควบคุมที่เลือก",en:"Each run randomises reveal distance, reaction time, distraction and missed detections, using the selected controller's assumed values."},
  oSafe:{th:"หยุด/ผ่านได้ปลอดภัย",en:"Safe"},oNear:{th:"เฉียดฉิว",en:"Near miss"},oLight:{th:"ชนเบา / เสียหายเฉพาะจุด",en:"Light impact / local damage"},oSerious:{th:"รุนแรง (ชนแรง พัง ตก)",en:"Serious (hard impact, collapse, crash)"},oMrc:{th:"ยุติอย่างปลอดภัย (จอด ปิดทาง ยกเลิก)",en:"Safely stopped (halt, closure, abort)"},
@@ -748,6 +775,8 @@ function drawK2(fr,run){
   const side=run.enc==="mid"||run.enc==="wire"||run.enc==="uheli";
   ctx.fillStyle=run.enc==="ship"||run.enc==="small"?"#1f4e6b":(run.enc==="wire"?C("--curb"):"#9cc3e0");ctx.fillRect(0,0,W,H);
   if(run.enc==="ship"&&cfgNow().surf==="flood"){ctx.fillStyle="rgba(230,235,240,.55)";ctx.fillRect(0,0,W,H);}
+  if(run.enc==="ship"||run.enc==="small"){const S=SEA[cfgNow().surf]||SEA.dry;ctx.strokeStyle="rgba(255,255,255,.18)";ctx.lineWidth=1;const ph=(performance.now()/600)%40;for(let y=24;y<H;y+=18){ctx.beginPath();for(let x=0;x<=W;x+=8){const yy=y+Math.sin((x+ph*4+y*3)/30)*S.hs*2;x?ctx.lineTo(x,yy):ctx.moveTo(x,yy);}ctx.stroke();}
+   txt(`${tx(S.d)} · ${L?"ลม":"wind"} ${S.w[1]} ${S.w[0]} ${L?"นอต":"kn"} · ${L?"คลื่น":"waves"} ${S.hs} ${L?"ม.":"m"} · ${L?"ทัศนวิสัย":"vis"} ${S.vis} ${L?"ไมล์ทะเล":"nm"}`,10,H-10,"#fff");}
   const cx=W*.68,cy=H*.5,span=Math.max(run.dmax,1),k_=(W*.62)/span;
   const ownX=cx-run.v*(f.tc||0)*k_;
   const sep=H*.28,ownY=side?cy-(f.off||0)*sep:cy+(f.off||0)*sep;
@@ -869,6 +898,30 @@ function draw2d(fr,run){
 }
 
 /* ---------- 3D view (Three.js) ---------- */
+/* drag to rotate, wheel or pinch to zoom, double-click to reset */
+const ORB={yaw:0,pitch:0,zoom:1};
+function orbReset(){ORB.yaw=0;ORB.pitch=0;ORB.zoom=1;}
+function orbHook(){const cam=R3.camera,_l=cam.lookAt.bind(cam);R3.look=v=>_l(v);cam.lookAt=function(x,y,z){R3.tgt=(x&&x.isVector3)?x.clone():new THREE.Vector3(x,y,z);_l(R3.tgt);};}
+function orbApply(cam,fp){const tgt=R3.tgt;if(!tgt||(!ORB.yaw&&!ORB.pitch&&ORB.zoom===1))return;
+ if(fp){const d=tgt.clone().sub(cam.position),s=new THREE.Spherical().setFromVector3(d);s.theta+=ORB.yaw;s.phi=Math.min(Math.PI-.05,Math.max(.05,s.phi-ORB.pitch*.8));R3.look(cam.position.clone().add(new THREE.Vector3().setFromSpherical(s)));cam.fov=Math.min(100,Math.max(4,cam.fov/ORB.zoom));}
+ else{const pv=R3.pivot||tgt,o=cam.position.clone().sub(pv),s=new THREE.Spherical().setFromVector3(o);s.theta+=ORB.yaw;s.phi=Math.min(1.53,Math.max(.03,s.phi-ORB.pitch));s.radius=Math.max(1.2,s.radius/ORB.zoom);cam.position.copy(pv).add(new THREE.Vector3().setFromSpherical(s));R3.look(pv);}}
+function orbBind(el,redraw){const pts=new Map();let pinch=0;
+ el.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;try{el.setPointerCapture(e.pointerId)}catch(_){}pts.set(e.pointerId,{x:e.clientX,y:e.clientY});});
+ el.addEventListener("pointermove",e=>{if(!pts.has(e.pointerId))return;const p=pts.get(e.pointerId);
+  if(pts.size===1){ORB.yaw-=(e.clientX-p.x)*.006;ORB.pitch=Math.max(-1.4,Math.min(1.4,ORB.pitch+(e.clientY-p.y)*.005));}
+  p.x=e.clientX;p.y=e.clientY;
+  if(pts.size===2){const [a,b]=[...pts.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch)ORB.zoom=Math.max(.3,Math.min(12,ORB.zoom*d/pinch));pinch=d;}
+  redraw();});
+ const up=e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=0;};el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
+ el.addEventListener("wheel",e=>{e.preventDefault();ORB.zoom=Math.max(.3,Math.min(12,ORB.zoom*Math.exp(-e.deltaY*.0015)));redraw();},{passive:false});
+ el.addEventListener("dblclick",e=>{if(e.target.closest("button"))return;orbReset();redraw();});
+ el.querySelectorAll("[data-orb]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.orb;if(k==="in")ORB.zoom=Math.min(12,ORB.zoom*1.4);else if(k==="out")ORB.zoom=Math.max(.3,ORB.zoom/1.4);else orbReset();redraw();}));}
+/* sea surface: a wave patch that follows the camera */
+function waveMesh(sc,col,hs){const g=new THREE.PlaneGeometry(2400,2400,100,100);g.rotateX(-Math.PI/2);const m=new THREE.MeshStandardMaterial({color:lin(col),roughness:.32,metalness:.12,flatShading:true});const w=mesh(g,m,false,true);sc.add(w);w.userData={hs,base:g.attributes.position.array.slice()};return w;}
+function waveH(x,z,t,hs){const a=hs*.5;return a*(.55*Math.sin(x*.045+t*.9)+.3*Math.sin((x*.6+z*.8)*.07+t*1.25)+.15*Math.sin((z-x*.3)*.1+t*1.7));}
+function stepWave(w,cx,cz,t){const c=24,sx=Math.round(cx/c)*c,sz=Math.round(cz/c)*c;w.position.set(sx,0,sz);const p=w.geometry.attributes.position,b=w.userData.base,hs=w.userData.hs;for(let i=0;i<p.count;i++)p.array[i*3+1]=waveH(b[i*3]+sx,b[i*3+2]+sz,t,hs);p.needsUpdate=true;w.geometry.computeVertexNormals();}
+function dm(v,pos){const a=Math.abs(v),d=Math.floor(a),m=(a-d)*60;return `${d}°${m.toFixed(1)}′${v>=0?pos[0]:pos[1]}`;}
+
 let R3=null;
 function has3D(){ if(R3===false) return false; if(R3) return true;
  try{ if(!window.THREE) {R3=false;return false;} const c=document.createElement("canvas"); if(!(c.getContext("webgl")||c.getContext("experimental-webgl"))){R3=false;return false;} }catch(e){R3=false;return false;}
@@ -877,7 +930,8 @@ function has3D(){ if(R3===false) return false; if(R3) return true;
  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
  renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
  document.getElementById("v3").appendChild(renderer.domElement);
- R3={renderer,scene:null,camera:new THREE.PerspectiveCamera(65,16/9,.1,4000),run:null,obj:{}};
+ R3={renderer,scene:null,camera:new THREE.PerspectiveCamera(65,16/9,.1,4000),run:null,obj:{}};orbHook();
+ orbBind(document.getElementById("v3wrap"),()=>{if(R3&&R3.last)draw3d(R3.last[0],R3.last[1]);});
  return true;
 }
 function size3d(){ if(!R3) return; const w=document.getElementById("v3wrap").clientWidth||800, h=Math.round(Math.min(440,Math.max(220,w*.56)));
@@ -1052,6 +1106,7 @@ function build3d(run){
 }
 function draw3d(fr,run){
  if(!has3D()){draw2d(fr,run);return;}
+ R3.last=[fr,run];{const vi=document.getElementById("v3info");if(vi)vi.hidden=true;}
  {const dk=document.getElementById("v3dark");if(dk)dk.style.opacity=0;}
  if(R3.run!==run) build3d(run);
  if(run.k2){draw3dK2(fr,run);return;}
@@ -1099,7 +1154,7 @@ function draw3d(fr,run){
   else if(O.worker){cam.position.set(hz.pos-1,2.0,.5);cam.lookAt(hz.pos-120,1.8,0);}
   else {cam.position.set(hz.pos+.4,1.15,-1.6);cam.lookAt(hz.pos-120,2.2,0);}
  }
- cam.updateProjectionMatrix();
+ R3.pivot=O.ego.position.clone().add(new THREE.Vector3(0,1,0));orbApply(cam,st.view==="driver"||st.view==="other");cam.updateProjectionMatrix();
  R3.renderer.render(R3.scene,cam);
  document.getElementById("v3tag").textContent=`${(f.v*3.6).toFixed(0)} km/h · ${esc(viewLabel(st.view))}`;
 }
@@ -1112,6 +1167,7 @@ function syncViews(){
  const is3=st.view!=="top"; document.getElementById("cv").hidden=is3; document.getElementById("v3wrap").hidden=!is3;
  const k=hazKind(); const q=isK2()?K2V[k2key()]:null;document.getElementById("viewcap").textContent=!ok?tx(T.no3d):st.view==="top"?tx(T.capTop):st.view==="chase"?tx(q?CAP_CHASE_K2:T.capChase):st.view==="driver"?tx(q?q.cd:SCN[st.scn].uph?T.capDriverUph:T.capDriver):tx(q?q.co:T.capOther[k]);
  if(is3) size3d();
+ {const h=document.querySelector("#orbhint span");if(h)h.textContent=tx(T.orbHint);}
 }
 
 /* ---------- 3D for ships, aircraft, drones, rockets and infrastructure ---------- */
@@ -1225,7 +1281,7 @@ function build3dK2(run){
  if(k==="enc"){const e=run.enc;O.enc=e;
   if(e==="ship"||e==="small"){
    const fogC=night?0x0b1220:sf==="flood"?0xc9d1d8:sf==="wet"?0x7d8a96:0xa9c7e3, far=sf==="flood"?(night?300:700):sf==="wet"?(night?1500:3500):(night?6000:24000);bg(fogC,far*.12,far);lights3(sc,night);
-   flat(sc,120000,120000,night?0x0a1a2a:0x1f4e6b,0,0,0,.22,{metal:.15});
+   flat(sc,120000,120000,night?0x0a1a2a:0x1f4e6b,0,-1.6,0,.22,{metal:.15});O.wave=waveMesh(sc,night?0x0c1f33:0x1f5677,(SEA[sf]||SEA.dry).hs);
    O.C=e==="ship"?900:300;O.own=shipMesh(260,40,22,C3("--accent").getHex());sc.add(O.own);
    O.oth=e==="ship"?shipMesh(300,45,24,0x8a2a2a):shipMesh(14,4.5,2.5,0x2e86c1);O.oth.rotation.y=-Math.PI/2;sc.add(O.oth);
    if(sf!=="dry")rainPts(sc,O,false);
@@ -1321,6 +1377,9 @@ function draw3dK2(fr,run){
  if(k==="enc"){const e=O.enc,tc=f.tc||0,off=f.off||0;
   if(e==="ship"||e==="small"){const C=O.C,ox=-run.v*tc,oz=off*C,yaw=ph==="avoid"?-.35*(1-off):0;O.own.position.set(ox,0,oz);O.own.rotation.y=yaw;const iz=-run.v*.8*tc;O.oth.position.set(0,0,iz);
    O.flash.visible=ph==="hit";if(O.flash.visible){O.flash.position.set(0,10,oz*.5);O.flash.scale.setScalar(40);}
+   const wt=performance.now()/1000,hs=O.wave.userData.hs;O.own.position.y=waveH(ox,oz,wt,hs)*.35;O.own.rotation.x=Math.sin(wt*.8)*.012*hs;O.own.rotation.z=Math.sin(wt*.6)*.006*hs;
+   O.oth.position.y=waveH(0,iz,wt,hs)*(e==="small"?.9:.35);O.oth.rotation.z=Math.sin(wt*1.1+1)*(e==="small"?.05:.012)*hs;
+   const vi=document.getElementById("v3info");vi.hidden=false;vi.innerHTML=seaInfo(run,O.own.position,O.oth.position,O.night);
    const ey=O.own.userData.eye,oe=O.oth.userData.eye;far=60000;near=1;
    if(v==="chase"){P(ox-420,120,oz+260);LK(ox+400,0,oz);} else if(v==="driver"){fov=55;P(ox+ey[0],ey[1],oz);LK(ox+ey[0]+1000*Math.cos(yaw),ey[1]-8,oz-1000*Math.sin(yaw));}
    else {fov=55;P(0,oe[1],iz+oe[0]);LK(ox,10,oz);}
@@ -1391,9 +1450,16 @@ function draw3dK2(fr,run){
   near=.2;far=6000;if(v==="chase"){P(-40,38,70);LK(170,0,0);} else if(v==="driver"){fov=70;const dx=(t*13+150)%420-10;P(dx+4.6,3.2,2);LK(dx+80,1,2);} else {fov=72;P(mx-.9,1.45,2.2);LK(mx+40,0,2.2);}
  }
  stepRain(O,cam);
- cam.fov=fov;cam.near=near;cam.far=far;cam.updateProjectionMatrix();R3.renderer.render(R3.scene,cam);cam.up.set(0,1,0);
+ if(O.wave)stepWave(O.wave,cam.position.x,cam.position.z,performance.now()/1000);
+ cam.fov=fov;cam.near=near;cam.far=far;R3.pivot=O.own?O.own.position.clone():null;orbApply(cam,st.view!=="chase");cam.updateProjectionMatrix();R3.renderer.render(R3.scene,cam);cam.up.set(0,1,0);
  document.getElementById("v3tag").textContent=viewLabel(st.view);
 }
+const SEA={dry:{w:[10,"NE"],bf:3,hs:.8,vis:10,d:B("ท้องฟ้าโปร่ง","Clear")},wet:{w:[25,"SW"],bf:6,hs:2.5,vis:2,d:B("ฝนหนัก","Heavy rain")},flood:{w:[4,"S"],bf:1,hs:.3,vis:.2,d:B("หมอกหนา","Dense fog")}};
+function seaInfo(run,own,oth,night){const S=SEA[cfgNow().surf]||SEA.dry,L=lang==="th",lat=12+55/60-own.z/111320,lon=100+40/60+own.x/(111320*Math.cos(lat*Math.PI/180));
+ const dx=oth.x-own.x,dn=-(oth.z-own.z),br=((Math.atan2(dx,dn)*180/Math.PI)+360)%360,rg=Math.hypot(dx,dn)/1852,kn=run.v*1.944;
+ return `<b>${L?"ตำแหน่ง":"Position"}</b> ${dm(lat,"NS")} ${dm(lon,"EW")} · ${L?"อ่าวไทย ใกล้ร่องน้ำเข้าท่าเรือ (สมมติ)":"Gulf of Thailand, port approach (illustrative)"}<br>`+
+  `<b>${L?"อากาศ":"Weather"}</b> ${tx(S.d)}${night?(L?" · กลางคืน":" · night"):""} · ${L?"ลม":"wind"} ${S.w[1]} ${S.w[0]} ${L?"นอต":"kn"} (${L?"โบฟอร์ต":"Beaufort"} ${S.bf}) · ${L?"คลื่น":"waves"} ${S.hs} ${L?"ม.":"m"} · ${L?"ทัศนวิสัย":"visibility"} ${S.vis} ${L?"ไมล์ทะเล":"nm"}<br>`+
+  `<b>${L?"เรือเรา":"Own ship"}</b> ${L?"เข็ม":"course"} 090° · ${kn.toFixed(0)} ${L?"นอต":"kn"} · <b>${L?"อีกลำ":"Target"}</b> ${L?"ทิศ":"bearing"} ${String(Math.round(br)).padStart(3,"0")}° · ${L?"ระยะ":"range"} ${rg.toFixed(2)} ${L?"ไมล์ทะเล":"nm"}`;}
 function sc_fog(c,n,f){const fg=R3.scene.fog;if(!fg)return;fg.color.copy(lin(c));fg.near=n;fg.far=f;R3.scene.background=lin(c);}
 
 /* ---------- animation ---------- */
@@ -1406,10 +1472,15 @@ function play(){
  const tr=run.trace;let i=0,t0=null;const speed=run.speedUp||(SCN[cfg.scn].kind==="rail"?3:1);
  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
  if(reduce){draw(tr[tr.length-1],run);hud(tr[tr.length-1],run);result(run);return;}
- function step(ts){if(t0===null)t0=ts;const simT=(ts-t0)/1000*speed;while(i<tr.length-1&&tr[i+1].t<=simT)i++;draw(tr[i],run);hud(tr[i],run);
+ function step(ts){if(t0===null)t0=ts;const simT=(ts-t0)/1000*speed;while(i<tr.length-1&&tr[i+1].t<=simT)i++;draw(tr[i],run);hud(tr[i],run);syncTL(i,tr.length);
   if(i<tr.length-1)anim=requestAnimationFrame(step);else result(run);}
  $("one").className="result";$("one").textContent="…";anim=requestAnimationFrame(step);
 }
+function syncTL(i,n){const el=$("tl");if(el)el.value=Math.round(i/Math.max(1,n-1)*1000);}
+function keyIdx(run){const tr=run.trace;if(!tr.length)return 0;let i=tr.findIndex(f=>["hit","boom","collapse","spiral","cascade"].includes(f.phase));
+ if(i<0)i=tr.findIndex(f=>["brake","avoid","turn","escape","term","lost","anomaly","react","caution"].includes(f.phase));if(i<0)i=Math.floor(tr.length/2);return i;}
+function showFrame(i){cancelAnimationFrame(anim);const run=lastRun;if(!run||!run.trace.length)return;const tr=run.trace;i=Math.max(0,Math.min(tr.length-1,i));draw(tr[i],run);hud(tr[i],run);syncTL(i,tr.length);
+ if(i===tr.length-1)result(run);else{$("one").className="result";$("one").textContent=tx(T.scrub);}}
 function hud(fr,run){
  const P=T.phase, ph=run.outcome==="mrc"?"mrc":fr?fr.phase:"idle";
  if(run.k2&&fr&&fr.hud){$("hud").innerHTML=fr.hud.map(([k,v])=>`<div><span>${esc(tx(k))}</span> ${esc(v)}</div>`).join("")+`<div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P[fr.phase]||P.idle))}</span></div>`;return;}
@@ -1490,6 +1561,7 @@ function syncSetup(){
  $("tun-row").hidden=!SCN[st.scn].uph; $("trk-row").hidden=K!=="rail";
  $("tun").innerHTML=Object.keys(TUN).map(k=>`<option value="${k}">${esc(tx(TUN[k]))}</option>`).join("");$("tun").value=st.tun;
  $("trk").innerHTML=Object.keys(TRK).map(k=>`<option value="${k}">${esc(tx(TRK[k]))}</option>`).join("");$("trk").value=st.track;
+ $("sw-resp").href=RESP_URL+(RMAP[st.scn]?"#"+RMAP[st.scn]:"");
  $("infra-row").hidden=K!=="infra"; $("force-row").hidden=!SCN[st.scn].ped;
  $("force").innerHTML=[["rand",T.fRand],["on",T.fOn],["off",T.fOff]].map(([k,l])=>`<option value="${k}">${esc(tx(l))}</option>`).join("");$("force").value=st.force;
  $("spec-o").textContent=st.spec+"%";$("age-o").textContent=st.age+" "+tx(T.years);$("ovl-o").textContent=st.ovl+"%";
@@ -1517,7 +1589,8 @@ let curveTimer=null;function laterCurves(){clearTimeout(curveTimer);curveTimer=s
 document.addEventListener("click",ev=>{
  const b=ev.target.closest("button");if(!b)return;
  if(b.dataset.veh){st.veh=b.dataset.veh;update(true);$("veh-"+st.veh)?.focus();}
- else if(b.dataset.view){st.view=b.dataset.view;syncViews();if(lastRun)draw(lastRun.trace[0]||null,lastRun);document.getElementById("view-"+st.view)?.focus();}
+ else if(b.dataset.jump){const r=lastRun;if(r&&r.trace.length)showFrame(b.dataset.jump==="pre"?0:b.dataset.jump==="post"?r.trace.length-1:keyIdx(r));}
+ else if(b.dataset.view){orbReset();st.view=b.dataset.view;syncViews();if(lastRun)draw(lastRun.trace[0]||null,lastRun);document.getElementById("view-"+st.view)?.focus();}
  else if(b.id==="run")play();
  else if(b.id==="reroll"){st.seed=(st.seed*48271)%2147483647||7;play();}
 });
@@ -1529,6 +1602,7 @@ document.addEventListener("change",ev=>{
 });
 document.addEventListener("input",ev=>{
  const t=ev.target;
+ if(t.id==="tl"){const r=lastRun;if(r&&r.trace.length)showFrame(Math.round(+t.value/1000*(r.trace.length-1)));return;}
  if(t.id==="spd"){st.spd=+t.value;update(false);laterCurves();}
  if(t.id==="exp"){st.exp=+t.value;update(false);laterCurves();}
  if(t.id==="spec"||t.id==="age"||t.id==="ovl"){st[t.id]=+t.value;update(false);laterCurves();}
