@@ -85,6 +85,10 @@ select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);backgrou
 .jumps button{font:600 13.5px var(--f-body);padding:8px 12px;border-radius:8px;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);cursor:pointer}
 .jumps button.crash{border-color:var(--warn);color:var(--warn)}
 .tl{width:100%;accent-color:var(--accent);margin-top:8px}
+.tsc{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+.tsc .lbl{margin:0 4px 0 0}
+.tsc button{font:600 13px var(--f-mono);padding:6px 11px;border-radius:999px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.tsc button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .btn.go{font-size:16px;padding:12px 22px;background:var(--accent);border-color:var(--accent);color:#fff}
 .modesw{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--ink);border-radius:12px;overflow:hidden}
 .modesw>*{display:grid;gap:2px;padding:12px 16px;color:var(--ink);text-decoration:none;min-width:0}
@@ -190,6 +194,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
     <div class="hud" id="hud"></div>
     <input class="tl" type="range" id="tl" min="0" max="1000" value="0" aria-label="Timeline">
     <div class="jumps" role="group"><button type="button" data-jump="pre" data-i="jPre"></button><button type="button" class="crash" data-jump="crash" data-i="jCrash"></button><button type="button" data-jump="post" data-i="jPost"></button></div>
+    <div class="tsc" role="group" aria-label="Playback speed"><span class="lbl" data-i="tsLbl"></span><button type="button" data-ts="auto" id="ts-auto"></button><button type="button" data-ts="1" data-i="tsReal"></button><button type="button" data-ts="10">×10</button><button type="button" data-ts="60">×60</button></div>
     <div class="btns">
      <button class="btn go" type="button" id="run" data-i="run"></button>
      <button class="btn ghost" type="button" id="reroll" data-i="reroll"></button>
@@ -250,7 +255,7 @@ const T={
  atpFail:{th:"ระบบสัญญาณ/ATP ขัดข้อง (แบบเหตุ Toledo)",en:"Signalling / ATP failure (like Toledo)"},
  expHuman:{th:"ประสบการณ์คนขับ",en:"Driver experience"},expSys:{th:"ระดับการฝึกของระบบ (ข้อมูล + การทดสอบ)",en:"System training (data + testing)"},
  hours:{th:"ชม.",en:"h"},mkm:{th:"ล้าน กม. เทียบเท่า",en:"million km equivalent"},
- run:{th:"▶ เริ่มจำลอง",en:"▶ Start simulation"},jPre:{th:"⏮ ก่อนเกิดเหตุ",en:"⏮ Before"},jCrash:{th:"⚠ จังหวะเกิดเหตุ",en:"⚠ The critical moment"},jPost:{th:"หลังเกิดเหตุ ⏭",en:"After ⏭"},scrub:{th:"กำลังดูทีละช่วง ลากแถบเวลาได้ กด ▶ เพื่อเล่นใหม่",en:"Scrubbing: drag the time bar, or press ▶ to play again."},swStep1:{th:"ขั้น 1 · ก่อนเกิดเหตุ",en:"Step 1 · Before the crash"},swSim:{th:"ตัวจำลองการขับขี่",en:"Driving simulator"},swStep2:{th:"ขั้น 2 · หลังเกิดเหตุ",en:"Step 2 · After the crash"},swResp:{th:"แผนช่วยเหลือ 3D",en:"Response in 3D"},orbHint:{th:"ลากเพื่อหมุน · ล้อเมาส์/บีบนิ้วเพื่อซูม · ดับเบิลคลิกเพื่อรีเซ็ต",en:"Drag to rotate · wheel or pinch to zoom · double-click to reset"},reroll:{th:"สุ่มสถานการณ์ใหม่",en:"New random run"},
+ run:{th:"▶ เริ่มจำลอง",en:"▶ Start simulation"},jPre:{th:"⏮ ก่อนเกิดเหตุ",en:"⏮ Before"},tsLbl:{th:"ความเร็วการเล่น",en:"Playback speed"},tsAuto:{th:"อัตโนมัติ",en:"Auto"},tsReal:{th:"×1 เวลาจริง",en:"×1 real time"},tsChip:{th:"เร่งเวลา",en:"Time-lapse"},jCrash:{th:"⚠ จังหวะเกิดเหตุ",en:"⚠ The critical moment"},jPost:{th:"หลังเกิดเหตุ ⏭",en:"After ⏭"},scrub:{th:"กำลังดูทีละช่วง ลากแถบเวลาได้ กด ▶ เพื่อเล่นใหม่",en:"Scrubbing: drag the time bar, or press ▶ to play again."},swStep1:{th:"ขั้น 1 · ก่อนเกิดเหตุ",en:"Step 1 · Before the crash"},swSim:{th:"ตัวจำลองการขับขี่",en:"Driving simulator"},swStep2:{th:"ขั้น 2 · หลังเกิดเหตุ",en:"Step 2 · After the crash"},swResp:{th:"แผนช่วยเหลือ 3D",en:"Response in 3D"},orbHint:{th:"ลากเพื่อหมุน · ล้อเมาส์/บีบนิ้วเพื่อซูม · ดับเบิลคลิกเพื่อรีเซ็ต",en:"Drag to rotate · wheel or pinch to zoom · double-click to reset"},reroll:{th:"สุ่มสถานการณ์ใหม่",en:"New random run"},
  mcH:{th:"สุ่มซ้ำ 400 ครั้ง",en:"400 randomised runs"},
  mcP:{th:"ทุกครั้งสุ่มระยะที่โผล่ เวลาตอบสนอง การเสียสมาธิ และการตรวจจับพลาด ตามค่าสมมติของผู้ควบคุมที่เลือก",en:"Each run randomises reveal distance, reaction time, distraction and missed detections, using the selected controller's assumed values."},
  oSafe:{th:"หยุด/ผ่านได้ปลอดภัย",en:"Safe"},oNear:{th:"เฉียดฉิว",en:"Near miss"},oLight:{th:"ชนเบา / เสียหายเฉพาะจุด",en:"Light impact / local damage"},oSerious:{th:"รุนแรง (ชนแรง พัง ตก)",en:"Serious (hard impact, collapse, crash)"},oMrc:{th:"ยุติอย่างปลอดภัย (จอด ปิดทาง ยกเลิก)",en:"Safely stopped (halt, closure, abort)"},
@@ -376,7 +381,7 @@ let lang=(globalThis.ProjectLanguage&&ProjectLanguage.language)==="en"?"en":"th"
 const tx=o=>typeof o==="string"?o:(o[lang]??o.en);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
-const st={veh:"car",scn:"ped",surf:"dry",light:"day",ctrl:"human",spd:50,exp:40,atpfail:false,seed:7,view:"top",force:"rand",spec:70,age:25,ovl:15,tun:"std",track:"ground"};
+const st={veh:"car",scn:"ped",surf:"dry",light:"day",ctrl:"human",spd:50,exp:40,atpfail:false,seed:7,view:"top",force:"rand",spec:70,age:25,ovl:15,tun:"std",track:"ground",tscale:"auto"};
 
 /* ---------- random ---------- */
 function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
@@ -941,7 +946,7 @@ function cloudLayer(sc,n,area,y0,y1,shade,seed){const rb=rngB(seed),G=new THREE.
  for(let i=0;i<n;i++){const c=new THREE.Group(),s=140+rb()*280,k=5+Math.floor(rb()*5);for(let j=0;j<k;j++){const b=mesh(geo,m,false);b.position.set((rb()-.5)*s*1.6,rb()*s*.3,(rb()-.5)*s);const r=s*(.35+rb()*.35);b.scale.set(r*1.2,r*.7,r);b.userData.r=r;c.add(b);}
   c.position.set((rb()-.5)*area,y0+rb()*(y1-y0),(rb()-.5)*area);c.userData.ph=rb()*6;G.add(c);}
  G.userData={area};sc.add(G);return G;}
-function stepClouds(G,cx,cz,wind,t){const A=G.userData.area,dt=Math.max(0,Math.min(.1,t-(G.userData.t||t)));G.userData.t=t;
+function stepClouds(G,cx,cz,wind,t){const A=G.userData.area,dt=Math.max(0,Math.min(60,t-(G.userData.t||t)));G.userData.t=t;
  G.children.forEach(c=>{c.position.x+=wind[0]*dt;c.position.z+=wind[1]*dt;
   if(c.position.x-cx>A/2)c.position.x-=A;if(c.position.x-cx<-A/2)c.position.x+=A;if(c.position.z-cz>A/2)c.position.z-=A;if(c.position.z-cz<-A/2)c.position.z+=A;
   c.children.forEach((b,j)=>{const r=b.userData.r*(1+.07*Math.sin(t*.25+c.userData.ph+j));b.scale.set(r*1.2,r*.7,r);});});}
@@ -1181,7 +1186,7 @@ function draw3d(fr,run){
  }
  R3.pivot=O.ego.position.clone().add(new THREE.Vector3(0,1,0));orbApply(cam,st.view==="driver"||st.view==="other");cam.updateProjectionMatrix();
  R3.renderer.render(R3.scene,cam);
- document.getElementById("v3tag").textContent=`${(f.v*3.6).toFixed(0)} km/h · ${esc(viewLabel(st.view))}`;
+ document.getElementById("v3tag").textContent=`${(f.v*3.6).toFixed(0)} km/h · ${viewLabel(st.view)} · ${fmtX(speedOf(run))}`;
 }
 function viewLabel(v){ const k=hazKind();
  if(v==="top")return tx(T.vTop); if(v==="chase")return tx(T.vChase); if(isK2()){const q=K2V[k2key()];return tx(v==="driver"?q.d:q.o);} if(v==="driver")return tx(VEH[st.veh].kind==="rail"?T.vDriverRail:T.vDriver); return tx(T.vOther[k]); }
@@ -1307,7 +1312,7 @@ function build3dK2(run){
   if(e==="ship"||e==="small"){
    const fogC=night?0x0b1220:sf==="flood"?0xc9d1d8:sf==="wet"?0x7d8a96:0xa9c7e3, far=sf==="flood"?(night?300:700):sf==="wet"?(night?1500:3500):(night?6000:24000);bg(fogC,far*.12,far);lights3(sc,night);
    const SS=SEA[sf]||SEA.dry;flat(sc,120000,120000,night?0x0a1a2a:0x1f5677,0,-.3,0,.22,{metal:.15});O.wave=waveMesh(sc,night?0x0c1f33:0x1f5677,SS.hs,SS.wa);
-   O.wind=[Math.cos(SS.wa)*SS.w[0]*.514*8,Math.sin(SS.wa)*SS.w[0]*.514*8];if(sf!=="flood")O.clouds=cloudLayer(sc,sf==="wet"?40:18,16000,sf==="wet"?520:1300,sf==="wet"?820:1900,night?0x3a4250:sf==="wet"?0x9aa3ab:0xffffff,31);
+   O.wind=[Math.cos(SS.wa)*SS.w[0]*.514,Math.sin(SS.wa)*SS.w[0]*.514];O.wakeA=makeWake(sc,night);O.wakeB=makeWake(sc,night);O.dims=e==="ship"?[300,45]:[14,4.5];if(sf!=="flood")O.clouds=cloudLayer(sc,sf==="wet"?40:18,16000,sf==="wet"?520:1300,sf==="wet"?820:1900,night?0x3a4250:sf==="wet"?0x9aa3ab:0xffffff,31);
    O.C=e==="ship"?900:300;O.own=shipMesh(260,40,22,C3("--accent").getHex());sc.add(O.own);
    O.oth=e==="ship"?shipMesh(300,45,24,0x8a2a2a):shipMesh(14,4.5,2.5,0x2e86c1);O.oth.rotation.y=-Math.PI/2;sc.add(O.oth);
    if(sf!=="dry")rainPts(sc,O,false);
@@ -1417,6 +1422,26 @@ function padComplex(sc,O){const pc=mat(0xb9bec4,.9),dk=mat(0x2b3036,.9),steel=ma
  O.steam=new THREE.Group();O.steamM=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.85,roughness:1,depthWrite:false});
  for(let i=0;i<16;i++){const b=mesh(new THREE.SphereGeometry(1,16,12),O.steamM,false),sd=i%2?1:-1;b.position.set((Math.random()-.5)*24,8+Math.random()*12,sd*(42+Math.random()*34));b.userData.s=4+Math.random()*5;O.steam.add(b);}sc.add(O.steam);}
 
+/* bow waves and wakes: a foam trail behind the stern, the Kelvin wake arms at 19.47 degrees, and spray at the bow.
+   Strength follows speed (Froude number Fr = v / sqrt(g L)); every strip rides on the Gerstner sea surface. */
+let FOAM=null;
+function foamTex(){if(FOAM)return FOAM;FOAM=canvasTex(64,256,(c,w,h)=>{c.clearRect(0,0,w,h);const r=rngB(4);for(let i=0;i<3200;i++){const y=r()*h,f=1-y/h,x=w/2+(r()-.5)*w*(.35+.65*y/h);c.fillStyle=`rgba(255,255,255,${((.35+.65*r())*Math.pow(f,1.2)).toFixed(3)})`;c.fillRect(x,y,1+r()*3,1+r()*3);}});return FOAM;}
+function wakeStrip(sc,night){const n=40,g=new THREE.BufferGeometry(),pos=new Float32Array((n+1)*6),uv=new Float32Array((n+1)*4),idx=[];
+ for(let i=0;i<=n;i++){uv.set([0,1-i/n,1,1-i/n],i*4);if(i<n){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}}
+ g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("uv",new THREE.BufferAttribute(uv,2));g.setIndex(idx);
+ const o=new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:foamTex(),transparent:true,depthWrite:false,color:night?0x7d8a99:0xffffff,side:THREE.DoubleSide}));o.frustumCulled=false;o.renderOrder=2;o.userData.n=n;sc.add(o);return o;}
+function setStrip(o,px,pz,dx,dz,len,w0,w1,t,lift,op){const p=o.geometry.attributes.position.array,n=o.userData.n,sx=-dz,sz=dx;
+ for(let i=0;i<=n;i++){const s=i/n,cx=px+dx*len*s,cz=pz+dz*len*s,hw=(w0+(w1-w0)*s)/2,xl=cx+sx*hw,zl=cz+sz*hw,xr=cx-sx*hw,zr=cz-sz*hw;
+  p[i*6]=xl;p[i*6+1]=waveH(xl,zl,t)+lift;p[i*6+2]=zl;p[i*6+3]=xr;p[i*6+4]=waveH(xr,zr,t)+lift;p[i*6+5]=zr;}
+ o.geometry.attributes.position.needsUpdate=true;o.material.opacity=op;o.visible=op>.02;}
+function makeWake(sc,night){return {c:wakeStrip(sc,night),k1:wakeStrip(sc,night),k2:wakeStrip(sc,night),b1:wakeStrip(sc,night),b2:wakeStrip(sc,night)};}
+function stepWake(W,ship,L,Bm,v,t){const yaw=ship.rotation.y,fx=Math.cos(yaw),fz=-Math.sin(yaw),x=ship.position.x,z=ship.position.z;
+ const op=Math.min(1,v/7),fr=v/Math.sqrt(9.81*L),rot=a=>[-(fx*Math.cos(a)-fz*Math.sin(a)),-(fx*Math.sin(a)+fz*Math.cos(a))];
+ const sx=x-fx*L*.5,sz=z-fz*L*.5,bx=x+fx*L*.5,bz=z+fz*L*.5;
+ setStrip(W.c,sx,sz,-fx,-fz,L*4,Bm*.9,Bm*3,t,.35,op);
+ const ka=19.47*Math.PI/180;[[W.k1,ka],[W.k2,-ka]].forEach(([o,a])=>{const d=rot(a);setStrip(o,bx-fx*L*.1,bz-fz*L*.1,d[0],d[1],L*6,Bm*.25,Bm*1.2,t,.2,op*.55);});
+ const ba=38*Math.PI/180;[[W.b1,ba],[W.b2,-ba]].forEach(([o,a])=>{const d=rot(a);setStrip(o,bx-fx*Bm*.2,bz-fz*Bm*.2,d[0],d[1],L*.4,Bm*.3,Bm*.8,t,.6,Math.min(1,.4+fr*4)*op);});}
+
 function draw3dK2(fr,run){
  const O=R3.obj,cam=R3.camera,k=run.k2,v=st.view,f=fr||run.trace[0]||{t:0},t=f.t||0,ph=f.phase;
  const dk=document.getElementById("v3dark");if(dk)dk.style.opacity=0;
@@ -1424,8 +1449,9 @@ function draw3dK2(fr,run){
  if(k==="enc"){const e=O.enc,tc=f.tc||0,off=f.off||0;
   if(e==="ship"||e==="small"){const C=O.C,ox=-run.v*tc,oz=off*C,yaw=ph==="avoid"?-.35*(1-off):0;O.own.position.set(ox,0,oz);O.own.rotation.y=yaw;const iz=-run.v*.8*tc;O.oth.position.set(0,0,iz);
    O.flash.visible=ph==="hit";if(O.flash.visible){O.flash.position.set(0,10,oz*.5);O.flash.scale.setScalar(40);}
-   const wt=performance.now()/1000,hs=(SEA[cfgNow().surf]||SEA.dry).hs;O.own.position.y=waveH(ox,oz,wt)*.35;O.own.rotation.x=(waveH(ox+60,oz,wt)-waveH(ox-60,oz,wt))/120*.6;O.own.rotation.z=Math.sin(wt*.6)*.006*hs;
+   const wt=f.t||0,hs=(SEA[cfgNow().surf]||SEA.dry).hs;O.simT=wt;O.own.position.y=waveH(ox,oz,wt)*.35;O.own.rotation.x=(waveH(ox+60,oz,wt)-waveH(ox-60,oz,wt))/120*.6;O.own.rotation.z=Math.sin(wt*.6)*.006*hs;
    O.oth.position.y=waveH(0,iz,wt)*(e==="small"?.9:.35);O.oth.rotation.z=(waveH(0,iz+3,wt)-waveH(0,iz-3,wt))/6*(e==="small"?.8:.2);
+   stepWake(O.wakeA,O.own,260,40,run.v,wt);stepWake(O.wakeB,O.oth,O.dims[0],O.dims[1],run.v*.8,wt);
    const vi=document.getElementById("v3info");vi.hidden=false;vi.innerHTML=seaInfo(run,O.own.position,O.oth.position,O.night);
    const ey=O.own.userData.eye,oe=O.oth.userData.eye;far=60000;near=1;
    if(v==="chase"){P(ox-420,120,oz+260);LK(ox+400,0,oz);} else if(v==="driver"){fov=55;P(ox+ey[0],ey[1],oz);LK(ox+ey[0]+1000*Math.cos(yaw),ey[1]-8,oz-1000*Math.sin(yaw));}
@@ -1505,10 +1531,10 @@ function draw3dK2(fr,run){
   near=.2;far=6000;if(v==="chase"){P(-40,38,70);LK(170,0,0);} else if(v==="driver"){fov=70;const dx=(t*13+150)%420-10;P(dx+4.6,3.2,2);LK(dx+80,1,2);} else {fov=72;P(mx-.9,1.45,2.2);LK(mx+40,0,2.2);}
  }
  stepRain(O,cam);
- if(O.wave&&!O.waveC)stepWave(O.wave,cam.position.x,cam.position.z,performance.now()/1000);
- if(O.clouds&&!O.waveC)stepClouds(O.clouds,cam.position.x,cam.position.z,O.wind,performance.now()/1000);
+ if(O.wave&&!O.waveC)stepWave(O.wave,cam.position.x,cam.position.z,O.simT);
+ if(O.clouds&&!O.waveC)stepClouds(O.clouds,cam.position.x,cam.position.z,O.wind,O.simT);
  cam.fov=fov;cam.near=near;cam.far=far;R3.pivot=O.own?O.own.position.clone():null;orbApply(cam,st.view!=="chase");cam.updateProjectionMatrix();R3.renderer.render(R3.scene,cam);cam.up.set(0,1,0);
- document.getElementById("v3tag").textContent=viewLabel(st.view);
+ document.getElementById("v3tag").textContent=viewLabel(st.view)+" · "+fmtX(speedOf(run));
 }
 const PADINFO=B("<b>ฐานปล่อย</b> ตัวยึดฐาน (hold-down clamps) ปลดที่ T+0 แขนหอปล่อยหมุนออก · <b>หอน้ำ</b> ส่งน้ำปริมาณมากใต้ฐานจรวด (deluge) ลดแรงสั่นจากเสียงและความร้อนไม่ให้ทำลายแท่นและตัวจรวด · ไกลออกไป: อาคารประกอบจรวด โรงงาน ป่า และเมือง","<b>Pad</b> hold-down clamps release at T+0 and the tower arms swing clear · <b>Water tower</b> floods the pad (deluge) to damp the sound and heat that would damage the pad and rocket · Further out: assembly building, factory, forest and a town");
 const SEA={dry:{wa:2.356,w:[10,"NE"],bf:3,hs:.8,vis:10,d:B("ท้องฟ้าโปร่ง","Clear")},wet:{wa:-.785,w:[25,"SW"],bf:6,hs:2.5,vis:2,d:B("ฝนหนัก","Heavy rain")},flood:{wa:-1.571,w:[4,"S"],bf:1,hs:.3,vis:.2,d:B("หมอกหนา","Dense fog")}};
@@ -1521,24 +1547,31 @@ function sc_fog(c,n,f){const fg=R3.scene.fog;if(!fg)return;fg.color.copy(lin(c))
 
 /* ---------- animation ---------- */
 let anim=null,lastRun=null;
-function play(){
- cancelAnimationFrame(anim);
- const cfg=cfgNow();const run=trial(cfg,st.exp/100,st.seed,true);lastRun=run;
+function autoSpeed(run){return run&&run.speedUp||(SCN[st.scn].kind==="rail"?3:1);}
+function speedOf(run){return st.tscale==="auto"?autoSpeed(run):+st.tscale;}
+const fmtX=x=>"×"+(x<10?(+x.toFixed(1)).toString():Math.round(x));
+let curIdx=0,simPlaying=false;
+function play(from){
+ cancelAnimationFrame(anim);simPlaying=false;
+ const cfg=cfgNow();let run;if(typeof from!=="number"){run=trial(cfg,st.exp/100,st.seed,true);lastRun=run;from=0;}else run=lastRun;
  if(run.outcome==="mrc"&&!run.k2){draw(null,run);hud(null,run);result(run);return;}
  if(!run.trace.length){draw(null,run);hud(null,run);result(run);return;}
- const tr=run.trace;let i=0,t0=null;const speed=run.speedUp||(SCN[cfg.scn].kind==="rail"?3:1);
+ const tr=run.trace;let i=from,t0=null;const base=tr[from].t;
  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
  if(reduce){draw(tr[tr.length-1],run);hud(tr[tr.length-1],run);result(run);return;}
- function step(ts){if(t0===null)t0=ts;const simT=(ts-t0)/1000*speed;while(i<tr.length-1&&tr[i+1].t<=simT)i++;draw(tr[i],run);hud(tr[i],run);syncTL(i,tr.length);
-  if(i<tr.length-1)anim=requestAnimationFrame(step);else result(run);}
- $("one").className="result";$("one").textContent="…";anim=requestAnimationFrame(step);
+ function step(ts){if(t0===null)t0=ts;const simT=base+(ts-t0)/1000*speedOf(run);while(i<tr.length-1&&tr[i+1].t<=simT)i++;curIdx=i;draw(tr[i],run);hud(tr[i],run);syncTL(i,tr.length);
+  if(i<tr.length-1)anim=requestAnimationFrame(step);else{simPlaying=false;result(run);}}
+ simPlaying=true;$("one").className="result";$("one").textContent="…";anim=requestAnimationFrame(step);
 }
+function tscUI(run){const a=$("ts-auto");if(a)a.textContent=tx(T.tsAuto)+" "+fmtX(autoSpeed(run));document.querySelectorAll("[data-ts]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.ts===String(st.tscale)));
+ const h=$("hud");if(h&&run&&run.trace&&run.trace.length)h.insertAdjacentHTML("afterbegin",`<div><span>${esc(tx(T.tsChip))}</span> <b>${fmtX(speedOf(run))}</b></div>`);}
 function syncTL(i,n){const el=$("tl");if(el)el.value=Math.round(i/Math.max(1,n-1)*1000);}
 function keyIdx(run){const tr=run.trace;if(!tr.length)return 0;let i=tr.findIndex(f=>["hit","boom","collapse","spiral","cascade"].includes(f.phase));
  if(i<0)i=tr.findIndex(f=>["brake","avoid","turn","escape","term","lost","anomaly","react","caution"].includes(f.phase));if(i<0)i=Math.floor(tr.length/2);return i;}
-function showFrame(i){cancelAnimationFrame(anim);const run=lastRun;if(!run||!run.trace.length)return;const tr=run.trace;i=Math.max(0,Math.min(tr.length-1,i));draw(tr[i],run);hud(tr[i],run);syncTL(i,tr.length);
+function showFrame(i){cancelAnimationFrame(anim);simPlaying=false;curIdx=i;const run=lastRun;if(!run||!run.trace.length)return;const tr=run.trace;i=Math.max(0,Math.min(tr.length-1,i));draw(tr[i],run);hud(tr[i],run);syncTL(i,tr.length);
  if(i===tr.length-1)result(run);else{$("one").className="result";$("one").textContent=tx(T.scrub);}}
-function hud(fr,run){
+function hud(fr,run){hud0(fr,run);tscUI(run);}
+function hud0(fr,run){
  const P=T.phase, ph=run.outcome==="mrc"?"mrc":fr?fr.phase:"idle";
  if(run.k2&&fr&&fr.hud){$("hud").innerHTML=fr.hud.map(([k,v])=>`<div><span>${esc(tx(k))}</span> ${esc(v)}</div>`).join("")+`<div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P[fr.phase]||P.idle))}</span></div>`;return;}
  if(run.k2){$("hud").innerHTML=`<div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P.idle))}</span></div>`;return;}
@@ -1646,6 +1679,7 @@ let curveTimer=null;function laterCurves(){clearTimeout(curveTimer);curveTimer=s
 document.addEventListener("click",ev=>{
  const b=ev.target.closest("button");if(!b)return;
  if(b.dataset.veh){st.veh=b.dataset.veh;update(true);$("veh-"+st.veh)?.focus();}
+ else if(b.dataset.ts){st.tscale=b.dataset.ts==="auto"?"auto":+b.dataset.ts;tscUI(null);if(simPlaying)play(curIdx);else if(lastRun)hud(lastRun.trace[curIdx]||null,lastRun);}
  else if(b.dataset.jump){const r=lastRun;if(r&&r.trace.length)showFrame(b.dataset.jump==="pre"?0:b.dataset.jump==="post"?r.trace.length-1:keyIdx(r));}
  else if(b.dataset.view){orbReset();st.view=b.dataset.view;syncViews();if(lastRun)draw(lastRun.trace[0]||null,lastRun);document.getElementById("view-"+st.view)?.focus();}
  else if(b.id==="run")play();
