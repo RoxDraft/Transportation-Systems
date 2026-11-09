@@ -46,7 +46,8 @@ h2{font-family:var(--f-display);font-size:26px;line-height:1.1;margin:0 0 10px}
 .lang button{font:600 14px var(--f-mono);padding:7px 16px;background:transparent;color:var(--ink);border:0;cursor:pointer}
 .lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.back{font-size:13.5px;color:var(--ink)}
+.back{display:inline-flex;align-items:center;gap:6px;font:600 14px var(--f-body);padding:9px 14px;border:2px solid var(--ink);border-radius:10px;color:var(--ink);background:var(--panel);text-decoration:none}
+.back:hover{background:var(--ink);color:var(--bg)}
 .console{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:18px;align-items:start}
 @media (max-width:900px){.console{grid-template-columns:1fr}}
 .setup{background:var(--panel);border:1px solid var(--line);padding:16px;display:grid;gap:16px}
@@ -261,7 +262,7 @@ const T={
  pathP:{th:"ขั้นตอนของคนอิงข้อกำหนดใบขับขี่ไทย ขั้นตอนของระบบอิงแนวทางที่บริษัทรถไร้คนขับใช้ ระยะทางในแต่ละขั้นเป็นค่าประกอบภาพ",en:"The human steps follow Thai licensing rules; the system steps follow the path driverless-car companies use. Distances per step are illustrative."},
  pathHuman:{th:"คน",en:"Human"},pathSys:{th:"ระบบขับเอง",en:"Self-driving system"},
  foot:{th:"ตัวเลขทั้งหมดในตัวจำลองเป็นค่าสมมติเพื่อการเรียนรู้หลักการ ได้แก่ เวลาตอบสนอง โอกาสตรวจจับ การเบรก และระยะมองเห็น ไม่ใช่ผลทดสอบของระบบหรือผลิตภัณฑ์จริงตัวใด ฟิสิกส์การเบรกใช้ระยะหยุด = v·t + v²/2a",en:"Every number in this simulator is a teaching assumption: reaction times, detection rates, braking and sight distances. None are test results for a real system or product. Braking physics uses stopping distance = v·t + v²/2a."},
- phase:{avoid:{th:"หลบหลีก",en:"Avoiding"},lost:{th:"สัญญาณหาย",en:"Link lost"},rth:{th:"บินกลับจุดขึ้น",en:"Returning home"},land:{th:"ลงจอดทันที",en:"Landing in place"},fly:{th:"บินหลุดควบคุม",en:"Fly-away"},anomaly:{th:"ตรวจพบความผิดปกติ",en:"Anomaly"},escape:{th:"แคปซูลหนีภัย",en:"Capsule escaping"},boom:{th:"ระเบิด",en:"Explosion"},term:{th:"สั่งทำลายในเขตปลอดภัย",en:"Terminated in safe zone"},deviate:{th:"ออกนอกเส้นทาง",en:"Off course"},ascent:{th:"ไต่ระดับ",en:"Ascending"},roll:{th:"วิ่งขึ้น",en:"Take-off roll"},cloud:{th:"อยู่ในเมฆ",en:"In cloud"},turn:{th:"เลี้ยวกลับออกจากเมฆ",en:"Turning out of cloud"},spiral:{th:"หลงท่า เสียการควบคุม",en:"Disoriented, losing control"},traffic:{th:"รถวิ่งผ่าน",en:"Traffic crossing"},cascade:{th:"พังต่อเนื่อง",en:"Cascading failure"},closed:{th:"ปิดทาง",en:"Closed"},collapse:{th:"ถล่ม",en:"Collapse"},repair:{th:"ซ่อมจุดเสีย",en:"Repairing"},
+ phase:{pad:{th:"บนฐานปล่อย",en:"On the pad"},avoid:{th:"หลบหลีก",en:"Avoiding"},lost:{th:"สัญญาณหาย",en:"Link lost"},rth:{th:"บินกลับจุดขึ้น",en:"Returning home"},land:{th:"ลงจอดทันที",en:"Landing in place"},fly:{th:"บินหลุดควบคุม",en:"Fly-away"},anomaly:{th:"ตรวจพบความผิดปกติ",en:"Anomaly"},escape:{th:"แคปซูลหนีภัย",en:"Capsule escaping"},boom:{th:"ระเบิด",en:"Explosion"},term:{th:"สั่งทำลายในเขตปลอดภัย",en:"Terminated in safe zone"},deviate:{th:"ออกนอกเส้นทาง",en:"Off course"},ascent:{th:"ไต่ระดับ",en:"Ascending"},roll:{th:"วิ่งขึ้น",en:"Take-off roll"},cloud:{th:"อยู่ในเมฆ",en:"In cloud"},turn:{th:"เลี้ยวกลับออกจากเมฆ",en:"Turning out of cloud"},spiral:{th:"หลงท่า เสียการควบคุม",en:"Disoriented, losing control"},traffic:{th:"รถวิ่งผ่าน",en:"Traffic crossing"},cascade:{th:"พังต่อเนื่อง",en:"Cascading failure"},closed:{th:"ปิดทาง",en:"Closed"},collapse:{th:"ถล่ม",en:"Collapse"},repair:{th:"ซ่อมจุดเสีย",en:"Repairing"},
  idle:{th:"พร้อม",en:"Ready"},cruise:{th:"วิ่งปกติ",en:"Cruising"},caution:{th:"ชะลอระวัง",en:"Slowing as a precaution"},react:{th:"กำลังตอบสนอง",en:"Reacting"},brake:{th:"เบรก",en:"Braking"},stop:{th:"หยุดแล้ว",en:"Stopped"},hit:{th:"ชน",en:"Impact"},clear:{th:"ผ่านไปแล้ว",en:"Passed"},mrc:{th:"ไม่ออกเดินทาง",en:"Not departing"}},
  hSpeed:{th:"ความเร็ว",en:"Speed"},
  lTun:{th:"ไฟใต้สะพาน / อุโมงค์",en:"Underpass lighting"},lTrk:{th:"ประเภททางรถไฟ",en:"Track type"},
@@ -669,9 +670,11 @@ function abortTrial(out,cfg,r,e,c,record){
  else {det=r()<.95+.045*e;react=.15;ok=benign||(det&&react+.4<W);}
  const escaped=!benign&&ok;out.outcome=ok?"mrc":"serious";out.react=react;out.k2="abort";out.W=W;out.benign=benign;out.escaped=escaped;out.trig=react;
  const ta=5,T=ta+Math.min(9,Math.max(4,W+4));out.speedUp=1;
- if(record)for(let i=0;i<=300;i++){const t=T*i/300;const alt=.5*18*(t+20)**2;let ph=t<ta?"ascent":"anomaly";
+ const PRE=6;
+ if(record){for(let i=0;i<120;i++){const t=PRE*i/120,Tp=-4+t*4,alt=Tp<=0?0:.5*18*Tp*Tp;out.trace.push({t,ta:ta+PRE,alt,Tp,phase:Tp<0?"pad":"ascent",hud:[[HK.time,(Tp<0?"T":"T+")+Tp.toFixed(1)+" s"],[HK.alt,fmtD(alt)]]});}
+  for(let i=0;i<=300;i++){const t=T*i/300;const alt=.5*18*(t+20)**2;let ph=t<ta?"ascent":"anomaly";
   if(escaped&&t>=ta+react)ph="escape";if(!benign&&t>=ta+W)ph=escaped?"escape":"boom";if(benign&&t>=ta+1.5)ph="stop";
-  out.trace.push({t,ta,alt,phase:ph,hud:[[HK.time,"T+"+(t+20).toFixed(1)+" s"],[HK.alt,fmtD(alt)]]});}
+  out.trace.push({t:t+PRE,ta:ta+PRE,alt,Tp:t+20,phase:ph,hud:[[HK.time,"T+"+(t+20).toFixed(1)+" s"],[HK.alt,fmtD(alt)]]});}}
  const w=fmtS(W);
  out.msg={th:benign?"ความผิดปกติไม่ระเบิดทันที ยกเลิกภารกิจได้อย่างปลอดภัย":escaped?`สั่งหนีภัยใน ${fmtS(react)} ก่อนระเบิด (มีเวลา ${w}) ลูกเรือปลอดภัย`:c==="snone"?`ไม่มีระบบหนีภัย ระเบิดหลังผิดปกติ ${w}`:`สั่งหนีภัยไม่ทัน เวลาก่อนระเบิดมีเพียง ${w}`,
   en:benign?"The failure didn't explode at once; the mission aborted safely.":escaped?`Escape triggered in ${fmtS(react)}, before the explosion (${w} available). Crew safe.`:c==="snone"?`No escape system; explosion ${w} after the failure.`:`Escape came too late; there were only ${w} before the explosion.`};
@@ -916,10 +919,32 @@ function orbBind(el,redraw){const pts=new Map();let pinch=0;
  el.addEventListener("wheel",e=>{e.preventDefault();ORB.zoom=Math.max(.3,Math.min(12,ORB.zoom*Math.exp(-e.deltaY*.0015)));redraw();},{passive:false});
  el.addEventListener("dblclick",e=>{if(e.target.closest("button"))return;orbReset();redraw();});
  el.querySelectorAll("[data-orb]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.orb;if(k==="in")ORB.zoom=Math.min(12,ORB.zoom*1.4);else if(k==="out")ORB.zoom=Math.max(.3,ORB.zoom/1.4);else orbReset();redraw();}));}
-/* sea surface: a wave patch that follows the camera */
-function waveMesh(sc,col,hs){const g=new THREE.PlaneGeometry(2400,2400,100,100);g.rotateX(-Math.PI/2);const m=new THREE.MeshStandardMaterial({color:lin(col),roughness:.32,metalness:.12,flatShading:true});const w=mesh(g,m,false,true);sc.add(w);w.userData={hs,base:g.attributes.position.array.slice()};return w;}
-function waveH(x,z,t,hs){const a=hs*.5;return a*(.55*Math.sin(x*.045+t*.9)+.3*Math.sin((x*.6+z*.8)*.07+t*1.25)+.15*Math.sin((z-x*.3)*.1+t*1.7));}
-function stepWave(w,cx,cz,t){const c=24,sx=Math.round(cx/c)*c,sz=Math.round(cz/c)*c;w.position.set(sx,0,sz);const p=w.geometry.attributes.position,b=w.userData.base,hs=w.userData.hs;for(let i=0;i<p.count;i++)p.array[i*3+1]=waveH(b[i*3]+sx,b[i*3+2]+sz,t,hs);p.needsUpdate=true;w.geometry.computeVertexNormals();}
+/* sea surface: Gerstner (trochoidal) waves on a patch that follows the camera.
+   Each wave obeys the deep-water dispersion relation w^2 = g*k, so long waves travel faster, as in real seas. */
+let WAVES=[];const _g=[0,0,0];
+function setWaves(hs,dir){const g=9.81,base=[[90,.30,0,0],[55,.16,.45,1.3],[36,.08,-.5,2.1],[150,.22,.9,.7]];
+ WAVES=base.map(([L,a,da,ph])=>{const k=2*Math.PI/L,w=Math.sqrt(g*k),A=a*hs,ang=dir+da;return {k,w,A,dx:Math.cos(ang),dz:Math.sin(ang),ph,Q:Math.min(.9,.5/(k*Math.max(A,.01)*4))};});}
+function gerst(X,Z,t,o){let x=0,y=0,z=0;for(const W of WAVES){const th=W.k*(W.dx*X+W.dz*Z)-W.w*t+W.ph,c=Math.cos(th),s=Math.sin(th);x+=W.Q*W.A*W.dx*c;z+=W.Q*W.A*W.dz*c;y+=W.A*s;}o[0]=x;o[1]=y;o[2]=z;return o;}
+function waveH(x,z,t){return gerst(x,z,t,_g)[1];}
+function waveMesh(sc,col,hs,dir=.6){setWaves(hs,dir);const R=1100,n=150,g=new THREE.PlaneGeometry(2*R,2*R,n,n);g.rotateX(-Math.PI/2);
+ g.setAttribute("color",new THREE.BufferAttribute(new Float32Array(g.attributes.position.count*3),3));
+ const w=mesh(g,new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.5,metalness:0}),false,true);sc.add(w);
+ const deep=lin(col);w.userData={base:g.attributes.position.array.slice(),deep,crest:deep.clone().lerp(new THREE.Color(1,1,1),.2),amp:WAVES.reduce((a,W)=>a+W.A,0)||1,R,n};return w;}
+function stepWave(w,cx,cz,t){const U=w.userData,c=2*U.R/U.n,sx=Math.round(cx/c)*c,sz=Math.round(cz/c)*c;w.position.set(sx,0,sz);
+ const p=w.geometry.attributes.position.array,col=w.geometry.attributes.color.array,b=U.base,R=U.R;
+ for(let i=0;i<b.length;i+=3){const bx=b[i],bz=b[i+2],r=Math.max(Math.abs(bx),Math.abs(bz))/R,f=r<.7?1:r>=1?0:1-(r-.7)/.3;gerst(bx+sx,bz+sz,t,_g);
+  p[i]=bx+_g[0]*f;p[i+1]=_g[1]*f;p[i+2]=bz+_g[2]*f;const h=Math.max(0,Math.min(1,_g[1]*f/U.amp*.5+.5)),q=h*h*h*h;
+  col[i]=U.deep.r+(U.crest.r-U.deep.r)*q;col[i+1]=U.deep.g+(U.crest.g-U.deep.g)*q;col[i+2]=U.deep.b+(U.crest.b-U.deep.b)*q;}
+ w.geometry.attributes.position.needsUpdate=true;w.geometry.attributes.color.needsUpdate=true;w.geometry.computeVertexNormals();}
+/* cumulus clusters carried by the wind (advection), slowly growing and shrinking */
+function cloudLayer(sc,n,area,y0,y1,shade,seed){const rb=rngB(seed),G=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:lin(shade),roughness:1,transparent:true,opacity:.95}),geo=new THREE.IcosahedronGeometry(1,2);
+ for(let i=0;i<n;i++){const c=new THREE.Group(),s=140+rb()*280,k=5+Math.floor(rb()*5);for(let j=0;j<k;j++){const b=mesh(geo,m,false);b.position.set((rb()-.5)*s*1.6,rb()*s*.3,(rb()-.5)*s);const r=s*(.35+rb()*.35);b.scale.set(r*1.2,r*.7,r);b.userData.r=r;c.add(b);}
+  c.position.set((rb()-.5)*area,y0+rb()*(y1-y0),(rb()-.5)*area);c.userData.ph=rb()*6;G.add(c);}
+ G.userData={area};sc.add(G);return G;}
+function stepClouds(G,cx,cz,wind,t){const A=G.userData.area,dt=Math.max(0,Math.min(.1,t-(G.userData.t||t)));G.userData.t=t;
+ G.children.forEach(c=>{c.position.x+=wind[0]*dt;c.position.z+=wind[1]*dt;
+  if(c.position.x-cx>A/2)c.position.x-=A;if(c.position.x-cx<-A/2)c.position.x+=A;if(c.position.z-cz>A/2)c.position.z-=A;if(c.position.z-cz<-A/2)c.position.z+=A;
+  c.children.forEach((b,j)=>{const r=b.userData.r*(1+.07*Math.sin(t*.25+c.userData.ph+j));b.scale.set(r*1.2,r*.7,r);});});}
 function dm(v,pos){const a=Math.abs(v),d=Math.floor(a),m=(a-d)*60;return `${d}°${m.toFixed(1)}′${v>=0?pos[0]:pos[1]}`;}
 
 let R3=null;
@@ -1281,7 +1306,8 @@ function build3dK2(run){
  if(k==="enc"){const e=run.enc;O.enc=e;
   if(e==="ship"||e==="small"){
    const fogC=night?0x0b1220:sf==="flood"?0xc9d1d8:sf==="wet"?0x7d8a96:0xa9c7e3, far=sf==="flood"?(night?300:700):sf==="wet"?(night?1500:3500):(night?6000:24000);bg(fogC,far*.12,far);lights3(sc,night);
-   flat(sc,120000,120000,night?0x0a1a2a:0x1f4e6b,0,-1.6,0,.22,{metal:.15});O.wave=waveMesh(sc,night?0x0c1f33:0x1f5677,(SEA[sf]||SEA.dry).hs);
+   const SS=SEA[sf]||SEA.dry;flat(sc,120000,120000,night?0x0a1a2a:0x1f5677,0,-.3,0,.22,{metal:.15});O.wave=waveMesh(sc,night?0x0c1f33:0x1f5677,SS.hs,SS.wa);
+   O.wind=[Math.cos(SS.wa)*SS.w[0]*.514*8,Math.sin(SS.wa)*SS.w[0]*.514*8];if(sf!=="flood")O.clouds=cloudLayer(sc,sf==="wet"?40:18,16000,sf==="wet"?520:1300,sf==="wet"?820:1900,night?0x3a4250:sf==="wet"?0x9aa3ab:0xffffff,31);
    O.C=e==="ship"?900:300;O.own=shipMesh(260,40,22,C3("--accent").getHex());sc.add(O.own);
    O.oth=e==="ship"?shipMesh(300,45,24,0x8a2a2a):shipMesh(14,4.5,2.5,0x2e86c1);O.oth.rotation.y=-Math.PI/2;sc.add(O.oth);
    if(sf!=="dry")rainPts(sc,O,false);
@@ -1331,10 +1357,10 @@ function build3dK2(run){
   const rb=rngB(66);O.crowd=crowd(sc,40,S*.47,S*.88,-.2*S,.1*S,77);trees(sc,60,-S,2*S,-S,S,0,night,88,(x,z)=>x>S*.4&&x<S*.95&&z>-.25*S&&z<.15*S||Math.hypot(x,z)<20);
   O.own=droneMesh(C3("--accent").getHex());O.own.scale.setScalar(1.6);sc.add(O.own);O.dir=new THREE.Vector3(1,0,0);if(sf!=="dry")rainPts(sc,O,false);
  }
- if(k==="abort"){bg(0x7fb2e5);lights3(sc,false,1.1);flat(sc,400000,400000,0x1f4e6b,0,0,0,.3,{metal:.1});flat(sc,60000,40000,0x6f8f5a,-25000,25,0,.95);
-  O.own=rocketMesh();sc.add(O.own);O.flash=boom(sc);
-  const cl=new THREE.InstancedMesh(new THREE.SphereGeometry(1,16,10),mat(0xffffff,.95,0,{transparent:true,opacity:.9}),40),mm=new THREE.Matrix4(),rb=rngB(12);
-  for(let i=0;i<40;i++){let cx_=(rb()-.5)*60000;if(cx_>-12000&&cx_<12000)cx_+=cx_<0?-14000:14000;mm.compose(new THREE.Vector3(cx_,1800+rb()*600,(rb()-.5)*60000),new THREE.Quaternion(),new THREE.Vector3(1500+rb()*2000,150+rb()*150,1200+rb()*1500));cl.setMatrixAt(i,mm);}sc.add(cl);
+ if(k==="abort"){bg(0x7fb2e5);lights3(sc,false,1.1);flat(sc,200000,400000,0x1f4e6b,100700,-.3,0,.3,{metal:.1});flat(sc,60700,400000,0x6f8f5a,-29650,0,0,.95);
+  flat(sc,120,40000,0xd9c9a0,640,.4,0,.95);O.wave=waveMesh(sc,0x1f5677,1.0,3.14);O.waveC=[1800,0];
+  padComplex(sc,O);O.own=rocketMesh();sc.add(O.own);O.flash=boom(sc);O.wind=[10,4];
+  O.clouds=cloudLayer(sc,34,60000,1800,2600,0xffffff,12);O.clouds.children.forEach(c=>{if(Math.abs(c.position.x)<12000&&Math.abs(c.position.z)<12000)c.position.x+=c.position.x<0?-14000:14000;});
  }
  if(k==="fts"){bg(0x6fa8dc);lights3(sc,false,1.1);flat(sc,600000,600000,0x1f4e6b,0,0,0,.3,{metal:.1});
   flat(sc,40000,120000,0x6f8f5a,-15000,40,0,.95);
@@ -1370,6 +1396,27 @@ function build3dK2(run){
  }
 }
 
+/* launch complex: pad and flame trench, hold-down clamps, tower with swing arms, water deluge, tank farm, assembly buildings, forest and a distant town */
+function padComplex(sc,O){const pc=mat(0xb9bec4,.9),dk=mat(0x2b3036,.9),steel=mat(0x8a939c,.5,.6);
+ bxm(sc,70,8,70,0,4,0,pc);bxm(sc,12,8.2,72,0,4.05,0,dk,false);bxm(sc,14,2,14,0,9,0,mat(0x6b7178,.6,.5));
+ O.clamps=[];[[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([a,b])=>{const c=bxm(sc,1,1.6,1,a*2.3,10.8,b*2.3,mat(0xe0b23a,.5,.3));c.userData.h=[a,b];O.clamps.push(c);});
+ const lt=canvasTex(64,64,(c,w,h)=>{c.clearRect(0,0,w,h);c.strokeStyle="#9aa3ab";c.lineWidth=6;c.strokeRect(3,3,w-6,h-6);c.lineWidth=4;c.beginPath();c.moveTo(0,0);c.lineTo(w,h);c.moveTo(w,0);c.lineTo(0,h);c.stroke();});
+ lt.wrapS=lt.wrapT=THREE.RepeatWrapping;lt.repeat.set(1,11);const lm=new THREE.MeshStandardMaterial({map:lt,transparent:true,alphaTest:.4,side:THREE.DoubleSide,roughness:.6,metalness:.4});
+ const tw=mesh(new THREE.BoxGeometry(8,96,8),lm);tw.position.set(-17,56,0);sc.add(tw);bxm(sc,10,1.5,10,-17,104.5,0,steel);
+ O.arms=[];[62,40].forEach(y=>{const g=new THREE.Group();g.position.set(-13,y,0);[-2.6,2.6].forEach(z=>bxm(g,15,1.4,1.2,7.5,0,z,steel));bxm(g,1.5,1.8,6.4,14.5,0,0,steel);sc.add(g);O.arms.push(g);});
+ const wt=new THREE.Group();[[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([a,b])=>cylm(wt,.5,.6,62,a*6,31,b*6,steel,"y",8));const tk=mesh(new THREE.SphereGeometry(11,24,16),mat(0xeef1f4,.5,.2));tk.position.y=72;wt.add(tk);wt.position.set(-160,0,130);sc.add(wt);
+ const pipe=cylm(sc,1.2,1.2,200,-80,1.4,65,mat(0x5d7f9a,.5,.5),"x",10);pipe.rotation.y=.68;
+ [[-95,-85],[-120,-60],[-70,-110]].forEach(([x,z])=>{const t_=mesh(new THREE.SphereGeometry(9,20,14),mat(0xf2f2f2,.4,.3));t_.position.set(x,10,z);sc.add(t_);});
+ [[60,60],[-60,-70],[65,-55]].forEach(([x,z])=>cylm(sc,.5,.9,120,x,60,z,steel,"y",6));
+ flat(sc,760,30,0x8a8f95,-430,.3,-120,.9);bxm(sc,150,110,120,-830,55,-120,mat(0xd9dde0,.8));bxm(sc,1,90,40,-754.6,45,-120,mat(0x5a6068,.7),false);
+ bxm(sc,240,28,110,-1150,14,180,mat(0xbfc4c8,.8));for(let x=-1260;x<-1040;x+=20)bxm(sc,10,4,110,x,30,180,mat(0x9aa3ab,.7),false);
+ trees(sc,1500,-9000,500,-6000,6000,0,false,77,(x,z)=>(x>-1400&&x<300&&Math.abs(z)<500));
+ const bi=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mat(0xc9c2b6,.8),500),mm=new THREE.Matrix4(),rb=rngB(23);for(let i=0;i<500;i++){const h=15+rb()*rb()*140;mm.compose(new THREE.Vector3(-16000+rb()*5000,h/2,(rb()-.5)*9000),new THREE.Quaternion(),new THREE.Vector3(40+rb()*60,h,40+rb()*60));bi.setMatrixAt(i,mm);}sc.add(bi);
+ const n=600,g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(n*3),3));O.dv=[];for(let i=0;i<n;i++){const a=Math.random()*6.28,r=3+Math.random()*9;O.dv.push([Math.cos(a)*r,5+Math.random()*12,Math.sin(a)*r,Math.random()]);}
+ O.deluge=new THREE.Points(g,new THREE.PointsMaterial({color:0xd6ecff,size:.7,transparent:true,opacity:.9}));sc.add(O.deluge);
+ O.steam=new THREE.Group();O.steamM=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.85,roughness:1,depthWrite:false});
+ for(let i=0;i<16;i++){const b=mesh(new THREE.SphereGeometry(1,16,12),O.steamM,false),sd=i%2?1:-1;b.position.set((Math.random()-.5)*24,8+Math.random()*12,sd*(42+Math.random()*34));b.userData.s=4+Math.random()*5;O.steam.add(b);}sc.add(O.steam);}
+
 function draw3dK2(fr,run){
  const O=R3.obj,cam=R3.camera,k=run.k2,v=st.view,f=fr||run.trace[0]||{t:0},t=f.t||0,ph=f.phase;
  const dk=document.getElementById("v3dark");if(dk)dk.style.opacity=0;
@@ -1377,8 +1424,8 @@ function draw3dK2(fr,run){
  if(k==="enc"){const e=O.enc,tc=f.tc||0,off=f.off||0;
   if(e==="ship"||e==="small"){const C=O.C,ox=-run.v*tc,oz=off*C,yaw=ph==="avoid"?-.35*(1-off):0;O.own.position.set(ox,0,oz);O.own.rotation.y=yaw;const iz=-run.v*.8*tc;O.oth.position.set(0,0,iz);
    O.flash.visible=ph==="hit";if(O.flash.visible){O.flash.position.set(0,10,oz*.5);O.flash.scale.setScalar(40);}
-   const wt=performance.now()/1000,hs=O.wave.userData.hs;O.own.position.y=waveH(ox,oz,wt,hs)*.35;O.own.rotation.x=Math.sin(wt*.8)*.012*hs;O.own.rotation.z=Math.sin(wt*.6)*.006*hs;
-   O.oth.position.y=waveH(0,iz,wt,hs)*(e==="small"?.9:.35);O.oth.rotation.z=Math.sin(wt*1.1+1)*(e==="small"?.05:.012)*hs;
+   const wt=performance.now()/1000,hs=(SEA[cfgNow().surf]||SEA.dry).hs;O.own.position.y=waveH(ox,oz,wt)*.35;O.own.rotation.x=(waveH(ox+60,oz,wt)-waveH(ox-60,oz,wt))/120*.6;O.own.rotation.z=Math.sin(wt*.6)*.006*hs;
+   O.oth.position.y=waveH(0,iz,wt)*(e==="small"?.9:.35);O.oth.rotation.z=(waveH(0,iz+3,wt)-waveH(0,iz-3,wt))/6*(e==="small"?.8:.2);
    const vi=document.getElementById("v3info");vi.hidden=false;vi.innerHTML=seaInfo(run,O.own.position,O.oth.position,O.night);
    const ey=O.own.userData.eye,oe=O.oth.userData.eye;far=60000;near=1;
    if(v==="chase"){P(ox-420,120,oz+260);LK(ox+400,0,oz);} else if(v==="driver"){fov=55;P(ox+ey[0],ey[1],oz);LK(ox+ey[0]+1000*Math.cos(yaw),ey[1]-8,oz-1000*Math.sin(yaw));}
@@ -1414,15 +1461,23 @@ function draw3dK2(fr,run){
   else {fov=65;P(O.S*.62,1.6,-.06*O.S);LK(x,y,z);}
   if(v==="driver"&&(ph==="lost"||ph==="fly"||ph==="rth"||ph==="land")&&dk){dk.style.background="#111";dk.style.opacity=ph==="lost"?.95:.6;}
  }
- if(k==="abort"){const alt=f.alt||3600,ta=f.ta||5;O.own.position.set(0,alt,0);const U_=O.own.userData,cap=U_.cap;
+ if(k==="abort"){const alt=f.alt!=null?f.alt:3600,ta=f.ta||5,ry=alt+10,Tp=f.Tp!=null?f.Tp:t+14;O.own.position.set(0,ry,0);const U_=O.own.userData,cap=U_.cap;
   const boomNow=ph==="boom",dead=boomNow&&!run.escaped,stop=ph==="stop";
-  U_.flame.visible=!boomNow&&!stop;U_.flame.scale.y=.9+Math.random()*.2;U_.anom.material.opacity=t>=ta&&!stop?(.5+.4*Math.sin(t*20)):0;
+  U_.flame.visible=!boomNow&&!stop&&Tp>-.3;U_.flame.scale.y=.9+Math.random()*.2;U_.anom.material.opacity=t>=ta&&!stop?(.5+.4*Math.sin(t*20)):0;
   let cy=40,cx=0,lf=0;if(run.escaped&&t>=ta+run.trig){const d_=t-ta-run.trig;cy=40+40*d_*d_;cx=-6*d_*d_;lf=d_<3?.9:0;}cap.position.set(cx,cy,0);cap.userData.flame.material.opacity=lf;cap.visible=!dead;
   O.own.children.forEach(c=>{if(c!==cap)c.visible=c===U_.flame?U_.flame.visible:c===U_.anom?true:!boomNow;});
-  O.flash.visible=!run.benign&&t>=ta+run.W;if(O.flash.visible){O.flash.position.set(0,alt+15,0);O.flash.scale.setScalar(Math.min(140,(t-ta-run.W)*120+5));O.flash.material.opacity=Math.max(.2,.9-(t-ta-run.W)*.15);}
-  near=1;far=500000;const cp=new THREE.Vector3(cx,alt+cy,0);
-  if(v==="chase"){P(70,alt+20,95);LK(0,alt+25,0);} else if(v==="driver"){fov=60;P(cp.x+2.2,cp.y+1.5,0);LK(cp.x+600,cp.y+180,0);} else {fov=1.6;P(6000,2,1500);LK(0,alt+25,0);}
+  O.flash.visible=!run.benign&&t>=ta+run.W;if(O.flash.visible){O.flash.position.set(0,ry+15,0);O.flash.scale.setScalar(Math.min(140,(t-ta-run.W)*120+5));O.flash.material.opacity=Math.max(.2,.9-(t-ta-run.W)*.15);}
+  near=1;far=500000;const cp=new THREE.Vector3(cx,ry+cy,0);
+  if(v==="chase"){P(70,ry+20,95);LK(0,ry+25,0);} else if(v==="driver"){fov=60;P(cp.x+2.2,cp.y+1.5,0);LK(cp.x+600,cp.y+180,0);} else {fov=1.6;P(640,4,5600);LK(0,ry+25,0);}
   const h=Math.min(1,cam.position.y/14000);const c1=lin(0x7fb2e5),c2=lin(0x0b1a33);R3.scene.background=c1.clone().lerp(c2,h);
+  O.clamps.forEach(c=>{const o=Tp>=0?1.6:0;c.position.x=c.userData.h[0]*(2.3+o);c.position.z=c.userData.h[1]*(2.3+o);});
+  const sw=Math.max(0,Math.min(1,(Tp+4)/2.5));O.arms.forEach((a,i)=>a.rotation.y=-sw*(1.25+i*.1));
+  const on=Tp>-2.5&&Tp<16;O.deluge.visible=on;if(on){const a=O.deluge.geometry.attributes.position,ts=performance.now()/1000;for(let i=0;i<a.count;i++){const d=O.dv[i],u=(ts*1.5+d[3])%1;a.setXYZ(i,d[0]*(1+2.5*u),9+d[1]*u*1.6-14*u*u,d[2]*(1+2.5*u));}a.needsUpdate=true;}
+  O.steam.visible=Tp>=0;if(Tp>=0){const g_=Math.min(1,Tp/12);O.steam.children.forEach(b=>b.scale.setScalar(b.userData.s*(1+g_*1.8)));O.steamM.opacity=Math.max(.25,.85-Math.max(0,Tp-20)*.03);}
+  if(O.wave)stepWave(O.wave,O.waveC[0],O.waveC[1],performance.now()/1000);if(O.clouds)stepClouds(O.clouds,0,0,O.wind,performance.now()/1000);
+  {const vi=document.getElementById("v3info");vi.hidden=Tp>=18;if(Tp<18)vi.innerHTML=tx(PADINFO)+(Tp<0?"":"<br><b>"+(lang==="th"?"ระบบน้ำ":"Deluge")+"</b> "+(lang==="th"?"กำลังทำงาน":"running"));}
+  if(v==="chase"&&Tp<6){P(110,40,150);LK(0,Math.max(30,ry),0);}
+  near=Math.max(1,Math.min(30,cam.position.y/30));
  }
  if(k==="fts"){const T_=run.Tc+4,pr=Math.min(1,t/T_),dev=f.dev||0;const pos=new THREE.Vector3(pr*60000,1000+pr*25000,-dev*15000);
   if(ph==="term"&&!O.tp)O.tp={p:pos.clone(),t};if(t<(O.tp?O.tp.t:Infinity))O.tp=null;
@@ -1450,11 +1505,13 @@ function draw3dK2(fr,run){
   near=.2;far=6000;if(v==="chase"){P(-40,38,70);LK(170,0,0);} else if(v==="driver"){fov=70;const dx=(t*13+150)%420-10;P(dx+4.6,3.2,2);LK(dx+80,1,2);} else {fov=72;P(mx-.9,1.45,2.2);LK(mx+40,0,2.2);}
  }
  stepRain(O,cam);
- if(O.wave)stepWave(O.wave,cam.position.x,cam.position.z,performance.now()/1000);
+ if(O.wave&&!O.waveC)stepWave(O.wave,cam.position.x,cam.position.z,performance.now()/1000);
+ if(O.clouds&&!O.waveC)stepClouds(O.clouds,cam.position.x,cam.position.z,O.wind,performance.now()/1000);
  cam.fov=fov;cam.near=near;cam.far=far;R3.pivot=O.own?O.own.position.clone():null;orbApply(cam,st.view!=="chase");cam.updateProjectionMatrix();R3.renderer.render(R3.scene,cam);cam.up.set(0,1,0);
  document.getElementById("v3tag").textContent=viewLabel(st.view);
 }
-const SEA={dry:{w:[10,"NE"],bf:3,hs:.8,vis:10,d:B("ท้องฟ้าโปร่ง","Clear")},wet:{w:[25,"SW"],bf:6,hs:2.5,vis:2,d:B("ฝนหนัก","Heavy rain")},flood:{w:[4,"S"],bf:1,hs:.3,vis:.2,d:B("หมอกหนา","Dense fog")}};
+const PADINFO=B("<b>ฐานปล่อย</b> ตัวยึดฐาน (hold-down clamps) ปลดที่ T+0 แขนหอปล่อยหมุนออก · <b>หอน้ำ</b> ส่งน้ำปริมาณมากใต้ฐานจรวด (deluge) ลดแรงสั่นจากเสียงและความร้อนไม่ให้ทำลายแท่นและตัวจรวด · ไกลออกไป: อาคารประกอบจรวด โรงงาน ป่า และเมือง","<b>Pad</b> hold-down clamps release at T+0 and the tower arms swing clear · <b>Water tower</b> floods the pad (deluge) to damp the sound and heat that would damage the pad and rocket · Further out: assembly building, factory, forest and a town");
+const SEA={dry:{wa:2.356,w:[10,"NE"],bf:3,hs:.8,vis:10,d:B("ท้องฟ้าโปร่ง","Clear")},wet:{wa:-.785,w:[25,"SW"],bf:6,hs:2.5,vis:2,d:B("ฝนหนัก","Heavy rain")},flood:{wa:-1.571,w:[4,"S"],bf:1,hs:.3,vis:.2,d:B("หมอกหนา","Dense fog")}};
 function seaInfo(run,own,oth,night){const S=SEA[cfgNow().surf]||SEA.dry,L=lang==="th",lat=12+55/60-own.z/111320,lon=100+40/60+own.x/(111320*Math.cos(lat*Math.PI/180));
  const dx=oth.x-own.x,dn=-(oth.z-own.z),br=((Math.atan2(dx,dn)*180/Math.PI)+360)%360,rg=Math.hypot(dx,dn)/1852,kn=run.v*1.944;
  return `<b>${L?"ตำแหน่ง":"Position"}</b> ${dm(lat,"NS")} ${dm(lon,"EW")} · ${L?"อ่าวไทย ใกล้ร่องน้ำเข้าท่าเรือ (สมมติ)":"Gulf of Thailand, port approach (illustrative)"}<br>`+

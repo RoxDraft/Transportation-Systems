@@ -43,8 +43,8 @@ h2{font-family:var(--f-display);font-size:26px;line-height:1.1;margin:0 0 10px;t
 .lang button{font:600 14px var(--f-mono);padding:7px 16px;background:transparent;color:var(--ink);border:0;cursor:pointer}
 .lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13.5px}
-.links a{color:var(--ink)}
+.boardbtn{display:inline-flex;align-items:center;gap:6px;font:600 14px var(--f-body);padding:9px 14px;border:2px solid var(--ink);border-radius:10px;color:var(--ink);background:var(--panel);text-decoration:none}
+.boardbtn:hover{background:var(--ink);color:var(--bg)}
 .console{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:18px;align-items:start}
 @media (max-width:900px){.console{grid-template-columns:1fr}}
 .setup{background:var(--panel);border:1px solid var(--line);padding:16px;display:grid;gap:15px}
@@ -141,7 +141,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
    <p class="lede" data-i="lede"></p>
   </div>
   <div style="display:grid;gap:10px;justify-items:end">
-   <div class="links"><a id="lk-board" href="./index.html" data-i="lkBoard"></a><a id="lk-sim" href="./simulator.html" data-i="lkSim"></a></div>
+   <a class="boardbtn" id="lk-board" href="./index.html" data-i="lkBoard"></a>
   </div>
  </header>
  <nav class="modesw" aria-label="Before / after the crash"><a class="bwd" id="sw-sim" href="./simulator.html"><small data-i="swStep1"></small><b data-i="swSim"></b></a><span class="on" aria-current="page"><small data-i="swStep2"></small><b data-i="swResp"></b></span></nav>
@@ -213,7 +213,7 @@ const T={
  eyebrow:B("กระดานความปลอดภัยการขนส่ง · แผนช่วยเหลือ","Transport Safety Board · Response"),
  title:B("หลังเกิดเหตุ: แผนช่วยเหลือ 3D","After the Crash: Response in 3D"),
  lede:B("เลือกเหตุการณ์ แล้วดูว่าการช่วยเหลือเดินไปทีละช่วงอย่างไร ตั้งแต่นาทีแรกที่แจ้งเหตุ การช่วยตัวเอง ทีมกู้ภัย โดรนและหุ่นยนต์ จนถึงการเปิดใช้งานอีกครั้ง การสืบสวน และการปรับมาตรฐาน ซึ่งกินเวลาเป็นเดือนหรือปี","Pick an incident and watch the response unfold phase by phase: the first minutes of the call, self-rescue, rescue teams, drones and robots, then reopening, the investigation and new standards, which take months or years."),
- lkBoard:B("← กระดานความปลอดภัย","← Safety board"),lkSim:B("ตัวจำลองการขับขี่ →","Driving simulator →"),
+ lkBoard:B("← กลับไปบอร์ดความปลอดภัย","← Back to the Safety Board"),
  lInc:B("เหตุการณ์","Incident"),lNotify:B("การแจ้งเหตุ","How the call is made"),lTeam:B("ผู้ช่วยเหลือ","Responders"),lPeople:B("ผู้ประสบเหตุและคนรอบข้าง","People at the scene"),
  lDist:B("ระยะถึงหน่วยกู้ภัยที่ใกล้ที่สุด","Distance to nearest rescue unit"),
  aut0:B("คนโทรแจ้งเอง","A person calls"),aut1:B("ระบบแจ้งเหตุอัตโนมัติ","Automatic alert"),
@@ -473,10 +473,32 @@ function orbBind(el,redraw){const pts=new Map();let pinch=0;
  el.addEventListener("wheel",e=>{e.preventDefault();ORB.zoom=Math.max(.3,Math.min(12,ORB.zoom*Math.exp(-e.deltaY*.0015)));redraw();},{passive:false});
  el.addEventListener("dblclick",e=>{if(e.target.closest("button"))return;orbReset();redraw();});
  el.querySelectorAll("[data-orb]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.orb;if(k==="in")ORB.zoom=Math.min(12,ORB.zoom*1.4);else if(k==="out")ORB.zoom=Math.max(.3,ORB.zoom/1.4);else orbReset();redraw();}));}
-/* sea surface: a wave patch that follows the camera */
-function waveMesh(sc,col,hs){const g=new THREE.PlaneGeometry(2400,2400,100,100);g.rotateX(-Math.PI/2);const m=new THREE.MeshStandardMaterial({color:lin(col),roughness:.32,metalness:.12,flatShading:true});const w=mesh(g,m,false,true);sc.add(w);w.userData={hs,base:g.attributes.position.array.slice()};return w;}
-function waveH(x,z,t,hs){const a=hs*.5;return a*(.55*Math.sin(x*.045+t*.9)+.3*Math.sin((x*.6+z*.8)*.07+t*1.25)+.15*Math.sin((z-x*.3)*.1+t*1.7));}
-function stepWave(w,cx,cz,t){const c=24,sx=Math.round(cx/c)*c,sz=Math.round(cz/c)*c;w.position.set(sx,0,sz);const p=w.geometry.attributes.position,b=w.userData.base,hs=w.userData.hs;for(let i=0;i<p.count;i++)p.array[i*3+1]=waveH(b[i*3]+sx,b[i*3+2]+sz,t,hs);p.needsUpdate=true;w.geometry.computeVertexNormals();}
+/* sea surface: Gerstner (trochoidal) waves on a patch that follows the camera.
+   Each wave obeys the deep-water dispersion relation w^2 = g*k, so long waves travel faster, as in real seas. */
+let WAVES=[];const _g=[0,0,0];
+function setWaves(hs,dir){const g=9.81,base=[[90,.30,0,0],[55,.16,.45,1.3],[36,.08,-.5,2.1],[150,.22,.9,.7]];
+ WAVES=base.map(([L,a,da,ph])=>{const k=2*Math.PI/L,w=Math.sqrt(g*k),A=a*hs,ang=dir+da;return {k,w,A,dx:Math.cos(ang),dz:Math.sin(ang),ph,Q:Math.min(.9,.5/(k*Math.max(A,.01)*4))};});}
+function gerst(X,Z,t,o){let x=0,y=0,z=0;for(const W of WAVES){const th=W.k*(W.dx*X+W.dz*Z)-W.w*t+W.ph,c=Math.cos(th),s=Math.sin(th);x+=W.Q*W.A*W.dx*c;z+=W.Q*W.A*W.dz*c;y+=W.A*s;}o[0]=x;o[1]=y;o[2]=z;return o;}
+function waveH(x,z,t){return gerst(x,z,t,_g)[1];}
+function waveMesh(sc,col,hs,dir=.6){setWaves(hs,dir);const R=1100,n=150,g=new THREE.PlaneGeometry(2*R,2*R,n,n);g.rotateX(-Math.PI/2);
+ g.setAttribute("color",new THREE.BufferAttribute(new Float32Array(g.attributes.position.count*3),3));
+ const w=mesh(g,new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.5,metalness:0}),false,true);sc.add(w);
+ const deep=lin(col);w.userData={base:g.attributes.position.array.slice(),deep,crest:deep.clone().lerp(new THREE.Color(1,1,1),.2),amp:WAVES.reduce((a,W)=>a+W.A,0)||1,R,n};return w;}
+function stepWave(w,cx,cz,t){const U=w.userData,c=2*U.R/U.n,sx=Math.round(cx/c)*c,sz=Math.round(cz/c)*c;w.position.set(sx,0,sz);
+ const p=w.geometry.attributes.position.array,col=w.geometry.attributes.color.array,b=U.base,R=U.R;
+ for(let i=0;i<b.length;i+=3){const bx=b[i],bz=b[i+2],r=Math.max(Math.abs(bx),Math.abs(bz))/R,f=r<.7?1:r>=1?0:1-(r-.7)/.3;gerst(bx+sx,bz+sz,t,_g);
+  p[i]=bx+_g[0]*f;p[i+1]=_g[1]*f;p[i+2]=bz+_g[2]*f;const h=Math.max(0,Math.min(1,_g[1]*f/U.amp*.5+.5)),q=h*h*h*h;
+  col[i]=U.deep.r+(U.crest.r-U.deep.r)*q;col[i+1]=U.deep.g+(U.crest.g-U.deep.g)*q;col[i+2]=U.deep.b+(U.crest.b-U.deep.b)*q;}
+ w.geometry.attributes.position.needsUpdate=true;w.geometry.attributes.color.needsUpdate=true;w.geometry.computeVertexNormals();}
+/* cumulus clusters carried by the wind (advection), slowly growing and shrinking */
+function cloudLayer(sc,n,area,y0,y1,shade,seed){const rb=rngB(seed),G=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:lin(shade),roughness:1,transparent:true,opacity:.95}),geo=new THREE.IcosahedronGeometry(1,2);
+ for(let i=0;i<n;i++){const c=new THREE.Group(),s=140+rb()*280,k=5+Math.floor(rb()*5);for(let j=0;j<k;j++){const b=mesh(geo,m,false);b.position.set((rb()-.5)*s*1.6,rb()*s*.3,(rb()-.5)*s);const r=s*(.35+rb()*.35);b.scale.set(r*1.2,r*.7,r);b.userData.r=r;c.add(b);}
+  c.position.set((rb()-.5)*area,y0+rb()*(y1-y0),(rb()-.5)*area);c.userData.ph=rb()*6;G.add(c);}
+ G.userData={area};sc.add(G);return G;}
+function stepClouds(G,cx,cz,wind,t){const A=G.userData.area,dt=Math.max(0,Math.min(.1,t-(G.userData.t||t)));G.userData.t=t;
+ G.children.forEach(c=>{c.position.x+=wind[0]*dt;c.position.z+=wind[1]*dt;
+  if(c.position.x-cx>A/2)c.position.x-=A;if(c.position.x-cx<-A/2)c.position.x+=A;if(c.position.z-cz>A/2)c.position.z-=A;if(c.position.z-cz<-A/2)c.position.z+=A;
+  c.children.forEach((b,j)=>{const r=b.userData.r*(1+.07*Math.sin(t*.25+c.userData.ph+j));b.scale.set(r*1.2,r*.7,r);});});}
 function dm(v,pos){const a=Math.abs(v),d=Math.floor(a),m=(a-d)*60;return `${d}°${m.toFixed(1)}′${v>=0?pos[0]:pos[1]}`;}
 
 let R3=null;
@@ -596,7 +618,7 @@ function build(){
   invs(210,20);O.view={over:[150,40,140]};
  }
  if(inc==="ship"){
-  sc.background=lin(0x8fa6bb);sc.fog=new THREE.Fog(lin(0x8fa6bb),300,3200);flat(sc,20000,20000,0x1f4e6b,0,-1.6,0,.25);O.wave=waveMesh(sc,0x1f5677,2.0);rainPts(sc,O,false);
+  sc.background=lin(0x8fa6bb);sc.fog=new THREE.Fog(lin(0x8fa6bb),300,3200);flat(sc,20000,20000,0x1f5677,0,-.3,0,.25);O.wave=waveMesh(sc,0x1f5677,2.0,-.785);rainPts(sc,O,false);O.wind=[23,-23];O.clouds=cloudLayer(sc,28,9000,600,950,0xb8c0c8,5);
   const a=shipMesh(160,26,14,0x8a2a2a);a.position.set(0,-1.5,0);a.rotation.set(.18,0,0);sc.add(a);O.wreck.push(a);
   const b=shipMesh(220,32,18,0x2e5f8a);b.position.set(150,0,-120);b.rotation.y=-1.1;sc.add(b);
   O.smoke=smoke(sc,16,40,16,8,20,0x3b3f45);O.victim.set(30,1.2,70);
@@ -646,7 +668,8 @@ function update(t){
  if(O.vic)O.vic.visible=t<R.accEnd;
  if(O.traffic&&O.traffic.length){const moving=t>=f.reopen[0];O.traffic.forEach((cv,i)=>{if(moving){cv.position.x=-400+((performance.now()/1000*14+i*37)%800);}});}
  if(O.rain)stepRain(O,cam);
- if(O.wave){const wt=performance.now()/1000;stepWave(O.wave,O.victim.x,O.victim.z,wt);O.walkers.forEach(w=>{w.p.position.y=waveH(w.p.position.x,w.p.position.z,wt,2)*.9;w.p.rotation.z=Math.sin(wt+w.p.position.x)*.08;});O.wreck[0].position.y=-1.5+waveH(0,0,wt,2)*.3;}
+ if(O.clouds)stepClouds(O.clouds,O.victim.x,O.victim.z,O.wind,performance.now()/1000);
+ if(O.wave){const wt=performance.now()/1000;stepWave(O.wave,O.victim.x,O.victim.z,wt);O.walkers.forEach(w=>{w.p.position.y=waveH(w.p.position.x,w.p.position.z,wt)*.9;w.p.rotation.z=(waveH(w.p.position.x+2,w.p.position.z,wt)-waveH(w.p.position.x-2,w.p.position.z,wt))/4;});O.wreck[0].position.y=-1.5+waveH(0,0,wt)*.3;}
  // cameras
  let first=null;O.units.forEach(u=>{if(u.obj.visible&&(!first)&&t>=u.t1&&!(u.away&&t>=u.t2))first=u;});
  if(!first)first=O.units.find(u=>u.obj.visible)||null;
@@ -727,7 +750,7 @@ function recompute(){RUN=compute(cfg(),rng(st.seed*7919+1));MC=monte(cfg());MB=m
  kpis();chart();learn();if(has3D()){size3d();build();}u0=0;lastT=0;$("rtl").value=0;orbReset();playing=false;cancelAnimationFrame(anim);$("play").textContent=tx(T.play);drawClock(0);drawPhases(0);}
 function render(){document.documentElement.lang=lang;document.querySelectorAll("[data-i]").forEach(el=>el.textContent=tx(T[el.dataset.i]));
  document.title=tx(T.title);
- $("lk-board").href=BOARD_URL;$("lk-sim").href=SIM_URL;$("sw-sim").href=SIM_URL;{const h=document.querySelector("#orbhint span");if(h)h.textContent=tx(T.orbHint);}
+ $("lk-board").href=BOARD_URL;$("sw-sim").href=SIM_URL;{const h=document.querySelector("#orbhint span");if(h)h.textContent=tx(T.orbHint);}
  $("src").innerHTML=SRC.map(([t,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("");
  setup();syncViews();recompute();}
 document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;

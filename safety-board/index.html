@@ -979,7 +979,7 @@ function render(){
  document.documentElement.lang=lang;
  document.querySelectorAll("[data-i]").forEach(el=>{el.textContent=tx(T[el.dataset.i])});
  document.title=tx(T.title);
- document.getElementById("jump").innerHTML=JUMP.map(([id,k])=>`<a href="#${id}">${esc(tx(T[k]))}</a>`).join("")+`<a href="${SIM_URL}" style="border-bottom-color:var(--accent)">${esc(tx(T.jSim))}</a>`+`<a href="${RESP_URL}" style="border-bottom-color:var(--accent)">${esc(tx(T.jResp))}</a>`;
+ document.getElementById("jump").innerHTML=JUMP.map(([id,k])=>`<a href="#${id}">${esc(tx(T[k]))}</a>`).join("");
 
  document.getElementById("recap").innerHTML=
   `<article class="rc case"><span class="k" style="color:var(--accent)">${esc(tx(CASE.k))}</span><h3>${esc(tx(CASE.h))}</h3>
