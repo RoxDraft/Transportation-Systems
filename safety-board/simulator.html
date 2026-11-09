@@ -50,7 +50,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 .console{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:18px;align-items:start}
 @media (max-width:900px){.console{grid-template-columns:1fr}}
 .setup{background:var(--panel);border:1px solid var(--line);padding:16px;display:grid;gap:16px}
-.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.seg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
 .seg button{font:600 13.5px var(--f-body);padding:9px 4px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;cursor:pointer}
 .seg button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
 select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px}
@@ -137,12 +137,18 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
   <div class="setup">
    <div><span class="lbl" data-i="lVeh"></span><div class="seg" id="veh" role="group"></div></div>
    <div><label class="lbl" for="scn" data-i="lScn"></label><select id="scn"></select><p class="note" id="scn-desc" style="margin:6px 0 0"></p></div>
+   <div id="force-row" hidden><label class="lbl" for="force" data-i="lForce"></label><select id="force"></select></div>
    <div class="row2">
     <div><label class="lbl" for="surf" data-i="lSurf"></label><select id="surf"></select></div>
     <div><label class="lbl" for="light" data-i="lLight"></label><select id="light"></select></div>
    </div>
+   <div id="infra-row" hidden style="display:grid;gap:12px">
+    <div class="range"><label class="lbl" for="spec" data-i="lSpec" style="margin:0"></label><output id="spec-o"></output><input type="range" id="spec" min="40" max="100" step="5" value="70"></div>
+    <div class="range"><label class="lbl" for="age" data-i="lAge" style="margin:0"></label><output id="age-o"></output><input type="range" id="age" min="0" max="60" step="5" value="25"></div>
+    <div class="range"><label class="lbl" for="ovl" data-i="lOvl" style="margin:0"></label><output id="ovl-o"></output><input type="range" id="ovl" min="0" max="50" step="5" value="15"></div>
+   </div>
    <label class="chk" id="atp-row"><input type="checkbox" id="atpfail"><span data-i="atpFail"></span></label>
-   <div class="range"><label class="lbl" for="spd" data-i="lSpd" style="margin:0"></label><output id="spd-o"></output><input type="range" id="spd"></div>
+   <div class="range" id="spd-row"><label class="lbl" for="spd" data-i="lSpd" style="margin:0"></label><output id="spd-o"></output><input type="range" id="spd"></div>
    <div><span class="lbl" data-i="lCtrl"></span><div class="ctrls" id="ctrls"></div></div>
    <div class="range"><label class="lbl" for="exp" id="exp-l" style="margin:0"></label><output id="exp-o"></output><input type="range" id="exp" min="0" max="100" step="1" value="40"></div>
   </div>
@@ -200,6 +206,12 @@ const BOARD_URL="./index.html";
 const T={
  eyebrow:{th:"ตัวจำลอง · ประกอบบอร์ดความปลอดภัย",en:"Simulator · companion to the safety board"},
  title:{th:"ห้องจำลองการขับขี่ปลอดภัย",en:"Safe Driving Simulator"},
+ lForce:{th:"คนเดินออกมาข้ามไหม",en:"Does someone step out?"},
+ fRand:{th:"สุ่ม (โอกาส 40%)",en:"Random (40% chance)"},fOn:{th:"เรียกให้ออกมาทุกครั้ง",en:"Always steps out"},fOff:{th:"ไม่มีใครออกมา",en:"Nobody steps out"},
+ lSpec:{th:"งานก่อสร้าง/ซ่อมตรงสเปก",en:"Work built to spec"},lAge:{th:"อายุโครงสร้าง",en:"Structure age"},lOvl:{th:"รถบรรทุกน้ำหนักเกิน",en:"Overloaded trucks"},
+ years:{th:"ปี",en:"years"},
+ expInfra:{th:"ประสบการณ์ทีมตรวจ",en:"Inspection team experience"},expPilot:{th:"ชั่วโมงบิน / ชั่วโมงฝึก",en:"Flight or training hours"},expSea:{th:"ชั่วโมงเข้ายามเรือ",en:"Watchkeeping hours"},
+ no3dK2:{th:"มุมมอง 3D มีสำหรับถนนและรางในตอนนี้ โหมดนี้ใช้ภาพ 2D แบบแผนผัง",en:"3D views cover road and rail for now; this mode uses a 2D schematic."},
  lede:{th:"เลือกยานพาหนะ สถานการณ์ และผู้ควบคุม ตั้งแต่คนขับมือใหม่ ระบบช่วยขับ (copilot) ไปจนถึงระบบขับเอง แล้วดูว่าแต่ละแบบรับมือความไม่แน่นอนอย่างไร ทั้งในการวิ่งครั้งเดียว และเมื่อสุ่มซ้ำหลายร้อยครั้ง",en:"Pick a vehicle, a situation and a controller, from a learner driver through driver assistance (copilot) to self-driving systems, and see how each handles uncertainty, in one run and across hundreds of randomised runs."},
  backBoard:{th:"← กลับไปบอร์ดความปลอดภัย",en:"← Back to the safety board"},
  lVeh:{th:"ยานพาหนะ",en:"Vehicle"},lScn:{th:"สถานการณ์",en:"Situation"},lSurf:{th:"ผิวทาง",en:"Surface"},lLight:{th:"แสง",en:"Light"},lSpd:{th:"ความเร็วตั้งต้น",en:"Starting speed"},lCtrl:{th:"ผู้ควบคุม",en:"Controller"},
@@ -209,7 +221,7 @@ const T={
  run:{th:"▶ เล่นจำลอง",en:"▶ Run"},reroll:{th:"สุ่มสถานการณ์ใหม่",en:"New random run"},
  mcH:{th:"สุ่มซ้ำ 400 ครั้ง",en:"400 randomised runs"},
  mcP:{th:"ทุกครั้งสุ่มระยะที่โผล่ เวลาตอบสนอง การเสียสมาธิ และการตรวจจับพลาด ตามค่าสมมติของผู้ควบคุมที่เลือก",en:"Each run randomises reveal distance, reaction time, distraction and missed detections, using the selected controller's assumed values."},
- oSafe:{th:"หยุด/ผ่านได้ปลอดภัย",en:"Safe"},oNear:{th:"เฉียดฉิว (< 2 ม.)",en:"Near miss (< 2 m)"},oLight:{th:"ชนเบา (< 15 กม./ชม.)",en:"Light impact (< 15 km/h)"},oSerious:{th:"ชนรุนแรง (≥ 15 กม./ชม.)",en:"Serious impact (≥ 15 km/h)"},oMrc:{th:"ระบบจอดเอง / ไม่ออกเดินทาง",en:"System stopped / trip not started"},
+ oSafe:{th:"หยุด/ผ่านได้ปลอดภัย",en:"Safe"},oNear:{th:"เฉียดฉิว",en:"Near miss"},oLight:{th:"ชนเบา / เสียหายเฉพาะจุด",en:"Light impact / local damage"},oSerious:{th:"รุนแรง (ชนแรง พัง ตก)",en:"Serious (hard impact, collapse, crash)"},oMrc:{th:"ยุติอย่างปลอดภัย (จอด ปิดทาง ยกเลิก)",en:"Safely stopped (halt, closure, abort)"},
  fReact:{th:"เวลาตอบสนองเฉลี่ย",en:"Mean reaction"},fImpact:{th:"ความเร็วชนเฉลี่ย (เมื่อชน)",en:"Mean impact speed (if hit)"},fLost:{th:"เวลาที่เสียไปจากการระวัง",en:"Time spent being cautious"},fMiss:{th:"ตรวจจับพลาด / ไม่ได้มอง",en:"Missed / not looking"},
  std:{th:"มาตรฐานอ้างอิง",en:"Standards"},probs:{th:"ปัญหาที่อาจเกิดขึ้น",en:"What can go wrong"},
  curveH:{th:"เส้นการเรียนรู้: ฝึกมากขึ้น ปลอดภัยขึ้นแค่ไหน",en:"Learning curves: how much safer with training"},
@@ -218,28 +230,47 @@ const T={
  pathP:{th:"ขั้นตอนของคนอิงข้อกำหนดใบขับขี่ไทย ขั้นตอนของระบบอิงแนวทางที่บริษัทรถไร้คนขับใช้ ระยะทางในแต่ละขั้นเป็นค่าประกอบภาพ",en:"The human steps follow Thai licensing rules; the system steps follow the path driverless-car companies use. Distances per step are illustrative."},
  pathHuman:{th:"คน",en:"Human"},pathSys:{th:"ระบบขับเอง",en:"Self-driving system"},
  foot:{th:"ตัวเลขทั้งหมดในตัวจำลองเป็นค่าสมมติเพื่อการเรียนรู้หลักการ ได้แก่ เวลาตอบสนอง โอกาสตรวจจับ การเบรก และระยะมองเห็น ไม่ใช่ผลทดสอบของระบบหรือผลิตภัณฑ์จริงตัวใด ฟิสิกส์การเบรกใช้ระยะหยุด = v·t + v²/2a",en:"Every number in this simulator is a teaching assumption: reaction times, detection rates, braking and sight distances. None are test results for a real system or product. Braking physics uses stopping distance = v·t + v²/2a."},
- phase:{idle:{th:"พร้อม",en:"Ready"},cruise:{th:"วิ่งปกติ",en:"Cruising"},caution:{th:"ชะลอระวัง",en:"Slowing as a precaution"},react:{th:"กำลังตอบสนอง",en:"Reacting"},brake:{th:"เบรก",en:"Braking"},stop:{th:"หยุดแล้ว",en:"Stopped"},hit:{th:"ชน",en:"Impact"},clear:{th:"ผ่านไปแล้ว",en:"Passed"},mrc:{th:"ไม่ออกเดินทาง",en:"Not departing"}},
+ phase:{avoid:{th:"หลบหลีก",en:"Avoiding"},lost:{th:"สัญญาณหาย",en:"Link lost"},rth:{th:"บินกลับจุดขึ้น",en:"Returning home"},land:{th:"ลงจอดทันที",en:"Landing in place"},fly:{th:"บินหลุดควบคุม",en:"Fly-away"},anomaly:{th:"ตรวจพบความผิดปกติ",en:"Anomaly"},escape:{th:"แคปซูลหนีภัย",en:"Capsule escaping"},boom:{th:"ระเบิด",en:"Explosion"},term:{th:"สั่งทำลายในเขตปลอดภัย",en:"Terminated in safe zone"},deviate:{th:"ออกนอกเส้นทาง",en:"Off course"},ascent:{th:"ไต่ระดับ",en:"Ascending"},roll:{th:"วิ่งขึ้น",en:"Take-off roll"},cloud:{th:"อยู่ในเมฆ",en:"In cloud"},turn:{th:"เลี้ยวกลับออกจากเมฆ",en:"Turning out of cloud"},spiral:{th:"หลงท่า เสียการควบคุม",en:"Disoriented, losing control"},traffic:{th:"รถวิ่งผ่าน",en:"Traffic crossing"},cascade:{th:"พังต่อเนื่อง",en:"Cascading failure"},closed:{th:"ปิดทาง",en:"Closed"},collapse:{th:"ถล่ม",en:"Collapse"},repair:{th:"ซ่อมจุดเสีย",en:"Repairing"},
+ idle:{th:"พร้อม",en:"Ready"},cruise:{th:"วิ่งปกติ",en:"Cruising"},caution:{th:"ชะลอระวัง",en:"Slowing as a precaution"},react:{th:"กำลังตอบสนอง",en:"Reacting"},brake:{th:"เบรก",en:"Braking"},stop:{th:"หยุดแล้ว",en:"Stopped"},hit:{th:"ชน",en:"Impact"},clear:{th:"ผ่านไปแล้ว",en:"Passed"},mrc:{th:"ไม่ออกเดินทาง",en:"Not departing"}},
  hSpeed:{th:"ความเร็ว",en:"Speed"},
  vTop:{th:"2D มุมบน",en:"2D top-down"},vChase:{th:"3D มุมติดตาม",en:"3D chase"},vDriver:{th:"มุมคนขับ",en:"Driver's view"},vDriverRail:{th:"มุมพนักงานขับ",en:"Train driver's view"},
- vOther:{ped:{th:"มุมคนข้ามถนน",en:"Pedestrian's view"},side:{th:"มุมรถที่ฝ่าไฟแดง",en:"Red-light runner's view"},lead:{th:"มุมคนข้างทาง",en:"Roadside view"},stall:{th:"มุมคนข้างทาง",en:"Roadside view"},signal:{th:"มุมข้างราง",en:"Trackside view"},obst:{th:"มุมรถที่ติดบนราง",en:"From the stuck car"}},
+ vOther:{gen:{th:"มุมอีกฝ่าย",en:"Other road user"},ped:{th:"มุมคนข้ามถนน",en:"Pedestrian's view"},side:{th:"มุมรถที่ฝ่าไฟแดง",en:"Red-light runner's view"},lead:{th:"มุมคนข้างทาง",en:"Roadside view"},stall:{th:"มุมคนข้างทาง",en:"Roadside view"},signal:{th:"มุมข้างราง",en:"Trackside view"},obst:{th:"มุมรถที่ติดบนราง",en:"From the stuck car"}},
  no3d:{th:"เบราว์เซอร์นี้แสดง 3D ไม่ได้ จึงใช้มุมบนแบบ 2D",en:"This browser can't show 3D, so the 2D top view is used."},
  capTop:{th:"มุมบนเห็นทุกอย่าง ซึ่งเป็นภาพที่คนขับจริงไม่มีวันได้เห็น",en:"The top view shows everything, which real drivers never get to see."},
  capChase:{th:"3D จากด้านหลังรถ ช่วยดูระยะห่างและจังหวะการเบรก แถบจางหน้ารถคือระยะที่ต้องใช้หยุดในตอนนั้น",en:"3D from behind the vehicle, for judging gaps and braking. The faint band ahead is the distance needed to stop right now."},
  capDriver:{th:"เห็นเท่าที่คนขับเห็นจริง หมอกจำลองระยะมองเห็นตามแสงและสภาพถนน สิ่งที่ถูกบังจะโผล่มาเมื่อสายเกินไปแล้ว",en:"Only what the driver can see. Fog stands in for sight distance in this light and weather; hidden hazards appear late."},
- capOther:{ped:{th:"คนเดินก็มองไม่เห็นรถเหมือนกัน รถเมล์บังทั้งสองฝั่ง จึงควรชะเง้อดูก่อนก้าวออกจากหลังรถใหญ่",en:"The pedestrian can't see the car either; the bus blocks both ways. Peek out before stepping past a large vehicle."},side:{th:"รถที่ฝ่าไฟแดงเห็นรถเราช้าเพราะมุมตึกบัง เป็นเหตุผลที่ระบบและคนขับที่ดีชะลอเมื่อเข้าทางแยก",en:"The red-light runner sees us late because buildings block the corner, which is why good drivers and systems ease off into junctions."},lead:{th:"มองจากข้างทาง จะเห็นว่าระยะห่างที่ดูเหมือนพอ หายไปเร็วแค่ไหนเมื่อคันหน้าเบรก",en:"From the roadside you can see how fast a gap that looked fine disappears when the car ahead brakes."},stall:{th:"รถเสียกะพริบไฟฉุกเฉิน แต่กลางคืนคนขับจะเห็นได้แค่ในระยะไฟหน้า",en:"The stalled car flashes its hazard lights, but at night a driver only sees as far as the headlights reach."},signal:{th:"สัญญาณเหลืองก่อนหน้าคือคำเตือนให้เริ่มเบรก เพราะรถไฟต้องใช้ระยะหยุดหลายร้อยเมตร",en:"The earlier yellow signal is the cue to start braking, because a train needs hundreds of metres to stop."},obst:{th:"จากรถที่ติดบนราง รถไฟปรากฏให้เห็นแต่ไกล แต่ก็ยังหยุดไม่ทัน ทางรอดคือออกจากรถแล้วเดินออกห่างจากราง",en:"From the stuck car the train is visible from far away and still can't stop. The way out is to leave the car and move away from the track."}},hDist:{th:"ระยะถึงอันตราย",en:"To hazard"},hPhase:{th:"สถานะ",en:"Phase"}
+ capOther:{gen:{th:"",en:""},ped:{th:"คนเดินก็มองไม่เห็นรถเหมือนกัน รถเมล์บังทั้งสองฝั่ง จึงควรชะเง้อดูก่อนก้าวออกจากหลังรถใหญ่",en:"The pedestrian can't see the car either; the bus blocks both ways. Peek out before stepping past a large vehicle."},side:{th:"รถที่ฝ่าไฟแดงเห็นรถเราช้าเพราะมุมตึกบัง เป็นเหตุผลที่ระบบและคนขับที่ดีชะลอเมื่อเข้าทางแยก",en:"The red-light runner sees us late because buildings block the corner, which is why good drivers and systems ease off into junctions."},lead:{th:"มองจากข้างทาง จะเห็นว่าระยะห่างที่ดูเหมือนพอ หายไปเร็วแค่ไหนเมื่อคันหน้าเบรก",en:"From the roadside you can see how fast a gap that looked fine disappears when the car ahead brakes."},stall:{th:"รถเสียกะพริบไฟฉุกเฉิน แต่กลางคืนคนขับจะเห็นได้แค่ในระยะไฟหน้า",en:"The stalled car flashes its hazard lights, but at night a driver only sees as far as the headlights reach."},signal:{th:"สัญญาณเหลืองก่อนหน้าคือคำเตือนให้เริ่มเบรก เพราะรถไฟต้องใช้ระยะหยุดหลายร้อยเมตร",en:"The earlier yellow signal is the cue to start braking, because a train needs hundreds of metres to stop."},obst:{th:"จากรถที่ติดบนราง รถไฟปรากฏให้เห็นแต่ไกล แต่ก็ยังหยุดไม่ทัน ทางรอดคือออกจากรถแล้วเดินออกห่างจากราง",en:"From the stuck car the train is visible from far away and still can't stop. The way out is to leave the car and move away from the track."}},hDist:{th:"ระยะถึงอันตราย",en:"To hazard"},hPhase:{th:"สถานะ",en:"Phase"}
 };
 const VEH={
  car:{th:"รถยนต์",en:"Car",a:7.0,len:4.6,w:1.8,v:[20,130,60],kind:"road"},
  moto:{th:"มอเตอร์ไซค์",en:"Motorcycle",a:6.0,len:2.1,w:0.8,v:[20,130,50],kind:"road"},
  bus:{th:"รถเมล์",en:"Bus",a:5.0,len:12,w:2.5,v:[20,100,50],kind:"road"},
- train:{th:"รถไฟ",en:"Train",a:1.2,len:120,w:3,v:[40,250,100],kind:"rail"}
+ train:{th:"รถไฟ",en:"Train",a:1.2,len:120,w:3,v:[40,250,100],kind:"rail"},
+ ship:{th:"เรือ",en:"Ship",kind:"sea",v:[15,45,30],len:300},
+ plane:{th:"เครื่องบิน",en:"Airliner",kind:"air",v:[80,250,200],len:40},
+ heli:{th:"เฮลิคอปเตอร์",en:"Helicopter",kind:"heli",v:[60,250,160],len:14},
+ drone:{th:"โดรน",en:"Drone",kind:"uav",v:[10,70,40],len:1},
+ rocket:{th:"จรวด",en:"Rocket",kind:"space",v:null,len:50},
+ infra:{th:"สะพาน / ถนน",en:"Bridge / road",kind:"infra",v:null,len:0}
 };
 const SCN={
- ped:{kind:"road",th:"คนเดินออกมาจากหลังรถเมล์ที่จอดอยู่",en:"Pedestrian steps out from behind a stopped bus",d:{th:"มองเห็นรถเมล์ได้ไกล แต่คนจะโผล่มาให้เห็นเมื่อเหลือ 12–25 ม. และมีคนออกมาจริงราว 4 ใน 10 ครั้ง",en:"The bus is visible from afar, but a person appears only at 12–25 m, and does so in about 4 of 10 runs."},ped:1},
+ ped:{kind:"road",limit:60,th:"คนเดินออกมาจากหลังรถเมล์ที่จอดอยู่",en:"Pedestrian steps out from behind a stopped bus",d:{th:"เขตชุมชนจำกัด 60 กม./ชม. ทางม้าลายมีป้ายไฟกะพริบ มองเห็นรถเมล์ได้ไกล แต่คนจะโผล่ให้เห็นเมื่อเหลือ 12–25 ม. ตั้งค่าว่าจะมีคนออกมาหรือไม่ได้ด้านล่าง",en:"Urban zone limited to 60 km/h; the crossing has a flashing sign. The bus is visible from afar, but a person appears only at 12–25 m. Choose below whether someone steps out."},ped:1},
  lead:{kind:"road",th:"รถคันหน้าเบรกกะทันหัน",en:"Car ahead brakes hard",d:{th:"ระยะห่างขึ้นกับผู้ควบคุม คันหน้าเบรกเต็มที่ในเวลาสุ่ม",en:"Following gap depends on the controller; the car ahead brakes fully at a random moment."},hw:1},
- junc:{kind:"road",th:"รถฝ่าไฟแดงตัดหน้าที่ทางแยก",en:"Red-light runner at a junction",d:{th:"รถจากด้านข้างโผล่ให้เห็นที่ 25–45 ม. (กลางคืนสั้นกว่า) และผ่านจุดตัดภายใน 1.2–1.8 วินาที",en:"A side car becomes visible at 25–45 m (less at night) and clears the conflict point within 1.2–1.8 s."},side:1},
+ junc:{kind:"road",limit:60,th:"รถฝ่าไฟแดงตัดหน้าที่ทางแยก",en:"Red-light runner at a junction",d:{th:"รถจากด้านข้างโผล่ให้เห็นที่ 25–45 ม. (กลางคืนสั้นกว่า) และผ่านจุดตัดภายใน 1.2–1.8 วินาที",en:"A side car becomes visible at 25–45 m (less at night) and clears the conflict point within 1.2–1.8 s."},side:1},
  stall:{kind:"road",th:"รถเสียจอดนิ่งบนทางหลวง",en:"Stalled car on the highway",d:{th:"กลางวันเห็นได้ 150–250 ม. กลางคืนตาคนเห็นได้แค่ระยะไฟหน้า 60–90 ม. ส่วนลิดาร์และเรดาร์ไม่ต้องใช้แสง ฝนลดระยะลงอีก",en:"Visible at 150–250 m by day; at night eyes see only as far as headlights, 60–90 m, while lidar and radar don't need light; rain cuts range further."},hwy:1},
  sig:{kind:"rail",th:"สัญญาณไฟแดงข้างหน้า",en:"Red signal ahead",d:{th:"สัญญาณเหลืองก่อนหน้าเตือนให้เริ่มเบรกตั้งแต่ไกล คนขับอาจพลาดไม่เห็น (SPAD) ส่วน ATP บังคับเบรกให้หยุดก่อนไฟแดงเสมอ",en:"An earlier yellow signal warns the driver to start braking far ahead. A driver can miss it (SPAD); ATP always enforces a stop before the red."},signal:1},
+ ship_cross:{kind:"sea",enc:"ship",th:"เรือสินค้าแล่นตัดหน้าในหมอก",en:"Cargo ship crossing ahead in fog",d:{th:"เรือขนาดใหญ่หยุดไม่ได้ ต้องเปลี่ยนเส้นทางตั้งแต่ไกลหลายกิโลเมตร ตาเห็นได้แค่ในทัศนวิสัย ส่วนเรดาร์และ AIS เห็นไกลกว่า",en:"A big ship can't stop; it must change course kilometres ahead. Eyes see only as far as visibility allows; radar and AIS see much further."}},
+ ship_small:{kind:"sea",enc:"small",th:"เรือประมงเล็กไม่มี AIS ในฝน",en:"Small fishing boat without AIS in rain",d:{th:"เรือเล็กส่วนใหญ่ไม่ติด AIS และสะท้อนเรดาร์น้อย ฝนหนักทำให้จอเรดาร์มีสัญญาณรบกวนจนกลืนเป้าเล็ก",en:"Most small boats carry no AIS and show weakly on radar; heavy rain clutter can swallow small targets."}},
+ air_mid:{kind:"air",enc:"mid",v:[400,950,800],th:"เครื่องบินอีกลำบินสวนที่ระดับเดียวกัน",en:"Another aircraft head-on at the same level",d:{th:"ความเร็วเข้าหากันเป็นสองเท่า การมองหาด้วยตา (see and avoid) มีเวลาน้อยมาก TCAS สั่งไต่หรือลดระดับล่วงหน้าราว 25–35 วินาที",en:"Closing speed doubles, so see-and-avoid leaves little time. TCAS issues a climb or descend advisory about 25–35 s ahead."}},
+ air_rwy:{kind:"air",rwy:1,v:[80,250,200],th:"มีรถหรือเครื่องบินขวางรันเวย์ขณะวิ่งขึ้น",en:"Vehicle or aircraft on the runway during take-off",d:{th:"จำลองเฉพาะความเร็วต่ำกว่า V1 ที่ยังเบรกหยุดได้ ระบบไฟสถานะรันเวย์และเรดาร์ภาคพื้นเตือนได้ทั้งรันเวย์",en:"Only speeds below V1, where stopping is still allowed. Runway status lights and ground radar can warn about the whole runway."}},
+ heli_wire:{kind:"heli",enc:"wire",th:"สายไฟแรงสูงพาดบนเส้นทางบินต่ำ",en:"Power lines across a low-level route",d:{th:"สายไฟเส้นเล็กมองเห็นยากมาก กลางคืนแทบมองไม่เห็น ฐานข้อมูลสิ่งกีดขวางเตือนได้เฉพาะสายที่บันทึกไว้",en:"Thin wires are very hard to see and almost invisible at night. Obstacle databases only warn about wires they contain."}},
+ heli_imc:{kind:"heli",imc:1,th:"บินเข้าเมฆโดยไม่ตั้งใจ",en:"Inadvertent flight into cloud",d:{th:"งานวิจัยปี 1954 พบว่านักบินที่ไม่ได้ฝึกบินด้วยเครื่องวัดเสียการควบคุมเฉลี่ยภายใน 178 วินาทีหลังเข้าเมฆ ทางรอดคือเลี้ยวกลับออกจากเมฆให้เร็ว",en:"A 1954 study found pilots without instrument training lost control on average within 178 seconds of entering cloud. The way out is to turn back out early."}},
+ uav_heli:{kind:"uav",enc:"uheli",th:"เฮลิคอปเตอร์กู้ภัยบินต่ำเข้ามาใกล้",en:"Low-flying rescue helicopter approaches",d:{th:"ผู้บังคับบนพื้นเห็นหรือได้ยินเฮลิคอปเตอร์ช้า ตัวรับ ADS-B ช่วยได้เฉพาะเครื่องที่ส่งสัญญาณ โดรนต้องลดระดับหลบ",en:"A ground pilot sees or hears the helicopter late. ADS-B receivers help only if the helicopter transmits. The drone must descend out of the way."}},
+ uav_link:{kind:"uav",link:1,th:"สัญญาณควบคุมหายขณะบินเหนือผู้คน",en:"Control link lost over people",d:{th:"ถ้าตั้งระบบกลับจุดขึ้น (RTH) ไว้ถูกต้อง โดรนจะบินกลับหรือลงจอดเอง ถ้าไม่ได้ตั้ง อาจลอยไปตามลมจนตก",en:"With return-to-home set correctly, the drone flies back or lands itself. Without it, it may drift with the wind and come down."}},
+ sp_abort:{kind:"space",abort:1,th:"เครื่องยนต์ขัดข้องช่วงไต่ระดับ",en:"Engine failure during ascent",d:{th:"บางความผิดปกติให้เวลาไม่ถึงวินาทีก่อนระเบิด ระบบหนีภัยต้องดึงแคปซูลออกไปก่อน แบบเหตุ Soyuz MS-10",en:"Some failures leave under a second before an explosion; the escape system must pull the capsule away first, as on Soyuz MS-10."}},
+ sp_fts:{kind:"space",fts:1,th:"จรวดออกนอกเส้นทางมุ่งสู่เขตชุมชน",en:"Rocket veers toward populated areas",d:{th:"ต้องสั่งทำลายก่อนจรวดข้ามเส้นจำกัดจุดตก เพื่อให้ชิ้นส่วนตกในเขตทะเลและน่านฟ้าที่ประกาศปิดไว้",en:"It must be terminated before crossing the impact limit line, so debris falls inside the sea and airspace closed in advance."}},
+ inf_bridge:{kind:"infra",bridge:1,th:"สะพานที่งานไม่ตรงสเปก เจอน้ำท่วมและรถบรรทุกหนัก",en:"Bridge built off-spec, hit by flood and heavy trucks",d:{th:"ชิ้นส่วนที่ทำไม่ครบตามแบบรับแรงได้ราวครึ่งเดียว เมื่อชิ้นหนึ่งพัง แรงจะถ่ายไปชิ้นข้างเคียงจนพังต่อกันเป็นคลื่น น้ำท่วมกัดเซาะตอม่อลดแรงรองรับลงอีก",en:"Members not built to the drawings carry about half the load. When one fails, its load shifts to neighbours, which can fail in turn like a wave. Flood scour weakens the piers further."}},
+ inf_road:{kind:"infra",road2:1,th:"ถนนน้ำท่วมขังแล้วรถหนักวิ่งผ่านซ้ำ",en:"Flooded road under repeated heavy traffic",d:{th:"ความเสียหายของผิวทางเพิ่มตามน้ำหนักเพลายกกำลัง 4 รถน้ำหนักเกิน 50% ทำลายถนนราว 5 เท่า ชั้นดินที่อิ่มน้ำรับแรงได้น้อยลง หลุมแรกทำให้ล้อกระแทกจุดถัดไปจนหลุมลามเป็นแนว",en:"Pavement damage grows with axle load to the fourth power; trucks 50% overweight do about five times the damage. Waterlogged layers are weaker, and the first pothole makes wheels slam the next spot, so potholes spread in a line."}},
  lx:{kind:"rail",th:"รถติดค้างบนจุดตัดทางรถไฟ",en:"Vehicle stuck on a level crossing",d:{th:"มองเห็นได้ 300–500 ม. กลางวัน กลางคืนสั้นลง ATP มองไม่เห็นสิ่งกีดขวาง",en:"Visible at 300–500 m by day, less at night. ATP can't see obstacles."},obst:1}
 };
 const CTRL={
@@ -249,6 +280,24 @@ const CTRL={
  l4:{kind:"road",cc:"--c-l4",th:"Autonomous · ระดับ 4",en:"Autonomous · Level 4",s:{th:"ไม่มีคนขับในพื้นที่ที่กำหนด ถ้าเกินขอบเขต จะจอดเอง",en:"No driver inside its area; beyond its limits it stops itself"},learner:"sys"},
  rhuman:{kind:"rail",cc:"--c-human",th:"พนักงานขับ",en:"Train driver",s:{th:"มองสัญญาณข้างทางและทางข้างหน้าเอง",en:"Reads lineside signals and the track ahead"},learner:"human"},
  atp:{kind:"rail",cc:"--c-atp",th:"พนักงานขับ + ATP / ETCS",en:"Driver + ATP / ETCS",s:{th:"ATP บังคับไม่ให้ฝ่าสัญญาณ แต่ไม่เห็นสิ่งกีดขวาง",en:"ATP won't let the train pass a red, but can't see obstacles"},learner:"human"},
+ oow:{kind:"sea",cc:"--c-human",th:"นายยามเรือ (มองด้วยตา)",en:"Officer of the watch (lookout)",s:{th:"เฝ้าระวังด้วยตาเป็นหลัก ตามกฎ COLREG ข้อ 5",en:"Keeps a visual lookout under COLREG Rule 5"},learner:"human"},
+ arpa:{kind:"sea",cc:"--c-l2",th:"นายยาม + เรดาร์ ARPA/AIS",en:"Watch officer + ARPA/AIS",s:{th:"เรดาร์คำนวณระยะใกล้สุด (CPA) และเตือน คนตัดสินใจหลบ",en:"Radar computes closest approach and alarms; the human decides"},learner:"human"},
+ mass:{kind:"sea",cc:"--c-l4",th:"เรืออัตโนมัติ (MASS)",en:"Autonomous ship (MASS)",s:{th:"รวมเรดาร์ AIS กล้อง แล้วหลบตามกฎเอง มีศูนย์ควบคุมระยะไกลกำกับ",en:"Fuses radar, AIS and cameras and avoids by the rules itself, overseen by a remote centre"},learner:"sys"},
+ pilot:{kind:"air",cc:"--c-human",th:"นักบินมองด้วยตา",en:"Pilots looking out",s:{th:"see and avoid ไม่มีระบบเตือนช่วย",en:"See and avoid, no alerting systems"},learner:"human"},
+ tcas:{kind:"air",cc:"--c-l2",th:"นักบิน + ATC + TCAS/ระบบเตือนรันเวย์",en:"Pilots + ATC + TCAS/runway alerts",s:{th:"ระบบเตือนและสั่งการ คนบังคับเครื่องตาม",en:"Systems alert and advise; pilots fly the response"},learner:"human"},
+ auto:{kind:"air",cc:"--c-l4",th:"Autopilot ตอบสนองอัตโนมัติ",en:"Autopilot flies the response",s:{th:"เช่น AP/FD TCAS ที่บินตามคำสั่ง TCAS เอง ส่วนการเบรกหยุดอัตโนมัติบนรันเวย์ยังเป็นแนวคิด",en:"e.g. AP/FD TCAS flies the advisory itself; automatic runway rejects remain a concept"},learner:"sys"},
+ hpilot:{kind:"heli",cc:"--c-human",th:"นักบินบินด้วยสายตา (VFR)",en:"Pilot flying visually (VFR)",s:{th:"อาศัยขอบฟ้าและพื้นดินเป็นหลัก",en:"Relies on the horizon and ground cues"},learner:"human"},
+ htaws:{kind:"heli",cc:"--c-l2",th:"นักบิน + HTAWS/จอภาพสังเคราะห์",en:"Pilot + HTAWS / synthetic vision",s:{th:"เตือนพื้นและสิ่งกีดขวางจากฐานข้อมูล แสดงท่าทางเครื่องชัดขึ้น",en:"Database terrain and obstacle alerts, clearer attitude display"},learner:"human"},
+ afcs:{kind:"heli",cc:"--c-l4",th:"Autopilot 4 แกน (AFCS) + เซนเซอร์สิ่งกีดขวาง",en:"4-axis autopilot (AFCS) + obstacle sensor",s:{th:"รักษาท่าทางเองในเมฆ ไต่หลบสิ่งกีดขวางอัตโนมัติ",en:"Holds attitude in cloud, climbs away from obstacles automatically"},learner:"sys"},
+ vlos:{kind:"uav",cc:"--c-human",th:"ผู้บังคับมองด้วยตา (VLOS)",en:"Pilot by eye (VLOS)",s:{th:"มองโดรนและท้องฟ้าเอง",en:"Watches the drone and sky directly"},learner:"human"},
+ assist:{kind:"uav",cc:"--c-l2",th:"ผู้บังคับ + ADS-B In และ failsafe",en:"Pilot + ADS-B In and failsafe",s:{th:"แจ้งเตือนเครื่องบินที่ส่งสัญญาณ ตั้งค่ากลับจุดขึ้นไว้แล้ว",en:"Alerts for transmitting aircraft; return-to-home configured"},learner:"human"},
+ daa:{kind:"uav",cc:"--c-l4",th:"โดรนอัตโนมัติ (DAA + geofence)",en:"Autonomous drone (DAA + geofence)",s:{th:"ตรวจจับและหลบเอง ห้ามเข้าเขตหวงห้ามอัตโนมัติ",en:"Detects and avoids by itself; geofencing keeps it out of restricted zones"},learner:"sys"},
+ snone:{kind:"space",cc:"--c-warn",th:"ไม่มีระบบหนีภัย / ระบบทำลาย",en:"No escape or termination system",s:{th:"แบบช่วงแรกของกระสวยอวกาศ",en:"As in the Shuttle's first stage"},learner:"human"},
+ shuman:{kind:"space",cc:"--c-human",th:"คนสั่งการ (ลูกเรือ / เจ้าหน้าที่ความปลอดภัย)",en:"Human command (crew / range safety officer)",s:{th:"ตัดสินใจกดสั่ง abort หรือสั่งทำลาย",en:"Decides to abort or terminate"},learner:"human"},
+ sauto:{kind:"space",cc:"--c-l4",th:"ระบบอัตโนมัติ (EDS / AFTS)",en:"Automatic systems (EDS / AFTS)",s:{th:"ตรวจจับและสั่งเองภายในเสี้ยววินาที",en:"Detects and acts within a fraction of a second"},learner:"sys"},
+ imnone:{kind:"infra",cc:"--c-warn",th:"ใช้งานจนพัง (ไม่มีแผนตรวจ)",en:"Run to failure (no inspection plan)",s:{th:"ซ่อมเมื่อเห็นความเสียหายแล้วเท่านั้น",en:"Repairs only after damage is obvious"},learner:"human"},
+ iminsp:{kind:"infra",cc:"--c-human",th:"วิศวกรตรวจตามรอบ",en:"Scheduled engineering inspection",s:{th:"ตรวจด้วยสายตาและเครื่องมือ ซ่อมจุดที่พบ ปิดทางเมื่อเห็นอันตราย",en:"Visual and instrument checks, fixes what it finds, closes when danger is seen"},learner:"human"},
+ imshm:{kind:"infra",cc:"--c-l4",th:"เซนเซอร์ SHM + ปิดทาง/คุมน้ำหนักอัตโนมัติ",en:"SHM sensors + automatic closure / weight control",s:{th:"วัดแรงและความเสียหายต่อเนื่อง สั่งปิดหรือกันรถหนักทันที",en:"Measures strain and damage continuously; closes or stops heavy trucks at once"},learner:"sys"},
  goa4:{kind:"rail",cc:"--c-goa",th:"ไร้คนขับ · GoA4",en:"Driverless · GoA4",s:{th:"ระบบควบคุมเต็มรูป มีเซนเซอร์ตรวจสิ่งกีดขวางระยะจำกัด",en:"Fully automatic, with limited-range obstacle detection"},learner:"sys"}
 };
 const INFO={
@@ -258,6 +307,24 @@ const INFO={
  l4:{learn:{th:"ฝึกจากข้อมูลขับจริงหลายล้านกิโลเมตร แล้วจำลองซ้ำหลายพันล้านกิโลเมตรรวมเหตุหายาก ทดสอบในสนามปิด ขับจริงโดยมีคนคุม แล้วจึงไร้คนขับใน ODD พร้อมเอกสารยืนยันความปลอดภัย (safety case)",en:"Trains on millions of real kilometres, then billions of simulated ones including rare events; closed-course testing, supervised public driving, then driverless inside the ODD with a documented safety case."},std:["SAE J3016 L4","UL 4600","ISO 21448","ISO 26262",{th:"ใบอนุญาตรัฐ (เช่น CA DMV)",en:"State permits (e.g. CA DMV)"},"NHTSA crash reporting"],prob:[{th:"เหตุหายากที่ไม่เคยเห็นในข้อมูล (long tail)",en:"Rare events never seen in the data (long tail)"},{th:"ฝนหนักและน้ำท่วมลดประสิทธิภาพเซนเซอร์",en:"Heavy rain and flooding degrade sensors"},{th:"ระวังเกินจนกีดขวางจราจร หรือจอดในจุดไม่ปลอดภัย",en:"Over-caution that blocks traffic, or stopping somewhere unsafe"},{th:"ผู้ช่วยทางไกลตอบช้า",en:"Slow remote assistance"}]},
  rhuman:{learn:{th:"ฝึกเป็นพนักงานขับ ได้ใบอนุญาตและใบรับรองเฉพาะเส้นทางและรุ่นรถ ต้องจำเส้นทาง จุดสัญญาณ และโค้ง",en:"Trains for a driver licence plus certificates for each route and train type, learning the route, signals and curves."},std:["EU Directive 2007/59/EC","49 CFR 240 (US)"],prob:[{th:"ฝ่าสัญญาณไฟแดง (SPAD) จากความเหนื่อยล้าหรือเสียสมาธิ",en:"Passing signals at danger (SPAD) through fatigue or distraction"},{th:"รถไฟใช้ระยะหยุดหลายร้อยเมตร มองเห็นแล้วก็มักหยุดไม่ทัน",en:"Trains need hundreds of metres to stop; seeing a hazard often isn't enough"}]},
  atp:{learn:{th:"ATP เป็นระบบวิศวกรรม ไม่ได้เรียนรู้จากข้อมูล รู้ตำแหน่งและสัญญาณจากราง แล้วคำนวณเส้นโค้งเบรก ถ้าคนขับไม่เบรก ระบบเบรกเอง ต้องผ่านมาตรฐานความปลอดภัยระดับสูงสุด (SIL 4)",en:"ATP is engineered, not learned from data. It knows position and signal aspects from the track, computes a braking curve and brakes if the driver doesn't. It must meet the highest safety integrity level (SIL 4)."},std:["ETCS / ERTMS","EN 50126 · 50128 · 50129","SIL 4","PTC (US)"],prob:[{th:"ไม่เห็นรถหรือคนบนราง",en:"Can't see vehicles or people on the track"},{th:"เมื่อระบบล่ม การสั่งการด้วยคนเสี่ยงผิดพลาด เช่นเหตุ Toledo",en:"When it fails, manual operation invites errors, as at Toledo"}]},
+ oow:{learn:{th:"เรียนตามหลักสูตร STCW ฝึกบนเรือเป็นนักเรียนเดินเรือ สอบประกาศนียบัตรนายยามเรือ ทักษะสำคัญคืออ่านสถานการณ์เรือสวนและตัดสินใจหลบตาม COLREG ตั้งแต่ไกล",en:"Learns through STCW courses and cadet sea time before the watch officer certificate. The key skill is reading encounters and acting early under COLREG."},std:["COLREG 1972 (Rule 5, 19)","STCW 1978/2010"],prob:[{th:"เหนื่อยล้าจากเวรยาวและเวรกลางคืน",en:"Fatigue from long and night watches"},{th:"ตัดสินใจช้าเพราะหวังให้อีกลำหลบก่อน",en:"Waiting for the other ship to act first"}]},
+ arpa:{learn:{th:"เรดาร์ ARPA คำนวณ CPA และเวลาถึงจุดใกล้สุด AIS บอกชื่อและเส้นทางเรือ คนต้องฝึกใช้ข้อมูลและไม่เชื่อจอจนลืมมองออกไปนอกเรือ",en:"ARPA radar computes CPA and time to it; AIS gives identity and track. Officers must learn to use them without trusting the screen over the view outside."},std:["SOLAS Ch. V","IMO radar performance standards","ECDIS"],prob:[{th:"เรือเล็กไม่มี AIS และกลืนกับคลื่นบนจอ",en:"Small boats lack AIS and vanish in sea clutter"},{th:"เชื่อจอเกินไปจนเกิดการชนที่มีเรดาร์ช่วย (radar-assisted collision)",en:"Over-reliance causing radar-assisted collisions"},{th:"สัญญาณเตือนถี่จนคนชิน",en:"Alarm fatigue"}]},
+ mass:{learn:{th:"ฝึกจากข้อมูลการเดินเรือและโลกจำลองสถานการณ์เรือสวนจำนวนมาก IMO กำลังจัดทำ MASS Code สำหรับเรืออัตโนมัติ",en:"Trained on voyage data and large numbers of simulated encounters. IMO is developing a MASS Code for autonomous ships."},std:["IMO MASS Code (in development)","COLREG","IEC 62443 (cyber)"],prob:[{th:"ตรวจจับเรือไม้เล็กหรือคนตกน้ำได้ยาก",en:"Hard to detect small wooden boats or people in the water"},{th:"การเชื่อมต่อกับศูนย์ควบคุมขาดหาย และภัยไซเบอร์",en:"Loss of the link to the remote centre, and cyber attacks"}]},
+ pilot:{learn:{th:"นักบินฝึกกวาดตามองหาเครื่องอื่นอย่างเป็นระบบ แต่เครื่องที่บินสวนตรงๆ แทบไม่ขยับในสายตาจนเข้ามาใกล้มาก จึงเห็นช้า",en:"Pilots learn systematic scanning, but an aircraft on a collision course barely moves in the windscreen until it is close, so it is seen late."},std:["ICAO Annex 2 (Rules of the Air)"],prob:[{th:"มองไม่เห็นในเมฆหรือแสงแดดแยงตา",en:"Nothing visible in cloud or sun glare"},{th:"ความเร็วเข้าหากันสูงจนมีเวลาไม่กี่วินาที",en:"High closing speeds leave only seconds"}]},
+ tcas:{learn:{th:"TCAS คุยกับ TCAS ของอีกลำเพื่อแบ่งกันไต่และลด นักบินฝึกใน simulator ให้ทำตามคำสั่ง RA ทันที แม้ ATC จะสั่งต่างไป บทเรียนจากเหตุชนกลางอากาศที่ Überlingen ปี 2002",en:"TCAS units coordinate so one aircraft climbs and the other descends. Pilots train to follow an RA at once even if ATC says otherwise, a lesson from the 2002 Überlingen collision."},std:["ICAO ACAS II (Annex 10 Vol IV)","TCAS II v7.1","ICAO A-SMGCS","RWSL"],prob:[{th:"ทำตามคำสั่ง ATC ที่ขัดกับ TCAS",en:"Following an ATC instruction that conflicts with TCAS"},{th:"เครื่องเล็กบางลำไม่มี transponder ทำให้ TCAS มองไม่เห็น",en:"Aircraft without transponders are invisible to TCAS"}]},
+ auto:{learn:{th:"AP/FD TCAS ให้ autopilot บินตามคำสั่ง RA เองอย่างนุ่มนวลและตรงเวลา ระบบผ่านการรับรองแบบวิศวกรรม ไม่ได้เรียนรู้จากข้อมูล",en:"AP/FD TCAS lets the autopilot fly the RA smoothly and on time. It is certified engineering, not learned from data."},std:["EASA CS-25","ICAO ACAS II","DO-178C (software)"],prob:[{th:"นักบินต้องเฝ้าดูและพร้อมรับช่วง",en:"Pilots must monitor and be ready to take over"},{th:"ยังไม่มีระบบเบรกหยุดเองบนรันเวย์ที่ได้รับรอง",en:"No certified automatic runway reject exists yet"}]},
+ hpilot:{learn:{th:"เรียน PPL(H) และ CPL(H) ถ้าไม่ได้ฝึกบินด้วยเครื่องวัด เข้าเมฆแล้วหูชั้นในหลอกให้รู้สึกผิดทิศ",en:"Learns through PPL(H) and CPL(H). Without instrument training, the inner ear misleads the pilot once in cloud."},std:["ICAO Annex 1","Part 27 / 29"],prob:[{th:"กดดันให้บินต่อในอากาศแย่ (get-there-itis)",en:"Pressing on in bad weather (get-there-itis)"},{th:"มองไม่เห็นสายไฟ",en:"Wires are hard to see"}]},
+ htaws:{learn:{th:"ระบบเตือนพื้นและสิ่งกีดขวาง (HTAWS) และจอสังเคราะห์ภาพภูมิประเทศ ช่วยให้รู้ตำแหน่งและท่าทางในเมฆ NTSB แนะนำให้ติดหลังเหตุ S-76 ปี 2020",en:"Terrain and obstacle warning (HTAWS) and synthetic vision show position and attitude in cloud. NTSB urged fitting them after the 2020 S-76 crash."},std:["HTAWS (TSO-C194)","Synthetic vision"],prob:[{th:"เตือนเฉพาะสายไฟที่อยู่ในฐานข้อมูล",en:"Warns only of wires in the database"},{th:"เตือนบ่อยตอนบินต่ำจนนักบินปิดเสียง",en:"Frequent low-level alerts get silenced"}]},
+ afcs:{learn:{th:"AFCS 4 แกนรักษาท่าทางและความสูงเอง จึงไม่หลงท่าในเมฆ เซนเซอร์ลิดาร์ตรวจสายไฟที่ไม่อยู่ในฐานข้อมูลได้ แต่ระยะจำกัด",en:"A 4-axis AFCS holds attitude and height, so it doesn't get disoriented in cloud. Lidar can spot wires missing from databases, within a limited range."},std:["Part 29 AFCS","Obstacle detection lidar"],prob:[{th:"นักบินต้องรู้ว่าระบบอยู่ในโหมดไหน",en:"Pilots must know which mode the system is in"},{th:"เครื่องเล็กส่วนใหญ่ยังไม่มีระบบนี้",en:"Most light helicopters don't have it"}]},
+ vlos:{learn:{th:"ขึ้นทะเบียนโดรนและผู้บังคับ สอบความรู้ บินในระยะสายตา",en:"Register the drone and pilot, pass a knowledge test, fly within sight."},std:["FAA Part 107","EU open category A1/A2/A3",{th:"กพท. + กสทช.",en:"CAAT + NBTC"}],prob:[{th:"มองไม่เห็นหรือได้ยินเครื่องบินช้า",en:"Late to see or hear manned aircraft"},{th:"ไม่ได้ตั้งค่ากลับจุดขึ้นหรือความสูงบินกลับ",en:"Return-to-home or its altitude not configured"}]},
+ assist:{learn:{th:"ตัวรับ ADS-B เตือนเครื่องบินที่ส่งสัญญาณ ระบบ failsafe กำหนดสิ่งที่โดรนทำเมื่อสัญญาณหาย",en:"ADS-B receivers warn of transmitting aircraft; failsafe settings decide what the drone does on link loss."},std:["Remote ID","ADS-B In"],prob:[{th:"เฮลิคอปเตอร์บางลำไม่ส่ง ADS-B",en:"Some helicopters don't transmit ADS-B"},{th:"บินกลับที่ความสูงต่ำแล้วชนตึก",en:"Returning home too low and hitting buildings"}]},
+ daa:{learn:{th:"ระบบตรวจจับและหลบ (DAA) ฝึกและทดสอบด้วยการบินจำลองจำนวนมาก ร่วมกับ geofence และระบบจัดการจราจรโดรน (UTM / U-space)",en:"Detect-and-avoid is trained and tested with many simulated encounters, alongside geofencing and drone traffic management (UTM / U-space)."},std:["ASTM F3442 (DAA)","EU U-space 2021/664"],prob:[{th:"GPS ถูกรบกวนหรือปลอมสัญญาณ",en:"GPS jamming or spoofing"},{th:"ระยะตรวจจับของเซนเซอร์เล็กสั้น",en:"Small sensors have short detection range"}]},
+ snone:{learn:{th:"ไม่มีระบบให้เรียนรู้ ความปลอดภัยพึ่งความน่าเชื่อถือของจรวดล้วนๆ หลังเหตุ Challenger ปี 1986 ยานรุ่นต่อมากลับมาใช้ระบบหนีภัยตอนปล่อย",en:"Nothing to learn; safety rests entirely on reliability. After Challenger in 1986, later crewed vehicles returned to launch escape systems."},std:["NASA NPR 8705.2 (requires abort capability)"],prob:[{th:"ความผิดปกติร้ายแรงช่วงแรกไม่มีทางรอด",en:"Severe early failures are unsurvivable"}]},
+ shuman:{learn:{th:"ลูกเรือและศูนย์ควบคุมซ้อมสถานการณ์ abort ใน simulator หลายร้อยครั้ง เจ้าหน้าที่ความปลอดภัยการยิงเฝ้าดูเส้นทางและกดสั่งทำลายเมื่อจำเป็น",en:"Crews and mission control rehearse aborts hundreds of times in simulators; range safety officers watch the track and send the destruct command when needed."},std:["FAA Part 450","NASA NPR 8705.2"],prob:[{th:"คนตอบสนองช้ากว่าเหตุที่เกิดในเสี้ยววินาที",en:"Human reactions are slower than sub-second failures"}]},
+ sauto:{learn:{th:"EDS ตรวจจับความผิดปกติและสั่งหนีภัยเอง เช่นที่ช่วยลูกเรือ Soyuz MS-10 ส่วน AFTS ใช้คอมพิวเตอร์บนจรวดตัดสินใจทำลายตามกฎที่โหลดไว้ ใช้แพร่หลายตั้งแต่ปลายทศวรรษ 2010",en:"EDS detects failures and triggers escape itself, as it did for Soyuz MS-10. AFTS uses onboard computers to terminate by preloaded rules, widely used since the late 2010s."},std:["RCC 319 (flight termination)","FAA Part 450"],prob:[{th:"ตั้งกฎผิดอาจยกเลิกโดยไม่จำเป็น",en:"Wrong rules can trigger needless aborts"},{th:"ต้องทดสอบซอฟต์แวร์อย่างเข้มงวด",en:"Software needs rigorous testing"}]},
+ imnone:{learn:{th:"ไม่มีการเรียนรู้เชิงระบบ ความเสียหายถูกพบเมื่อสายเกินไป บทเรียนจากสะพาน Morandi และ I-35W",en:"No systematic learning; damage is found too late, as Morandi and I-35W showed."},std:["—"],prob:[{th:"งานที่ไม่ตรงสเปกไม่มีใครเห็นจนพัง",en:"Off-spec work stays hidden until failure"},{th:"น้ำท่วมกัดเซาะตอม่อโดยไม่มีใครตรวจ",en:"Flood scour goes unchecked"}]},
+ iminsp:{learn:{th:"วิศวกรผ่านหลักสูตรผู้ตรวจ ฝึกภาคสนามกับพี่เลี้ยง ตรวจตามรอบ (สหรัฐฯ ไม่เกิน 24 เดือน) ตรวจพิเศษหลังน้ำท่วม และคำนวณความสามารถรับน้ำหนัก (load rating)",en:"Engineers train as inspectors with field mentoring, inspect on a cycle (24 months max in the US), add special checks after floods, and compute load ratings."},std:["FHWA NBIS","AASHTO MBE (load rating)","ISO 55000"],prob:[{th:"มองไม่เห็นข้อบกพร่องที่ซ่อนในคอนกรีต",en:"Defects hidden inside concrete are missed"},{th:"ระหว่างรอบตรวจ ความเสียหายอาจลุกลาม",en:"Damage can grow between inspections"}]},
+ imshm:{learn:{th:"เซนเซอร์วัดแรง การสั่น การเอียง และการกัดเซาะ ส่งข้อมูลต่อเนื่อง ระบบเรียนรู้รูปแบบปกติแล้วเตือนเมื่อผิดปกติ ร่วมกับด่านชั่งน้ำหนักขณะวิ่ง (WIM)",en:"Strain, vibration, tilt and scour sensors stream data; the system learns normal patterns and alarms on anomalies, together with weigh-in-motion checks."},std:["ISO 55000","SHM guidelines","Weigh-in-motion"],prob:[{th:"เซนเซอร์เสียหรือเตือนผิด",en:"Sensor failures and false alarms"},{th:"มีข้อมูลแต่ไม่มีอำนาจหรืองบสั่งปิดทาง",en:"Data without the authority or budget to close a road"}]},
  goa4:{learn:{th:"ระบบเดินรถอัตโนมัติ (ATO) ทำงานบน ATP และ CBTC ส่วนการตรวจสิ่งกีดขวางเป็นส่วนเสริมที่ยังจำกัดระยะ จึงต้องพึ่งรั้วกั้นและประตูกั้นชานชาลา",en:"Automatic train operation (ATO) runs on ATP and CBTC. Obstacle detection is an add-on with limited range, so it relies on fencing and platform screen doors."},std:["IEC 62290 (GoA)","IEEE 1474 (CBTC)","EN 50126 · 50128 · 50129"],prob:[{th:"ระยะตรวจจับสั้นกว่าระยะหยุดที่ความเร็วสูง",en:"Detection range is shorter than stopping distance at speed"},{th:"ใช้ได้ดีในระบบปิด เช่น รถไฟฟ้าในเมือง มากกว่าเส้นทางที่มีจุดตัดถนน",en:"Works best on closed systems like metros, not lines with road crossings"}]}
 };
 const SURF={dry:{th:"แห้ง",en:"Dry",m:1,vis:1,rm:1},wet:{th:"ฝนตก / เปียก",en:"Rain / wet",m:.65,vis:.75,rm:.8},flood:{th:"น้ำขัง",en:"Standing water",m:.35,vis:.65,rm:.75}};
@@ -269,7 +336,7 @@ let lang=(globalThis.ProjectLanguage&&ProjectLanguage.language)==="en"?"en":"th"
 const tx=o=>typeof o==="string"?o:(o[lang]??o.en);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
-const st={veh:"car",scn:"ped",surf:"dry",light:"day",ctrl:"human",spd:60,exp:40,atpfail:false,seed:7,view:"top"};
+const st={veh:"car",scn:"ped",surf:"dry",light:"day",ctrl:"human",spd:50,exp:40,atpfail:false,seed:7,view:"top",force:"rand",spec:70,age:25,ovl:15};
 
 /* ---------- random ---------- */
 function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
@@ -286,7 +353,7 @@ function inODD(c,cfg){
 }
 function profile(c,e,cfg,r){
  const s=SCN[cfg.scn], night=cfg.light==="night";
- const human=(eh,extra=0)=>({react:Math.max(.7,N(r,(s.hw?1.6-.6*eh:2.0-.8*eh),.25))+(night&&!s.hw?.3:0)+extra,distract:.12-.07*eh,antic:.1+.7*eh,hw:Math.max(.6,N(r,.9+1.2*eh,.2)),brk:(cfg.veh==="moto"?.7+.3*eh:.85+.15*eh),miss:0,late:.35,sensor:"eye"});
+ const human=(eh,extra=0)=>({react:Math.max(.7,N(r,(s.hw?1.6-.6*eh:2.0-.8*eh),.25))+(night&&!s.hw?.3:0)+extra,distract:.12-.07*eh,antic:.1+.7*eh+(s.ped?.1:0),hw:Math.max(.6,N(r,.9+1.2*eh,.2)),brk:(cfg.veh==="moto"?.7+.3*eh:.85+.15*eh),miss:0,late:.35,sensor:"eye"});
  if(c==="human"||c==="rhuman"){const p=human(e);if(c==="rhuman"){p.miss=s.signal?.06-.05*e:0;p.hw=2;}return p;}
  if(c==="atp"){const p=human(e);p.miss=s.signal?.06-.05*e:0;p.atp=!cfg.atpfail;return p;}
  if(c==="l2"){
@@ -311,6 +378,7 @@ function profile(c,e,cfg,r){
 
 /* ---------- one trial ---------- */
 function trial(cfg,e,seed,record){
+ if(K2.has(VEH[cfg.veh].kind)) return trial2(cfg,e,seed,record);
  const r=rng(seed), s=SCN[cfg.scn], V=VEH[cfg.veh], sf=SURF[cfg.surf], night=cfg.light==="night";
  const p=profile(cfg.ctrl,e,cfg,r);
  const a=V.a*sf.m*(cfg.veh==="train"?(cfg.surf==="dry"?1:.8):1);
@@ -323,7 +391,7 @@ function trial(cfg,e,seed,record){
  const sen=p.sensor||"eye";
  const rainMul=sen==="lidar"?1-(1-sf.vis)*.5:sf.vis;
  const nightMul=!night?1:sen==="eye"?.7:sen==="cam"?.8:1;
- if(s.ped){reveal=U(r,12,25);present=r()<.4;hazPos=110;visKnown=80;}
+ if(s.ped){reveal=U(r,12,25);const roll=r();present=cfg.force==="on"?true:cfg.force==="off"?false:roll<.4;hazPos=110;visKnown=80;}
  if(s.side){reveal=U(r,25,45)*nightMul*rainMul;hazPos=110;clearT=U(r,1.2,1.8);visKnown=60;}
  if(s.hwy){reveal=(night&&sen==="eye"?U(r,60,90):U(r,150,250)*nightMul)*rainMul;hazPos=Math.max(220,v0*v0/(2*a)+v0*3+60);}
  if(s.hw){gap0=Math.max(4,p.hw*v0);leadV=v0;leadBrakeT=U(r,2,5);hazPos=gap0;}
@@ -399,7 +467,7 @@ function trial(cfg,e,seed,record){
  if(p.handback) out.handback=1;
  return out;
 }
-function cfgNow(){return {veh:st.veh,scn:st.scn,surf:st.surf,light:st.light,ctrl:st.ctrl,v:st.spd,atpfail:st.atpfail};}
+function cfgNow(){return {veh:st.veh,scn:st.scn,surf:st.surf,light:st.light,ctrl:st.ctrl,v:st.spd,atpfail:st.atpfail,force:st.force,spec:st.spec,age:st.age,ovl:st.ovl};}
 function monte(cfg,e,n){
  const res={safe:0,near:0,light:0,serious:0,mrc:0,spad:0,react:0,rc:0,imp:0,ic:0,lost:0,miss:0,handback:0};
  for(let i=0;i<n;i++){const o=trial(cfg,e,1000+i*7919);
@@ -411,12 +479,332 @@ function monte(cfg,e,n){
  return res;
 }
 
+/* ---------- other modes: sea, air, helicopter, drone, space, infrastructure (teaching models) ---------- */
+const K2=new Set(["sea","air","heli","uav","space","infra"]);
+function isK2(){return K2.has(VEH[st.veh].kind);}
+const HMAX={road:1000,rail:1000,sea:5000,air:5000,heli:3000,uav:300,space:2000,infra:1000};
+const SYS_F=[0,.2,.35,.5,.7,.88];
+const PATHS_H={
+ rail:[{th:"ตรวจร่างกายและจิตวิทยา",en:"Medical and aptitude checks",h:0},{th:"หลักสูตรพนักงานขับ",en:"Driver course",h:100},{th:"ขับคู่ครูฝึก",en:"Driving with an instructor",h:300},{th:"ใบอนุญาต + รับรองเส้นทาง",en:"Licence + route certificates",h:600},{th:"ทบทวนเป็นระยะ",en:"Periodic rechecks",h:900}],
+ sea:[{th:"หลักสูตรความปลอดภัยพื้นฐาน STCW",en:"STCW basic safety",h:0},{th:"นักเรียนเดินเรือฝึกบนเรือ",en:"Cadet sea time",h:300},{th:"ประกาศนียบัตรนายยามเรือ",en:"Officer of the watch certificate",h:1500},{th:"ต้นเรือ",en:"Chief mate",h:3000},{th:"นายเรือ",en:"Master",h:4500}],
+ air:[{th:"ใบรับรองแพทย์ชั้น 1",en:"Class 1 medical",h:0},{th:"PPL ราว 40 ชม.",en:"PPL ~40 h",h:40},{th:"CPL 200 ชม.",en:"CPL 200 h",h:200},{th:"Type rating + เข้าสายการบิน",en:"Type rating + airline entry",h:300},{th:"ATPL 1,500 ชม.",en:"ATPL 1,500 h",h:1500},{th:"กัปตัน",en:"Captain",h:4000}],
+ heli:[{th:"ใบรับรองแพทย์",en:"Medical",h:0},{th:"PPL(H) ราว 45 ชม.",en:"PPL(H) ~45 h",h:45},{th:"CPL(H) ราว 150 ชม.",en:"CPL(H) ~150 h",h:150},{th:"บินด้วยเครื่องวัด (IR)",en:"Instrument rating",h:300},{th:"นักบินกู้ภัย / การแพทย์",en:"Rescue / medical pilot",h:1500}],
+ uav:[{th:"ขึ้นทะเบียนโดรนและผู้บังคับ",en:"Register drone and pilot",h:0},{th:"สอบความรู้ (เช่น Part 107)",en:"Knowledge test (e.g. Part 107)",h:5},{th:"บินในระยะสายตา",en:"Flying within sight",h:20},{th:"อนุญาตพิเศษ กลางคืน/เหนือคน",en:"Waivers: night, over people",h:100},{th:"บินนอกระยะสายตา (BVLOS)",en:"Beyond visual line of sight",h:250}],
+ space:[{th:"คัดเลือกนักบินอวกาศ",en:"Astronaut selection",h:0},{th:"ฝึกพื้นฐาน",en:"Basic training",h:300},{th:"ฝึกจำลองภารกิจ",en:"Mission simulations",h:800},{th:"ซ้อม abort และฉุกเฉิน",en:"Abort and emergency drills",h:1400},{th:"ได้รับมอบหมายภารกิจ",en:"Assigned to a mission",h:1900}],
+ infra:[{th:"ใบอนุญาตวิศวกร",en:"Engineering licence",h:0},{th:"หลักสูตรผู้ตรวจสะพาน/ถนน",en:"Bridge / road inspector course",h:40},{th:"ตรวจภาคสนามกับพี่เลี้ยง",en:"Field inspections with a mentor",h:150},{th:"หัวหน้าทีมตรวจ",en:"Inspection team lead",h:500},{th:"ประเมินความสามารถรับน้ำหนัก",en:"Load-rating specialist",h:900}]
+};
+function surfLabel(K,k){const L={
+ road:{dry:SURF.dry,wet:SURF.wet,flood:SURF.flood},rail:{dry:SURF.dry,wet:{th:"รางเปียก / ใบไม้",en:"Wet rail / leaves"}},
+ sea:{dry:{th:"ทะเลเปิด อากาศดี",en:"Clear, open sea"},wet:{th:"ฝนหนัก",en:"Heavy rain"},flood:{th:"หมอกหนา",en:"Dense fog"}},
+ air:{dry:{th:"ฟ้าโปร่ง",en:"Clear sky"},wet:{th:"ฝน / ในเมฆ",en:"Rain / in cloud"},flood:{th:"พายุ / รันเวย์น้ำขัง",en:"Storm / standing water"}},
+ heli:{dry:{th:"ฟ้าโปร่ง",en:"Clear sky"},wet:{th:"ฝน",en:"Rain"},flood:{th:"ลมแรงและเมฆต่ำ",en:"Strong wind, low cloud"}},
+ uav:{dry:{th:"ลมสงบ",en:"Calm"},wet:{th:"ลมแรง",en:"Windy"},flood:{th:"ฝนและลมกระโชก",en:"Rain and gusts"}},
+ space:{dry:{th:"ปกติ",en:"Nominal"},wet:{th:"ปกติ",en:"Nominal"},flood:{th:"ปกติ",en:"Nominal"}},
+ infra:{dry:{th:"สภาพปกติ",en:"Normal"},wet:{th:"ฝนตกหนักต่อเนื่อง",en:"Prolonged heavy rain"},flood:{th:"น้ำท่วม / กัดเซาะตอม่อ",en:"Flood / pier scour"}}}[K]||{};return tx(L[k]||SURF[k]);}
+const fmtD=m=>m>=2000?(m/1000).toFixed(1)+(lang==="th"?" กม.":" km"):Math.round(m)+(lang==="th"?" ม.":" m");
+const fmtS=t=>t>=120?(t/60).toFixed(1)+(lang==="th"?" นาที":" min"):t.toFixed(1)+(lang==="th"?" วิ":" s");
+const B=(th,en)=>({th,en});
+const N0=(r,m,sd,min)=>Math.max(min,N(r,m,sd));
+const HK={dist:B("ระยะถึงจุดอันตราย","To conflict"),spd:B("ความเร็ว","Speed"),det:B("ตรวจพบที่","Detected at"),time:B("เวลา","Time"),incl:B("เวลาในเมฆ","Time in cloud"),veh:B("รถบนสะพาน","Vehicles on bridge"),util:B("แรงสูงสุด/กำลังรับ","Peak load / capacity"),fail:B("ชิ้นส่วนพัง","Members failed"),pot:B("หลุมบ่อ","Potholes"),dmg:B("ความเสียหายสูงสุด","Worst damage"),trk:B("รถบรรทุกผ่าน","Trucks passed"),alt:B("ความสูง","Altitude"),dev:B("เบี่ยงจากเส้นทาง","Off track")};
+
+function trial2(cfg,e,seed,record){
+ const r=rng(seed),s=SCN[cfg.scn],c=cfg.ctrl,night=cfg.light==="night",sf=cfg.surf,v=(cfg.v||0)/3.6;
+ const out={outcome:"safe",impact:0,react:null,miss:false,lost:0,trace:[],hazard:{kind:"k2",pos:0,present:true},start:0,k2:"",speedUp:1};
+ if(s.enc) return encTrial(out,s,cfg,r,e,v,night,sf,c,record);
+ if(s.rwy) return rwyTrial(out,cfg,r,e,v,night,sf,c,record);
+ if(s.imc) return imcTrial(out,cfg,r,e,v,night,sf,c,record);
+ if(s.link) return linkTrial(out,cfg,r,e,v,night,sf,c,record);
+ if(s.abort) return abortTrial(out,cfg,r,e,c,record);
+ if(s.fts) return ftsTrial(out,cfg,r,e,c,record);
+ if(s.bridge) return bridgeTrial(out,cfg,r,e,sf,c,record);
+ if(s.road2) return roadTrial(out,cfg,r,e,sf,c,record);
+ return out;
+}
+function grade(f){return f>=1?"safe":f>=.4?"near":f>=.15?"light":"serious";}
+
+function encTrial(out,s,cfg,r,e,v,night,sf,c,record){
+ let vc=v,tman,det={eye:0,radar:0,ais:0,tcas:0,atc:0,adsb:0,daa:0,db:0,lidar:0};
+ const big=(1200+80*v)/Math.max(v,1);
+ if(s.enc==="ship"){tman=big;det.eye=(night?U(r,5000,7000):U(r,8000,12000))*(sf==="wet"?.6:sf==="flood"?U(r,.05,.1):1);det.radar=U(r,11000,20000)*(sf==="wet"?.75:1);det.ais=U(r,25000,35000);}
+ if(s.enc==="small"){tman=.6*big;det.eye=(night?U(r,1500,2500):U(r,2000,4000))*(sf==="wet"?.6:sf==="flood"?U(r,.08,.15):1);det.radar=U(r,3000,6000)*(sf==="wet"?.4:1);det.ais=r()<.1?U(r,8000,12000):0;}
+ if(s.enc==="mid"){vc=2*v;tman=15;det.eye=sf==="dry"?(night?U(r,6000,10000):U(r,3000,8000)):0;det.tcas=vc*U(r,25,35);det.atc=vc*U(r,60,120);}
+ if(s.enc==="uheli"){vc=v+55;tman=10*(sf==="dry"?1:sf==="wet"?1.3:1.6);det.eye=(night?U(r,200,400):U(r,300,1000))*(sf==="flood"?.6:1);det.adsb=r()<.6?U(r,6000,10000):0;det.daa=U(r,1500,2500)*(sf==="flood"?.7:1);}
+ if(s.enc==="wire"){tman=5*(sf==="flood"?1.3:1);det.eye=(night?U(r,0,60):U(r,150,350))*(sf==="dry"?1:.6);det.db=r()<.75?U(r,1500,2500):0;det.lidar=U(r,600,1000)*(sf==="dry"?1:.7);}
+ let Dd=0,react=0,wrong=false;
+ switch(c){
+  case "oow":Dd=det.eye;react=N0(r,150-110*e,25,30);if(r()<.15-.1*e)react+=U(r,60,180);break;
+  case "arpa":Dd=r()<.9+.07*e?Math.max(det.radar,det.ais):det.eye;react=N0(r,70-45*e,12,20);wrong=r()<.08-.06*e;break;
+  case "mass":Dd=r()<(s.enc==="small"?.8+.18*e:.97+.02*e)?Math.max(det.radar*(s.enc==="small"?1.1:1),det.ais):det.eye*.8;react=N0(r,12,3,5);wrong=r()<.03*(1-e);break;
+  case "pilot":Dd=det.eye;react=N0(r,12.5-6*e,2,4);break;
+  case "tcas":Dd=Math.max(det.eye,r()<.85?det.atc:0,det.tcas);react=N0(r,6-1.5*e,1.2,3);wrong=r()<.08-.06*e;break;
+  case "auto":Dd=Math.max(det.tcas,r()<.85?det.atc:0);react=N0(r,1.5,.3,.8);break;
+  case "vlos":Dd=det.eye;react=N0(r,4-2*e,.6,1.5);break;
+  case "assist":Dd=Math.max(det.eye,det.adsb);react=N0(r,3-1.2*e,.5,1.2);break;
+  case "daa":Dd=r()<.85+.14*e?Math.max(det.daa,det.adsb):det.eye*.5;react=N0(r,.6,.1,.3);break;
+  case "hpilot":Dd=det.eye;react=N0(r,2.6-1*e,.4,1);break;
+  case "htaws":Dd=Math.max(det.eye,det.db);react=N0(r,2.2-.7*e,.4,1);break;
+  case "afcs":Dd=Math.max(det.db,r()<.85+.14*e?det.lidar:0,det.eye);react=N0(r,.6,.1,.3);break;
+ }
+ if(wrong)tman*=2;
+ const tav=Dd/vc,slack=tav-react,f=slack<=0?0:Math.min(1,(slack/tman)**2);
+ out.outcome=grade(f);out.react=react;out.miss=Dd<1;out.wrong=wrong;out.k2="enc";out.enc=s.enc;out.Dd=Dd;out.f=f;
+ if(out.outcome==="light"||out.outcome==="serious")out.impact=cfg.v*(1-f);
+ const slow=s.enc==="ship"||s.enc==="small";
+ const pre=Math.max(tav*1.2+(slow?60:3),slow?300:12),post=slow?150:4,Tt=pre+post,tm=pre-tav+react;
+ out.speedUp=Tt/12;out.dmax=vc*pre;out.vc=vc;out.v=v;
+ if(record)for(let i=0;i<=320;i++){const t=Tt*i/320,tc=pre-t,dv=vc*tc,vis=tc>0&&dv<=Dd;
+  const off=tc>0?(t>tm?Math.min(1,((t-tm)/tman)**2):0):f;
+  const ph=tc<=0?((out.outcome==="light"||out.outcome==="serious")?"hit":"clear"):t>tm?"avoid":vis?"react":"cruise";
+  out.trace.push({t,tc,off,vis,phase:ph,hud:[[HK.dist,fmtD(Math.max(0,dv))],[HK.spd,(v*3.6).toFixed(0)+" km/h"],[HK.det,Dd>0?fmtD(Dd):"–"]]});}
+ const L={ship:B("เรือสินค้า","cargo ship"),small:B("เรือประมง","fishing boat"),mid:B("เครื่องบินอีกลำ","other aircraft"),uheli:B("เฮลิคอปเตอร์","helicopter"),wire:B("สายไฟ","power lines")}[s.enc];
+ const why=wrong?B(" ครั้งนี้ตอบสนองผิดทาง (เช่นทำตามคำสั่งที่ขัดกับ TCAS หรือเลี้ยวผิดฝั่งตามกฎ) จึงต้องใช้เวลาหลบนานขึ้นสองเท่า"," This run responded the wrong way (e.g. following an instruction that conflicts with TCAS, or turning the wrong side under the rules), doubling the time needed."):B("","");
+ const dd=Dd>0?fmtD(Dd):(lang==="th"?"ไม่พบเลย":"never");
+ out.msg={th:{safe:`หลบ${L.th}ได้ทัน ตรวจพบที่ ${dd} ตอบสนองใน ${fmtS(react)}`,near:`หลบได้แต่เฉียดฉิว ตรวจพบที่ ${dd} ตอบสนองใน ${fmtS(react)}`,light:`หลบไม่พ้นทั้งหมด เกิดการปะทะเฉี่ยว ตรวจพบที่ ${dd}`,serious:`หลบไม่ทัน ตรวจพบที่ ${dd} ซึ่งใกล้เกินกว่าจะหลบได้`}[out.outcome]+why.th,
+  en:{safe:`Avoided the ${L.en} in time: detected at ${dd}, reacted in ${fmtS(react)}.`,near:`Avoided, but only just: detected at ${dd}, reacted in ${fmtS(react)}.`,light:`Couldn't fully avoid it; a glancing contact. Detected at ${dd}.`,serious:`Too late: detected at ${dd}, too close to avoid.`}[out.outcome]+why.en};
+ return out;
+}
+
+function rwyTrial(out,cfg,r,e,v,night,sf,c,record){
+ const a=3.0*(sf==="dry"?1:sf==="wet"?.75:.5);
+ const eye=(night?U(r,800,1500):U(r,1500,2500))*(sf==="wet"?.6:sf==="flood"?.5:1),sysD=U(r,2500,3000),sysOK=r()<.9+.09*e;
+ let Dd,react;
+ if(c==="pilot"){Dd=eye;react=N0(r,2.2-1*e,.4,1);}
+ else if(c==="tcas"){Dd=Math.max(eye,r()<.9?sysD:0);react=N0(r,2.0-.7*e,.3,1);}
+ else {Dd=sysOK?sysD:eye*.8;react=.6;}
+ const avail=Dd-v*react,vimp=avail<=0?v:Math.sqrt(Math.max(0,v*v-2*a*avail)),gap=Dd-v*react-v*v/(2*a);
+ out.outcome=vimp>.1?(vimp*3.6<15?"light":"serious"):(gap<15?"near":"safe");out.impact=vimp*3.6;out.react=react;out.k2="rwy";out.Dd=Dd;out.v=v;
+ const start=-(Dd+250);let x=start,vv=v,t=0,tdet=null,ph="roll";out.start=start;
+ if(record){while(t<60){const d=-x;if(tdet===null&&d<=Dd)tdet=t;const brk=tdet!==null&&t-tdet>=react;if(brk)vv=Math.max(0,vv-a*.05);x+=vv*.05;
+  ph=x>=0?"hit":vv<=0?"stop":brk?"brake":tdet!==null?"react":"roll";
+  if(Math.round(t/.05)%3===0||x>=0||vv<=0)out.trace.push({t,x,v:vv,phase:ph,vis:tdet!==null,hud:[[HK.dist,fmtD(Math.max(0,-x))],[HK.spd,(vv*3.6).toFixed(0)+" km/h"],[HK.det,fmtD(Dd)]]});
+  if(x>=0||vv<=0)break;t+=.05;}}
+ out.speedUp=1.6;
+ out.msg={th:{safe:`หยุดได้ก่อนถึงสิ่งกีดขวาง ${Math.round(gap)} ม. ตรวจพบที่ ${fmtD(Dd)}`,near:`หยุดได้แต่เหลือไม่ถึง 15 ม.`,light:`เบรกแล้วแต่ยังชนที่ ${out.impact.toFixed(0)} กม./ชม.`,serious:`ชนที่ ${out.impact.toFixed(0)} กม./ชม. ตรวจพบช้าเกินไป (${fmtD(Dd)})`}[out.outcome],
+  en:{safe:`Stopped ${Math.round(gap)} m short of the obstacle; detected at ${fmtD(Dd)}.`,near:`Stopped with under 15 m to spare.`,light:`Braked but still hit at ${out.impact.toFixed(0)} km/h.`,serious:`Hit at ${out.impact.toFixed(0)} km/h; detected too late (${fmtD(Dd)}).`}[out.outcome]};
+ return out;
+}
+
+function imcTrial(out,cfg,r,e,v,night,sf,c,record){
+ let Lt,recog;const exit=60*(sf==="flood"?1.3:1);
+ if(c==="hpilot"){Lt=178*(1+4*e)*U(r,.6,1.4)*(night?.8:1);recog=N0(r,45-35*e,15,4)+(r()<.35-.25*e?U(r,60,180):0);}
+ else if(c==="htaws"){Lt=178*1.6*(1+4*e)*U(r,.6,1.4);recog=N0(r,25-15*e,8,3)+(r()<.2-.15*e?U(r,45,120):0);}
+ else {Lt=r()<.01+.03*(1-e)?178*U(r,.6,1.4):Infinity;recog=N0(r,5,1,2);}
+ const done=recog+exit,margin=Lt-done;
+ out.outcome=margin>=30?"safe":margin>=0?"near":"serious";out.react=recog;out.k2="imc";out.Lt=Lt;out.recog=recog;out.exit=exit;out.v=v;
+ const end=Math.min(done,Lt)+(margin<0?25:12);out.speedUp=end/12;
+ if(record)for(let i=0;i<=300;i++){const t=end*i/300;const ph=t>=Lt&&margin<0?"spiral":t>=done?"clear":t>=recog?"turn":"cloud";
+  out.trace.push({t,phase:ph,hud:[[HK.incl,fmtS(Math.min(t,done))],[HK.spd,(v*3.6).toFixed(0)+" km/h"]]});}
+ const lt=isFinite(Lt)?fmtS(Lt):(lang==="th"?"ไม่หลงท่า":"none");
+ out.msg={th:{safe:`รู้ตัวใน ${fmtS(recog)} เลี้ยวกลับออกจากเมฆได้ ก่อนถึงจุดหลงท่า (${lt})`,near:`ออกจากเมฆได้ แต่เกือบหลงท่า เหลือเวลาไม่ถึง 30 วินาที`,serious:`หลงท่าและเสียการควบคุมที่ ${lt} ก่อนออกจากเมฆได้ (ต้องใช้ ${fmtS(done)})`}[out.outcome],
+  en:{safe:`Recognised it in ${fmtS(recog)} and turned out of cloud before disorientation (${lt}).`,near:`Got out of cloud with under 30 s to spare before disorientation.`,serious:`Lost control at ${lt}, before getting out of cloud (needed ${fmtS(done)}).`}[out.outcome]};
+ return out;
+}
+
+function linkTrial(out,cfg,r,e,v,night,sf,c,record){
+ let pS=c==="vlos"?.5+.45*e:c==="assist"?.9+.09*e:.95+.045*e;pS-=sf==="wet"?.05:sf==="flood"?.12:0;if(night&&c==="vlos")pS-=.03;
+ let mode;if(r()<pS){mode=r()<.8?"rth":"land";out.outcome=mode==="rth"?"safe":"mrc";}else{mode="fly";out.outcome=r()<.5?"serious":"light";}
+ out.k2="link";out.mode=mode;out.v=Math.max(v,3);const vv=out.v,tl=4,T=16;out.speedUp=1;
+ const wind=sf==="dry"?1.5:sf==="wet"?5:8;
+ if(record)for(let i=0;i<=320;i++){const t=T*i/320;let x,y=0,alt=30,ph;
+  if(t<tl){x=vv*t;ph="cruise";}
+  else if(mode==="rth"){const back=vv*tl;x=Math.max(0,back-vv*(t-tl-1));alt=t<tl+1?30:40;ph=x<=0?"stop":t<tl+1?"lost":"rth";}
+  else if(mode==="land"){x=vv*tl;alt=Math.max(0,30-(t-tl)*3);ph=alt<=0?"stop":t<tl+1?"lost":"land";}
+  else {x=vv*tl+wind*(t-tl);y=wind*.6*(t-tl);alt=Math.max(0,30-(t-tl)*2.4);ph=alt<=0?"hit":t<tl+1?"lost":"fly";}
+  out.trace.push({t,x,y,alt,phase:ph,hud:[[HK.alt,alt.toFixed(0)+" m"],[HK.dist,fmtD(Math.hypot(x,y))]]});}
+ out.msg={th:{rth:"สัญญาณหาย แล้วโดรนบินกลับจุดขึ้นเองตามที่ตั้งไว้",land:"สัญญาณหาย โดรนลงจอดทันทีในที่ที่อยู่ ปลอดภัยแต่ต้องไปเก็บ",fly:out.outcome==="serious"?"ไม่ได้ตั้ง failsafe โดรนลอยไปตามลมแล้วตกในเขตที่มีคน":"โดรนลอยไปตามลมแล้วตกในที่โล่ง เสียหายแต่ไม่มีคนเจ็บ"}[mode],
+  en:{rth:"Link lost; the drone flew home by itself as configured.",land:"Link lost; the drone landed where it was. Safe, but it needs collecting.",fly:out.outcome==="serious"?"No failsafe set; the drone drifted with the wind and came down where people were.":"The drone drifted and came down in open ground. Damaged, nobody hurt."}[mode]};
+ return out;
+}
+
+function abortTrial(out,cfg,r,e,c,record){
+ const W=Math.exp(N(r,Math.log(1.5),1.0)),benign=r()<.3;let det=false,react=null,ok;
+ if(c==="snone"){ok=benign;}
+ else if(c==="shuman"){det=r()<.9+.08*e;react=N0(r,2.5-1.2*e,.5,.8);ok=benign||(det&&react+.4<W);}
+ else {det=r()<.95+.045*e;react=.15;ok=benign||(det&&react+.4<W);}
+ const escaped=!benign&&ok;out.outcome=ok?"mrc":"serious";out.react=react;out.k2="abort";out.W=W;out.benign=benign;out.escaped=escaped;out.trig=react;
+ const ta=5,T=ta+Math.min(9,Math.max(4,W+4));out.speedUp=1;
+ if(record)for(let i=0;i<=300;i++){const t=T*i/300;const alt=.5*18*(t+20)**2;let ph=t<ta?"ascent":"anomaly";
+  if(escaped&&t>=ta+react)ph="escape";if(!benign&&t>=ta+W)ph=escaped?"escape":"boom";if(benign&&t>=ta+1.5)ph="stop";
+  out.trace.push({t,ta,alt,phase:ph,hud:[[HK.time,"T+"+(t+20).toFixed(1)+" s"],[HK.alt,fmtD(alt)]]});}
+ const w=fmtS(W);
+ out.msg={th:benign?"ความผิดปกติไม่ระเบิดทันที ยกเลิกภารกิจได้อย่างปลอดภัย":escaped?`สั่งหนีภัยใน ${fmtS(react)} ก่อนระเบิด (มีเวลา ${w}) ลูกเรือปลอดภัย`:c==="snone"?`ไม่มีระบบหนีภัย ระเบิดหลังผิดปกติ ${w}`:`สั่งหนีภัยไม่ทัน เวลาก่อนระเบิดมีเพียง ${w}`,
+  en:benign?"The failure didn't explode at once; the mission aborted safely.":escaped?`Escape triggered in ${fmtS(react)}, before the explosion (${w} available). Crew safe.`:c==="snone"?`No escape system; explosion ${w} after the failure.`:`Escape came too late; there were only ${w} before the explosion.`};
+ return out;
+}
+
+function ftsTrial(out,cfg,r,e,c,record){
+ const Tc=U(r,4,15);let react=null,ok;
+ if(c==="snone")ok=r()<.1;
+ else if(c==="shuman"){react=1+N0(r,3-1.5*e,.6,.8)+.5;ok=react<Tc;}
+ else {const det=r()<.97+.02*e;react=.3;ok=det&&react<Tc;}
+ out.outcome=ok?"mrc":"serious";out.react=react;out.k2="fts";out.Tc=Tc;out.term=ok&&c!=="snone"?react:null;out.self=ok&&c==="snone";
+ const T=Tc+4;out.speedUp=1;
+ if(record)for(let i=0;i<=300;i++){const t=T*i/300;const tt=out.term!=null?Math.min(t,out.term):t;const dev=Math.min(1.3,out.self?Math.min(t,Tc*.5)/Tc*(1-Math.max(0,t-Tc*.5)/Tc):tt/Tc);
+  const ph=out.term!=null&&t>=out.term?"term":t>=Tc&&!ok?"hit":"deviate";
+  out.trace.push({t,dev,phase:ph,hud:[[HK.time,fmtS(t)],[HK.dev,Math.round(dev*100)+"%"]]});}
+ out.msg={th:out.self?"ไม่มีระบบทำลาย ครั้งนี้จรวดกลับเข้าเส้นทางเอง ซึ่งเป็นแค่โชค":ok?`สั่งทำลายใน ${fmtS(react)} ก่อนข้ามเส้นจำกัด (มีเวลา ${fmtS(Tc)}) ชิ้นส่วนตกในเขตที่ปิดไว้`:`ข้ามเส้นจำกัดจุดตกก่อนถูกทำลาย ชิ้นส่วนอาจตกนอกเขตที่ปิดไว้`,
+  en:out.self?"No termination system; this time the rocket corrected itself, which was luck.":ok?`Terminated in ${fmtS(react)}, before the limit line (${fmtS(Tc)} available); debris fell inside the closed area.`:`Crossed the impact limit line before termination; debris may fall outside the closed area.`};
+ return out;
+}
+
+function bridgeTrial(out,cfg,r,e,sf,c,record){
+ const M=12,spec=cfg.spec/100,age=cfg.age,ovl=cfg.ovl/100,piers=new Set([0,1,5,6,10,11]);
+ const corrRate=c==="imnone"?.007:.004;
+ let cap=[],defect=[],scour=0;
+ for(let i=0;i<M;i++){defect[i]=r()<1-spec;cap[i]=2.2*(defect[i]?.62:1)*(1-Math.min(.6,age*corrRate))*N(r,1,.07);}
+ if(sf==="flood"){scour=U(r,.2,.5);piers.forEach(i=>cap[i]*=1-scour);} else if(sf==="wet") for(let i=0;i<M;i++)cap[i]*=.97;
+ let closed=false,repaired=0;
+ if(c==="iminsp"){for(let i=0;i<M;i++){if((defect[i]||age>20)&&r()<.45+.45*e){cap[i]=2.2*N(r,1,.05);repaired++;}} if(sf==="flood"&&r()<.35+.45*e)closed=true;}
+ if(c==="imshm"&&sf==="flood"&&r()<.7+.29*e)closed=true;
+ const failed=new Array(M).fill(false);let maxU=0,trucks=0,steps=150,phase="traffic",onBridge=0,cascadeWaves=0;
+ out.k2="bridge";out.M=M;out.scour=scour;out.repaired=repaired;out.speedUp=1;
+ const push=(t,util,veh,ph)=>{if(record)out.trace.push({t,util:util.slice(),failed:failed.slice(),veh,phase:ph,water:sf==="flood"?1:sf==="wet"?.4:.15,hud:[[HK.veh,String(veh.length)],[HK.util,Math.round(maxU*100)+"%"],[HK.fail,failed.filter(Boolean).length+"/"+M]]});};
+ if(closed){out.outcome="mrc";push(0,new Array(M).fill(.3),[],"closed");push(3,new Array(M).fill(.3),[],"closed");
+  out.msg={th:"ตรวจพบการกัดเซาะตอม่อหลังน้ำท่วม จึงปิดสะพานก่อนเปิดให้รถวิ่ง",en:"Pier scour found after the flood, so the bridge was closed before traffic was let on."};return out;}
+ let t=0,collapse=false,stopTrucks=false;
+ for(let k=0;k<steps&&!collapse;k++){
+  const n=2+Math.floor(r()*5),veh=[];
+  for(let j=0;j<n;j++){const truck=!stopTrucks&&r()<.25,over=truck&&r()<ovl;veh.push({pos:Math.floor(r()*M),w:over?.5:truck?.28:.06,type:over?2:truck?1:0});if(truck)trucks++;}
+  const load=new Array(M).fill(.55);veh.forEach(q=>{load[q.pos]+=q.w;if(q.pos+1<M)load[q.pos+1]+=q.w*.5;});
+  // cascade: failed members hand their load to the nearest standing neighbours
+  let changed=true,wave=0;
+  while(changed){changed=false;const eff=load.slice();
+   for(let i=0;i<M;i++)if(failed[i]){let lft=i-1;while(lft>=0&&failed[lft])lft--;let rgt=i+1;while(rgt<M&&failed[rgt])rgt++;
+    const share=(lft>=0?1:0)+(rgt<M?1:0);if(share){if(lft>=0)eff[lft]+=load[i]/share;if(rgt<M)eff[rgt]+=load[i]/share;}}
+   const util=eff.map((x,i)=>failed[i]?1.2:x/cap[i]);maxU=Math.max(maxU,...util.filter((u,i)=>!failed[i]));
+   const nf=[];for(let i=0;i<M;i++)if(!failed[i]&&util[i]>1)nf.push(i);
+   if(nf.length){nf.forEach(i=>failed[i]=true);changed=true;wave++;push(t,util,veh,"cascade");t+=.35;}
+   else {push(t,util,veh,"traffic");}
+   const nfail=failed.filter(Boolean).length;let run_=0,best=0;failed.forEach(f=>{run_=f?run_+1:0;best=Math.max(best,run_);});
+   if(best>=3||nfail>=M*.34){collapse=true;onBridge=veh.length;break;}
+  }
+  cascadeWaves=Math.max(cascadeWaves,wave);
+  if(!collapse&&c==="imshm"&&maxU>.85&&r()<.85+.14*e){
+   if(failed.some(Boolean)||maxU>.95){out.outcome="mrc";push(t+.3,new Array(M).fill(.3),[],"closed");out.msg={th:"เซนเซอร์วัดแรงเกิน 85% ของกำลังรับ จึงปิดสะพานทันที",en:"Sensors read loads above 85% of capacity and closed the bridge at once."};return out;}
+   stopTrucks=true;}
+  t+=.08;
+ }
+ const nfail=failed.filter(Boolean).length;
+ if(collapse){out.outcome="serious";failed.fill(true);push(t+.4,new Array(M).fill(1.2),[],"collapse");}
+ else out.outcome=nfail?"light":maxU>=.9?"near":"safe";
+ out.msg={th:{safe:`สะพานรับแรงได้ แรงสูงสุด ${Math.round(maxU*100)}% ของกำลังรับ`+(repaired?` (ซ่อมไป ${repaired} จุดจากการตรวจ)`:""),near:`ยังไม่พัง แต่แรงสูงสุดถึง ${Math.round(maxU*100)}% ของกำลังรับ`,light:`ชิ้นส่วนพัง ${nfail} ชิ้น แต่สะพานยังไม่ถล่ม ต้องปิดซ่อม`,serious:`ชิ้นส่วนพังต่อเนื่อง ${cascadeWaves} ระลอกจนสะพานถล่ม ขณะมีรถอยู่ ${onBridge} คัน`}[out.outcome]+(stopTrucks&&!collapse?" ระบบกันรถบรรทุกไว้หลังวัดแรงสูง":""),
+  en:{safe:`The bridge held; peak load ${Math.round(maxU*100)}% of capacity`+(repaired?` (${repaired} members repaired after inspection).`:"."),near:`No failure, but peak load reached ${Math.round(maxU*100)}% of capacity.`,light:`${nfail} member(s) failed but the bridge stood; it must close for repair.`,serious:`Failures cascaded in ${cascadeWaves} waves and the bridge collapsed with ${onBridge} vehicles on it.`}[out.outcome]+(stopTrucks&&!collapse?" Trucks were stopped after high loads were measured.":"")};
+ return out;
+}
+
+function roadTrial(out,cfg,r,e,sf,c,record){
+ const Nc=40,spec=cfg.spec/100,age=cfg.age,ovl0=cfg.ovl/100;
+ const S=[],d=[],pot=new Array(Nc).fill(false),wet=[];
+ for(let i=0;i<Nc;i++){S[i]=(r()<1-spec?.75:1)*(1-age*.005)*N(r,1,.06);wet[i]=sf==="flood"?(i>=10&&i<30):sf==="wet";if(wet[i])S[i]*=sf==="flood"?.72:.9;d[i]=Math.min(.5,age*.009*(c==="imnone"?1.3:1))*U(r,.6,1.2);}
+ let ovl=ovl0,trucks=0,repaired=0,maxD=0;const period=Math.round(70-45*e);
+ out.k2="road";out.speedUp=1;
+ const push=(t,tr,ph)=>{if(record)out.trace.push({t,d:d.slice(),pot:pot.slice(),wet:wet.slice(),tr,phase:ph,hud:[[HK.trk,String(trucks)],[HK.pot,String(pot.filter(Boolean).length)],[HK.dmg,Math.round(Math.min(1,maxD)*100)+"%"]]});};
+ if(c==="imshm")ovl=ovl0/3;
+ let t=0;
+ for(let k=0;k<150;k++){
+  const n=3+Math.floor(r()*4),tr=[];
+  for(let j=0;j<n;j++){const over=r()<ovl,Lx=over?1.5:1;trucks++;tr.push({x:r(),over});
+   for(let i=0;i<Nc;i++){let imp=1;if(i>0&&pot[i-1])imp=1.5;else if(i>1&&pot[i-2])imp=1.3;
+    if(!pot[i]){d[i]+=.00025*Math.pow(Lx*imp/S[i],4);if(d[i]>=1)pot[i]=true;}}}
+  maxD=Math.max(maxD,...d.map((x,i)=>pot[i]?0:x));
+  let ph="traffic";
+  if(c==="iminsp"&&k%period===period-1){for(let i=0;i<Nc;i++)if(!pot[i]&&d[i]>.55&&r()<.6+.35*e){d[i]=.1;repaired++;}ph="repair";}
+  if(c==="imshm"){for(let i=0;i<Nc;i++)if(!pot[i]&&d[i]>.5&&r()<.85+.14*e){d[i]=.1;repaired++;ph="repair";}}
+  push(t,tr,ph);t+=.09;
+ }
+ let run_=0,best=0;pot.forEach(p=>{run_=p?run_+1:0;best=Math.max(best,run_);});const np=pot.filter(Boolean).length;
+ out.outcome=best>=3?"serious":np?"light":maxD>.75?"near":"safe";
+ out.msg={th:{safe:`ผิวทางยังดี ความเสียหายสูงสุด ${Math.round(maxD*100)}%`+(repaired?` ซ่อมไป ${repaired} จุด`:""),near:`ยังไม่มีหลุม แต่บางจุดเสียหายถึง ${Math.round(maxD*100)}%`,light:`เกิดหลุม ${np} จุด อันตรายต่อมอเตอร์ไซค์`,serious:`หลุมลามต่อกันเป็นแนว ${best} ช่วงติดกัน รวม ${np} จุด จากแรงกระแทกที่ส่งต่อไปจุดถัดไป`}[out.outcome],
+  en:{safe:`The surface held; worst damage ${Math.round(maxD*100)}%`+(repaired?`, ${repaired} spots repaired.`:"."),near:`No potholes yet, but some spots reached ${Math.round(maxD*100)}% damage.`,light:`${np} pothole(s) formed, a hazard for motorcycles.`,serious:`Potholes spread into a run of ${best} adjacent sections (${np} in all), as each impact damaged the next spot.`}[out.outcome]};
+ return out;
+}
+
+/* ---------- 2D schematics for the extra modes ---------- */
+function drawK2(fr,run){
+ const W=cv._w,H=cv._h,f=fr||run.trace[0]||{},k=run.k2;
+ const C=n=>css(n);ctx.clearRect(0,0,W,H);ctx.font="11px "+C("--f-mono");
+ const txt=(s,x,y,col,al)=>{ctx.fillStyle=col||C("--muted");ctx.textAlign=al||"left";ctx.fillText(s,x,y);ctx.textAlign="left";};
+ const L=lang==="th";
+ if(k==="enc"){
+  const side=run.enc==="mid"||run.enc==="wire"||run.enc==="uheli";
+  ctx.fillStyle=run.enc==="ship"||run.enc==="small"?"#1f4e6b":(run.enc==="wire"?C("--curb"):"#9cc3e0");ctx.fillRect(0,0,W,H);
+  if(run.enc==="ship"&&cfgNow().surf==="flood"){ctx.fillStyle="rgba(230,235,240,.55)";ctx.fillRect(0,0,W,H);}
+  const cx=W*.68,cy=H*.5,span=Math.max(run.dmax,1),k_=(W*.62)/span;
+  const ownX=cx-run.v*(f.tc||0)*k_;
+  const sep=H*.28,ownY=side?cy-(f.off||0)*sep:cy+(f.off||0)*sep;
+  if(run.enc==="wire"){ctx.fillStyle=C("--muted");ctx.fillRect(cx-4,cy-8,8,H*.5);ctx.strokeStyle=C("--ink");ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,cy-6);ctx.quadraticCurveTo(cx/2,cy+18,cx,cy-6);ctx.quadraticCurveTo(cx+(W-cx)/2,cy+18,W,cy-6);ctx.stroke();ctx.fillStyle="#6f8f5a";ctx.fillRect(0,H*.82,W,H*.18);}
+   ctx.strokeStyle=f.vis?C("--ok"):"rgba(255,255,255,.55)";ctx.setLineDash(f.vis?[]:[5,5]);ctx.beginPath();ctx.arc(ownX,ownY,Math.max(6,run.Dd*k_*run.v/run.vc),0,7);ctx.stroke();ctx.setLineDash([]);
+  // intruder
+  if(run.enc!=="wire"){let ix,iy;const tc=f.tc||0;
+   if(run.enc==="ship"||run.enc==="small"){ix=cx;iy=cy-(run.v*.8*tc)*k_;} else {ix=cx+(run.vc-run.v)*tc*k_;iy=cy;}
+   ctx.fillStyle=run.enc==="uheli"?C("--c-l3"):"#f2f2f2";ctx.beginPath();ctx.arc(ix,iy,run.enc==="small"?4:7,0,7);ctx.fill();}
+  ctx.fillStyle=C("--accent");ctx.beginPath();ctx.ellipse(ownX,ownY,run.enc==="ship"?14:9,run.enc==="ship"?5:4,0,0,7);ctx.fill();
+  if(f.phase==="hit"){ctx.strokeStyle=C("--warn");ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy,18,0,7);ctx.stroke();ctx.lineWidth=1;}
+  txt(L?(side?"มุมข้าง · วงกลม = ระยะตรวจพบ":"มุมบน · วงกลม = ระยะตรวจพบ"):(side?"Side view · ring = detection range":"Top view · ring = detection range"),10,16,"#fff");
+  return;}
+ if(k==="rwy"){ctx.fillStyle="#6f8f5a";ctx.fillRect(0,0,W,H);const y0=H*.32,h=H*.36;ctx.fillStyle="#4a535c";ctx.fillRect(0,y0,W,h);
+  ctx.fillStyle="#f2f2f2";for(let x=10;x<W;x+=40)ctx.fillRect(x,y0+h/2-1.5,20,3);
+  const span=Math.abs(run.start)+80,k_=W/span,X=x=>(x-run.start)*k_;
+  ctx.fillStyle=C("--warn");ctx.fillRect(X(0),y0+h*.3,Math.max(6,10*k_),h*.4);
+  const ax=X(f.x||run.start);ctx.fillStyle=C("--accent");ctx.fillRect(ax-40*k_,y0+h*.35,Math.max(10,40*k_),h*.3);ctx.fillRect(ax-24*k_,y0+h*.05,Math.max(4,6*k_),h*.9);
+  if(f.v>0){const sd=f.v*f.v/(2*3.0);ctx.fillStyle="rgba(226,100,15,.2)";ctx.fillRect(ax,y0+h*.35,sd*k_,h*.3);}
+  txt(L?"รันเวย์ · แถบจาง = ระยะที่ต้องใช้หยุด":"Runway · faint band = distance needed to stop",10,16,"#fff");return;}
+ if(k==="imc"){ctx.fillStyle="#9cc3e0";ctx.fillRect(0,0,W,H);ctx.fillStyle="rgba(240,243,246,.92)";ctx.beginPath();ctx.ellipse(W*.62,H*.5,W*.36,H*.42,0,0,7);ctx.fill();
+  const t=f.t||0,vpx=Math.min(1.6,W/(run.recog+run.exit+40));const x0=W*.12,y0=H*.5;let x,y;
+  const tr=Math.min(t,run.recog);x=x0+tr*vpx*3;y=y0;
+  if(t>run.recog&&(f.phase==="turn"||f.phase==="clear"||f.phase==="cloud")){const a=Math.min(Math.PI,(t-run.recog)/run.exit*Math.PI),R=H*.22;x=x0+run.recog*vpx*3+Math.sin(a)*R;y=y0-R+Math.cos(a)*R;if(t>run.recog+run.exit)x-=(t-run.recog-run.exit)*vpx*3;}
+  if(f.phase==="spiral"){const tt=t-run.Lt,R=Math.max(4,H*.2-tt*3),a=tt*1.4;x=x0+Math.min(run.Lt,run.recog)*vpx*3+Math.cos(a)*R;y=y0+Math.sin(a)*R;}
+  ctx.fillStyle=f.phase==="spiral"?C("--warn"):C("--accent");ctx.beginPath();ctx.arc(x,y,6,0,7);ctx.fill();
+  txt(L?"มุมบน · ก้อนสีขาว = เมฆ":"Top view · white mass = cloud",10,16,C("--ink"));return;}
+ if(k==="link"){ctx.fillStyle=C("--curb");ctx.fillRect(0,0,W,H);ctx.fillStyle="rgba(179,38,30,.12)";ctx.fillRect(W*.45,H*.15,W*.5,H*.7);txt(L?"พื้นที่มีคน":"Area with people",W*.47,H*.15+14,C("--warn"));
+  const k_=W/(run.v*4*2.4+60),hx=30,hy=H*.6;ctx.fillStyle=C("--ink");ctx.fillText("H",hx-4,hy+4);ctx.strokeStyle=C("--ink");ctx.strokeRect(hx-9,hy-9,18,18);
+  const x=hx+(f.x||0)*k_,y=hy-(f.y||0)*k_,r_=4+(f.alt||0)/6;ctx.fillStyle=f.phase==="hit"?C("--warn"):C("--accent");ctx.beginPath();ctx.arc(x,y,r_,0,7);ctx.fill();
+  if(f.phase&&f.phase!=="cruise"){ctx.strokeStyle=C("--warn");ctx.beginPath();ctx.moveTo(hx+run.v*4*k_-6,hy-14);ctx.lineTo(hx+run.v*4*k_+6,hy-2);ctx.moveTo(hx+run.v*4*k_+6,hy-14);ctx.lineTo(hx+run.v*4*k_-6,hy-2);ctx.stroke();}
+  txt(L?"มุมบน · วงกลมใหญ่ = บินสูง · X = จุดสัญญาณหาย":"Top view · bigger dot = higher · X = link lost",10,16,C("--ink"));return;}
+ if(k==="abort"){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,"#0a1a33");g.addColorStop(1,"#5b8fc7");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const t=f.t||0,cx=W*.5,cy=H*.55;
+  if(f.phase!=="boom"||run.escaped){ctx.fillStyle="#e9edf2";ctx.fillRect(cx-6,cy-10,12,70);ctx.fillStyle="#ffb347";ctx.beginPath();ctx.moveTo(cx-6,cy+60);ctx.lineTo(cx,cy+60+18+Math.random()*6);ctx.lineTo(cx+6,cy+60);ctx.fill();}
+  if(t>=f.ta){ctx.fillStyle=C("--warn");ctx.beginPath();ctx.arc(cx+10,cy+40,4,0,7);ctx.fill();}
+  let capY=cy-18,capX=cx;if(run.escaped&&t>=f.ta+run.trig){const dt=t-f.ta-run.trig;capY-=dt*dt*14;capX-=dt*14;}
+  if(!(f.phase==="boom"&&!run.escaped)){ctx.fillStyle=C("--accent");ctx.beginPath();ctx.moveTo(capX-7,capY+8);ctx.lineTo(capX,capY-6);ctx.lineTo(capX+7,capY+8);ctx.fill();}
+  if(!run.benign&&t>=f.ta+run.W){const rr=Math.min(60,(t-f.ta-run.W)*80);ctx.fillStyle="rgba(255,120,40,.75)";ctx.beginPath();ctx.arc(cx,cy+20,rr,0,7);ctx.fill();}
+  txt(L?"มุมข้าง · จุดแดง = ความผิดปกติ · สามเหลี่ยม = แคปซูลลูกเรือ":"Side view · red dot = anomaly · triangle = crew capsule",10,16,"#fff");return;}
+ if(k==="fts"){ctx.fillStyle="#1f4e6b";ctx.fillRect(0,0,W,H);ctx.fillStyle="#6f8f5a";ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(W*.18,0);ctx.lineTo(W*.12,H);ctx.lineTo(0,H);ctx.fill();
+  ctx.fillStyle="#7a8a5a";ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(W,H*.18);ctx.lineTo(W*.55,H*.12);ctx.lineTo(W*.5,0);ctx.fill();txt(L?"เมือง":"Town",W*.8,H*.08,"#fff");
+  const x0=W*.15,y0=H*.65;ctx.fillStyle="rgba(226,160,110,.18)";ctx.beginPath();ctx.moveTo(x0,y0-10);ctx.lineTo(W,y0-H*.22);ctx.lineTo(W,y0+H*.22);ctx.lineTo(x0,y0+10);ctx.fill();
+  ctx.setLineDash([6,5]);ctx.strokeStyle="#ffd28a";ctx.beginPath();ctx.moveTo(x0,y0-10);ctx.lineTo(W,y0-H*.22);ctx.stroke();ctx.setLineDash([]);
+  txt(L?"เขตทะเลและน่านฟ้าที่ประกาศปิด":"Closed sea and airspace",W*.55,y0+H*.2,"#ffd28a");txt(L?"เส้นจำกัดจุดตก":"Impact limit line",W*.6,y0-H*.2,"#ffd28a");
+  const t=f.t||0,prog=Math.min(1,t/(run.Tc+4)),x=x0+prog*W*.8,y=y0-(f.dev||0)*H*.33;ctx.strokeStyle="rgba(255,255,255,.5)";ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(W,y0);ctx.stroke();
+  ctx.fillStyle=f.phase==="hit"?C("--warn"):f.phase==="term"?"#ffd28a":C("--accent");ctx.beginPath();ctx.arc(x,y,6,0,7);ctx.fill();
+  if(f.phase==="term"){ctx.fillStyle="rgba(255,210,138,.35)";ctx.beginPath();ctx.ellipse(x+20,y+6,30,12,0,0,7);ctx.fill();}
+  txt(L?"มุมบน · ฐานปล่อยอยู่ริมฝั่งซ้าย":"Top view · launch site on the left shore",10,16,"#fff");return;}
+ if(k==="bridge"){ctx.fillStyle="#bcd3e6";ctx.fillRect(0,0,W,H);const M=run.M,x0=W*.06,x1=W*.94,deckY=H*.42,segW=(x1-x0)/M,wl=H*(.62+(1-(f.water||.15))*.25);
+  ctx.fillStyle="#5d8fb3";ctx.fillRect(0,wl,W,H-wl);ctx.fillStyle="#8a7a66";ctx.fillRect(0,H*.9,W,H*.1);
+  [0,4,8,12].forEach(i=>{const px=x0+i*segW-(i===12?12:0);ctx.fillStyle="#7c8a99";ctx.fillRect(px-6+(i===0?6:0),deckY+10,12,H*.9-deckY-10);if(run.scour&&i>0&&i<12){ctx.fillStyle="#5d8fb3";ctx.beginPath();ctx.ellipse(px,H*.9,18*run.scour*2,8,0,0,7);ctx.fill();}});
+  const util=f.util||[],failed=f.failed||[];
+  for(let i=0;i<M;i++){const u=Math.min(1.2,util[i]||0),x=x0+i*segW;
+   const col=failed[i]?"#3b3b3b":u<.6?C("--ok"):u<.85?C("--amber"):C("--warn");
+   if(failed[i]){ctx.save();ctx.translate(x+segW/2,deckY+40);ctx.rotate((i%2?1:-1)*.35);ctx.fillStyle=col;ctx.fillRect(-segW/2,-6,segW-2,12);ctx.restore();}
+   else {ctx.fillStyle=col;ctx.fillRect(x+1,deckY,segW-2,12);}}
+  (f.veh||[]).forEach((q,j)=>{if(failed[q.pos])return;const x=x0+(q.pos+.2+(j%3)*.2)*segW;ctx.fillStyle=q.type===2?C("--warn"):q.type===1?"#4a535c":C("--accent");ctx.fillRect(x,deckY-(q.type?10:6),q.type?16:9,q.type?10:6);});
+  if(f.phase==="closed"){ctx.fillStyle=C("--warn");ctx.fillRect(x0-4,deckY-26,6,26);ctx.fillRect(x1-2,deckY-26,6,26);txt(L?"ปิดสะพาน":"Bridge closed",W/2,deckY-30,C("--warn"),"center");}
+  txt(L?"สีชิ้นส่วน: เขียว <60% · เหลือง <85% · แดง ใกล้พัง · เทา = พัง · รถแดง = บรรทุกเกิน":"Members: green <60% · amber <85% · red near failure · grey = failed · red truck = overloaded",10,16,C("--ink"));return;}
+ if(k==="road"){ctx.fillStyle=C("--curb");ctx.fillRect(0,0,W,H);const Nc=(f.d||[]).length||40,x0=W*.04,cw=(W*.92)/Nc,y0=H*.32,h=H*.36;
+  for(let i=0;i<Nc;i++){const dd=Math.min(1,(f.d||[])[i]||0),x=x0+i*cw;const g=Math.round(150-dd*90);ctx.fillStyle=`rgb(${g},${g+6},${g+12})`;ctx.fillRect(x,y0,cw+.5,h);
+   if((f.wet||[])[i]){ctx.fillStyle="rgba(70,130,190,.35)";ctx.fillRect(x,y0,cw+.5,h);}
+   if((f.pot||[])[i]){ctx.fillStyle="#111";ctx.beginPath();ctx.ellipse(x+cw/2,y0+h*.55,cw*.42,h*.22,0,0,7);ctx.fill();}}
+  ctx.fillStyle="#f2f2f2";for(let x=x0;x<W*.96;x+=34)ctx.fillRect(x,y0+h*.1,16,2);
+  (f.tr||[]).forEach((q,j)=>{const x=x0+q.x*W*.92;ctx.fillStyle=q.over?C("--warn"):"#4a535c";ctx.fillRect(x,y0+h*.3+(j%2)*h*.25,22,h*.2);});
+  txt(L?"มุมบน · สีเข้ม = เสียหายมาก · วงดำ = หลุม · ฟ้า = น้ำขัง · รถแดง = บรรทุกเกิน · รถวิ่งไปทางขวา":"Top view · darker = more damage · black = pothole · blue = standing water · red = overloaded · traffic heads right",10,16,C("--ink"));return;}
+}
+
 /* ---------- drawing ---------- */
 const cv=$("cv"),ctx=cv.getContext("2d");
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
-function sizeCanvas(){const w=cv.clientWidth||800;const h=Math.round(Math.min(300,Math.max(180,w*.34)));const d=Math.min(2,window.devicePixelRatio||1);cv.width=w*d;cv.height=h*d;ctx.setTransform(d,0,0,d,0,0);cv._w=w;cv._h=h;}
+function sizeCanvas(){const w=cv.clientWidth||800;const h=Math.round(isK2()?Math.min(340,Math.max(230,w*.48)):Math.min(300,Math.max(180,w*.34)));const d=Math.min(2,window.devicePixelRatio||1);cv.width=w*d;cv.height=h*d;ctx.setTransform(d,0,0,d,0,0);cv._w=w;cv._h=h;}
 function draw(fr,run){ if(st.view!=="top"&&has3D()){draw3d(fr,run);return;} draw2d(fr,run); }
 function draw2d(fr,run){
+ if(run&&run.k2){drawK2(fr,run);return;}
  const W=cv._w,H=cv._h, cfg=cfgNow(), s=SCN[cfg.scn], V=VEH[cfg.veh], rail=V.kind==="rail";
  const view=rail?Math.max(500,cfg.v*4):(s.hwy?Math.max(160,cfg.v*2):120);
  const ex=fr?fr.x:(run?run.start:0), left=ex-view*.18, k=W/view;
@@ -439,6 +827,10 @@ function draw2d(fr,run){
    ctx.fillStyle=css("--muted");ctx.fillRect(X(hz.pos-14),mid+4,12*k,(bot-mid)-8);
    if(hz.present&&(!fr||fr.vis)){ctx.fillStyle=css("--warn");ctx.beginPath();ctx.arc(hx,mid+8,Math.max(5,.5*k),0,7);ctx.fill();}
   }
+  if(SCN[cfg.scn].limit){const tt=fr?fr.t:0,on=Math.floor(tt*2.6)%2===0,sx=X(hz.pos-3.5),sy=bot+12;
+   ctx.fillStyle="#1f5fbf";ctx.fillRect(sx-7,sy-7,14,14);ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(sx,sy-5);ctx.lineTo(sx+5,sy+4);ctx.lineTo(sx-5,sy+4);ctx.fill();
+   ctx.fillStyle=on?"#ffa000":"rgba(255,160,0,.25)";ctx.beginPath();ctx.arc(sx-4,sy-11,3,0,7);ctx.fill();ctx.fillStyle=!on?"#ffa000":"rgba(255,160,0,.25)";ctx.beginPath();ctx.arc(sx+4,sy-11,3,0,7);ctx.fill();
+   const lx_=X(hz.pos-75);if(lx_>-20&&lx_<W+20){ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(lx_,bot+12,9,0,7);ctx.fill();ctx.strokeStyle="#d0021b";ctx.lineWidth=2.5;ctx.stroke();ctx.lineWidth=1;ctx.fillStyle="#111";ctx.font="bold 9px "+css("--f-mono");ctx.textAlign="center";ctx.fillText(String(SCN[cfg.scn].limit),lx_,bot+15);ctx.textAlign="left";}}
   if(hz.kind==="side"){ctx.fillStyle=css("--muted");ctx.fillRect(hx-4*k,0,8*k,top);ctx.fillRect(hx-4*k,bot,8*k,H-bot);ctx.fillStyle=css("--asphalt");ctx.fillRect(hx-4*k,top-1,8*k,bot-top+2);
    if(fr&&fr.vis){ctx.fillStyle=css("--c-l3");ctx.fillRect(hx-1*k,top+4,Math.max(8,1.8*k),Math.max(16,4.5*k));}}
   if(hz.kind==="lead"||hz.kind==="stall"){ctx.fillStyle=css("--muted");ctx.fillRect(hx,mid+6,4.6*k,Math.max(10,1.8*k));if(fr&&fr.vis){ctx.fillStyle=css("--warn");ctx.fillRect(hx,mid+6,Math.max(3,.4*k),Math.max(10,1.8*k));}}
@@ -461,6 +853,8 @@ function has3D(){ if(R3===false) return false; if(R3) return true;
  try{ if(!window.THREE) {R3=false;return false;} const c=document.createElement("canvas"); if(!(c.getContext("webgl")||c.getContext("experimental-webgl"))){R3=false;return false;} }catch(e){R3=false;return false;}
  const renderer=new THREE.WebGLRenderer({antialias:true});
  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+ renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
  document.getElementById("v3").appendChild(renderer.domElement);
  R3={renderer,scene:null,camera:new THREE.PerspectiveCamera(65,16/9,.1,4000),run:null,obj:{}};
  return true;
@@ -468,81 +862,152 @@ function has3D(){ if(R3===false) return false; if(R3) return true;
 function size3d(){ if(!R3) return; const w=document.getElementById("v3wrap").clientWidth||800, h=Math.round(Math.min(440,Math.max(220,w*.56)));
  R3.renderer.setSize(w,h,false); R3.renderer.domElement.style.height=h+"px"; R3.camera.aspect=w/h; R3.camera.updateProjectionMatrix(); }
 const C3=k=>new THREE.Color(css(k)||"#888");
-function box(w,h,d,color,opts={}){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color,emissive:opts.emissive||0x000000})); return m; }
-function vehicleMesh(kind,color,train){
- const g=new THREE.Group();
- if(kind==="train"){ for(let i=0;i<3;i++){const b=box(24,3.6,3,color);b.position.set(-12-i*25,2.1,0);g.add(b);const w=box(23.6,.8,3.05,0x1d2a36);w.position.set(-12-i*25,2.7,0);g.add(w);} return g; }
- if(kind==="bus"){ const b=box(12,2.8,2.5,color);b.position.set(-6,1.7,0);g.add(b);const w=box(11.6,.9,2.55,0x1d2a36);w.position.set(-6,2.2,0);g.add(w);return g; }
- if(kind==="moto"){ const b=box(2.1,.7,.45,color);b.position.set(-1.05,.6,0);g.add(b);
-  const r=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.9,10),new THREE.MeshLambertMaterial({color:0x2b3642}));r.position.set(-1.2,1.3,0);r.name="rider";g.add(r);
-  const hh=new THREE.Mesh(new THREE.SphereGeometry(.2,12,10),new THREE.MeshLambertMaterial({color:0xf2f2f2}));hh.position.set(-1.2,1.85,0);hh.name="rider";g.add(hh);return g; }
- const b=box(4.6,.85,1.8,color);b.position.set(-2.3,.6,0);g.add(b);const c=box(2.4,.65,1.6,color);c.position.set(-2.5,1.3,0);g.add(c);
- const gl=box(2.42,.4,1.62,0x1d2a36);gl.position.set(-2.5,1.35,0);g.add(gl);
- const bl=box(.05,.2,1.5,0x551111);bl.position.set(-4.62,.75,0);bl.name="brake";g.add(bl);
+/* materials and small builders, in the style of the E-Bus model: standard PBR materials, real shadows */
+const MAT={};
+function mat(color,r=.7,m=0,o={}){const k=[color,r,m,JSON.stringify(o)].join("|");if(!MAT[k])MAT[k]=new THREE.MeshStandardMaterial({color:lin(color),roughness:r,metalness:m,...o});return MAT[k];}
+function lin(c){return new THREE.Color(c).convertSRGBToLinear();}
+const GLASS=()=>mat(0x1b2733,.08,.6,{transparent:true,opacity:.85});
+const RUBBER=()=>mat(0x1a1a1a,.9,0);
+function mesh(geo,m,cast=true,recv=false){const o=new THREE.Mesh(geo,m);o.castShadow=cast;o.receiveShadow=recv;return o;}
+function bxm(parent,w,h,d,x,y,z,m,cast=true){const o=mesh(new THREE.BoxGeometry(w,h,d),m,cast,true);o.position.set(x,y,z);parent.add(o);return o;}
+function cylm(parent,rt,rb,h,x,y,z,m,axis="y",seg=20){const o=mesh(new THREE.CylinderGeometry(rt,rb,h,seg),m);if(axis==="z")o.rotation.x=Math.PI/2;if(axis==="x")o.rotation.z=Math.PI/2;o.position.set(x,y,z);parent.add(o);return o;}
+function extrudeProfile(pts,depth,m,bevel=.05){const sh=new THREE.Shape();pts.forEach((p,i)=>i?sh.lineTo(p[0],p[1]):sh.moveTo(p[0],p[1]));sh.closePath();
+ const g=new THREE.ExtrudeGeometry(sh,{depth:depth-2*bevel,bevelEnabled:true,bevelThickness:bevel,bevelSize:bevel,bevelSegments:2,curveSegments:6});g.translate(0,0,-(depth-2*bevel)/2);return mesh(g,m);}
+function wheel(parent,x,z,r,w){cylm(parent,r,r,w,x,r,z,RUBBER(),"z",22);cylm(parent,r*.55,r*.55,w+.02,x,r,z,mat(0xb8c0c8,.35,.8),"z",16);}
+function lampMat(color,on){return new THREE.MeshStandardMaterial({color:lin(color),emissive:lin(color),emissiveIntensity:on?1.6:.15,roughness:.4});}
+function vehicleMesh(kind,color){
+ const g=new THREE.Group(),paint=mat(color,.35,.25);g.userData.brake=[];
+ if(kind==="train"){
+  for(let i=0;i<3;i++){const ox=-i*25;
+   const body=extrudeProfile([[0,.9],[0,3.4],[-.6,4.1],[-23.4,4.1],[-24,3.4],[-24,.9]],3.1,paint,.08);body.position.x=ox;g.add(body);
+   bxm(g,22.6,.9,3.16,ox-12,2.9,0,GLASS());bxm(g,24,.25,3.12,ox-12,1.55,0,mat(0xc0392b,.5,.1));
+   [-3,-21].forEach(bx_=>[-.72,.72].forEach(z=>wheel(g,ox+bx_,z,.45,.2)));}
+  const nose=extrudeProfile([[0,.9],[2.2,1.4],[2.6,2.4],[1.2,3.6],[0,4.1],[0,.9]],3.0,paint,.06);g.add(nose);
+  const hl=lampMat(0xfff4d6,true);bxm(g,.1,.2,.5,2.45,1.9,-.9,hl,false);bxm(g,.1,.2,.5,2.45,1.9,.9,hl,false);
+  bxm(g,.6,.9,2.4,1.6,3.05,0,GLASS());return g;}
+ if(kind==="bus"){
+  const body=extrudeProfile([[0,.45],[0,3.0],[-.3,3.2],[-11.7,3.2],[-12,3.0],[-12,.45]],2.5,paint,.08);g.add(body);
+  bxm(g,10.4,1.0,2.56,-6.4,2.15,0,GLASS());bxm(g,.1,1.6,2.2,.05,2.0,0,GLASS());
+  bxm(g,.08,.25,1.6,.06,2.95,0,lampMat(0xffb000,true),false);
+  [-2.2,-9.2].forEach(x=>[-1.05,1.05].forEach(z=>wheel(g,x,z,.5,.32)));
+  const bl=lampMat(0x8a0000,false);g.userData.brake.push(bl);bxm(g,.06,.35,.3,-12.05,1.0,-1.0,bl,false);bxm(g,.06,.35,.3,-12.05,1.0,1.0,bl,false);return g;}
+ if(kind==="moto"){
+  wheel(g,-.25,0,.32,.12);wheel(g,-1.75,0,.32,.12);
+  bxm(g,1.3,.18,.18,-1.0,.62,0,mat(0x2b3642,.5,.4));const tank=mesh(new THREE.SphereGeometry(.26,16,12),paint);tank.scale.set(1.5,.8,.9);tank.position.set(-.75,.86,0);g.add(tank);
+  bxm(g,.65,.12,.32,-1.35,.88,0,mat(0x111111,.8));
+  const rider=new THREE.Group();rider.name="rider";g.add(rider);
+  cylm(rider,.17,.21,.62,-1.18,1.25,0,mat(0x2b4a6b,.8));const helm=mesh(new THREE.SphereGeometry(.17,16,12),mat(0xf2f2f2,.3,.1));helm.position.set(-1.1,1.68,0);rider.add(helm);
+  bxm(rider,.08,.1,.22,-.98,1.66,0,GLASS(),false);
+  [-.2,.2].forEach(z=>{const leg=cylm(rider,.08,.08,.55,-1.15,.95,z,mat(0x22303d,.8));leg.rotation.z=1.0;});
+  const bl=lampMat(0x8a0000,false);g.userData.brake.push(bl);bxm(g,.05,.1,.16,-2.05,.95,0,bl,false);
+  bxm(g,.06,.12,.16,.02,.95,0,lampMat(0xfff4d6,true),false);return g;}
+ // car
+ const body=extrudeProfile([[0,.32],[0,.82],[-.95,.95],[-1.55,1.0],[-2.15,1.42],[-3.45,1.45],[-4.05,1.02],[-4.6,.95],[-4.6,.32]],1.78,paint,.06);g.add(body);
+ const glassSide=extrudeProfile([[-1.62,1.02],[-2.17,1.39],[-3.43,1.42],[-3.98,1.03]],1.82,GLASS(),.01);g.add(glassSide);
+ [-.95,-3.7].forEach(x=>[-.8,.8].forEach(z=>wheel(g,x,z,.33,.24)));
+ const hl=lampMat(0xfff4d6,true);bxm(g,.06,.1,.32,.02,.72,-.6,hl,false);bxm(g,.06,.1,.32,.02,.72,.6,hl,false);
+ const bl=lampMat(0x8a0000,false);g.userData.brake.push(bl);bxm(g,.06,.12,.3,-4.62,.82,-.62,bl,false);bxm(g,.06,.12,.3,-4.62,.82,.62,bl,false);
  return g;
 }
-function person(color){ const g=new THREE.Group();
- const b=new THREE.Mesh(new THREE.CylinderGeometry(.22,.24,1.1,10),new THREE.MeshLambertMaterial({color}));b.position.y=.95;g.add(b);
- const h=new THREE.Mesh(new THREE.SphereGeometry(.19,12,10),new THREE.MeshLambertMaterial({color:0xe9c9a8}));h.position.y=1.68;g.add(h);
- const l=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,.45,8),new THREE.MeshLambertMaterial({color:0x2b3642}));l.position.y=.22;g.add(l);return g; }
+function person(shirt){const g=new THREE.Group(),skin=mat(0xd9a67e,.7),pants=mat(0x2b3642,.85);
+ [-.1,.1].forEach(z=>cylm(g,.075,.065,.82,0,.41,z,pants,"y",10));
+ cylm(g,.17,.2,.62,0,1.13,0,mat(shirt,.8),"y",14);
+ [-.25,.25].forEach(z=>cylm(g,.055,.05,.58,0,1.1,z,mat(shirt,.8),"y",8));
+ const h=mesh(new THREE.SphereGeometry(.12,16,12),skin);h.position.y=1.58;g.add(h);
+ const hair=mesh(new THREE.SphereGeometry(.125,16,8,0,Math.PI*2,0,Math.PI/2),mat(0x1d1d1d,.9));hair.position.y=1.6;g.add(hair);return g;}
 function rngB(seed){let x=seed;return()=>{x=(x*16807)%2147483647;return x/2147483647;};}
+function canvasTex(w,h,draw){const c=document.createElement("canvas");c.width=w;c.height=h;draw(c.getContext("2d"),w,h);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return t;}
+let TEX=null;
+function textures(){ if(TEX) return TEX;
+ TEX={
+  speed60:canvasTex(256,256,(c,w,h)=>{c.fillStyle="#fff";c.beginPath();c.arc(w/2,h/2,124,0,7);c.fill();c.lineWidth=30;c.strokeStyle="#d0021b";c.beginPath();c.arc(w/2,h/2,108,0,7);c.stroke();c.fillStyle="#111";c.font="bold 112px Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("60",w/2,h/2+6);}),
+  cross:canvasTex(256,256,(c,w,h)=>{c.fillStyle="#1f5fbf";c.fillRect(0,0,w,h);c.fillStyle="#fff";c.beginPath();c.moveTo(w/2,26);c.lineTo(230,220);c.lineTo(26,220);c.closePath();c.fill();
+   c.fillStyle="#111";c.beginPath();c.arc(128,92,14,0,7);c.fill();c.lineWidth=12;c.lineCap="round";c.strokeStyle="#111";c.beginPath();c.moveTo(126,108);c.lineTo(118,158);c.lineTo(98,196);c.moveTo(118,158);c.lineTo(142,196);c.moveTo(124,118);c.lineTo(150,140);c.moveTo(124,118);c.lineTo(104,142);c.stroke();
+   c.fillStyle="#111";for(let i=0;i<5;i++)c.fillRect(70+i*24,204,14,10);}),
+  zone:canvasTex(256,96,(c,w,h)=>{c.fillStyle="#fff";c.fillRect(0,0,w,h);c.strokeStyle="#111";c.lineWidth=6;c.strokeRect(3,3,w-6,h-6);c.fillStyle="#111";c.font="bold 34px Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText(lang==="th"?"เขตชุมชน":"URBAN ZONE",w/2,h/2);}),
+  windowsDay:canvasTex(128,128,(c,w,h)=>{c.fillStyle="#9aa6b2";c.fillRect(0,0,w,h);for(let y=8;y<h;y+=32)for(let x=8;x<w;x+=32){c.fillStyle="#3c4a58";c.fillRect(x,y,18,20);}}),
+  windowsNight:canvasTex(128,128,(c,w,h)=>{c.fillStyle="#1b2129";c.fillRect(0,0,w,h);const r=rngB(5);for(let y=8;y<h;y+=32)for(let x=8;x<w;x+=32){c.fillStyle=r()<.45?"#ffd98a":"#0d1218";c.fillRect(x,y,18,20);}})
+ };TEX.speed60.needsUpdate=true;return TEX;}
+function signPost(parent,x,z,face,tex,size,height,round){const pole=cylm(parent,.04,.04,height,x,height/2,z,mat(0x9aa3ab,.4,.8),"y",10);
+ const geo=round?new THREE.CircleGeometry(size/2,40):new THREE.PlaneGeometry(size,size);const m=new THREE.MeshStandardMaterial({map:tex,roughness:.5,side:THREE.DoubleSide});
+ const s_=mesh(geo,m);s_.position.set(x-.03,height+size/2-.05,z);s_.rotation.y=face;parent.add(s_);return s_;}
 function build3d(run){
  const cfg=cfgNow(), V=VEH[cfg.veh], rail=V.kind==="rail", night=cfg.light==="night", sf=SURF[cfg.surf];
- const sc=new THREE.Scene(); const O={};
- const sky=night?0x0a1018:(cfg.surf==="dry"?0xbcd3e6:0x9fb0bd);
- sc.background=new THREE.Color(sky);
+ const sc=new THREE.Scene(); const O={}; const X=textures();
+ const sky=night?0x0a1018:(cfg.surf==="dry"?0xa9c7e3:0x8d9ba6);
+ sc.background=lin(sky);
  const far=rail?(night?450:1600)*(cfg.surf==="dry"?1:.75):(night?95:(cfg.surf==="dry"?650:cfg.surf==="wet"?230:160));
- sc.fog=new THREE.Fog(sky,far*.25,far);
- sc.add(new THREE.HemisphereLight(0xffffff,0x445566,night?.22:.85));
- const sun=new THREE.DirectionalLight(0xffffff,night?.05:.7);sun.position.set(-50,120,60);sc.add(sun);
+ sc.fog=new THREE.Fog(lin(sky),far*.25,far);
+ sc.add(new THREE.HemisphereLight(night?0x30405a:0xdfefff,night?0x0b0f14:0x6b6a5a,night?.3:.65));
+ const sun=new THREE.DirectionalLight(night?0x8fa8d8:0xfff1dc,night?.12:1.6);sun.castShadow=!night;sun.shadow.mapSize.set(1024,1024);
+ const sc_=sun.shadow.camera;sc_.left=-60;sc_.right=60;sc_.top=40;sc_.bottom=-40;sc_.near=1;sc_.far=200;sun.shadow.bias=-.0004;sc.add(sun);sc.add(sun.target);O.sun=sun;
  const hz=run.hazard, x0=(run.start||0)-80, x1=Math.max(hz.pos,run.trace.length?run.trace[run.trace.length-1].lx||0:0)+(rail?400:220), L=x1-x0, xc=(x0+x1)/2;
- const ground=new THREE.Mesh(new THREE.PlaneGeometry(L,260),new THREE.MeshPhongMaterial({shininess:2,color:night?0x1b232c:(rail?0x9aa77f:0xd3d9df)}));ground.rotation.x=-Math.PI/2;ground.position.set(xc,-.01,0);sc.add(ground);
+ const ground=mesh(new THREE.PlaneGeometry(L,320),mat(night?0x141a14:(rail?0x7f9461:0x8a9a72),.95),false,true);ground.rotation.x=-Math.PI/2;ground.position.set(xc,-.02,0);sc.add(ground);
  const lane=rail?0:1.75; O.lane=lane;
+ const asphalt=mat(night?0x1d232a:0x4b535b,.92), concrete=mat(night?0x3a4048:0xbfc4c8,.85), white=mat(0xf2f2f2,.6), yellow=mat(0xe0b23a,.6);
  if(rail){
-  const bal=new THREE.Mesh(new THREE.PlaneGeometry(L,4.2),new THREE.MeshPhongMaterial({shininess:2,color:0x8a8178}));bal.rotation.x=-Math.PI/2;bal.position.set(xc,0,0);sc.add(bal);
-  [-.72,.72].forEach(z=>{const r=box(L,.16,.08,0xb8c0c8);r.position.set(xc,.2,z);sc.add(r);});
-  const n=Math.floor(L/.65),slg=new THREE.BoxGeometry(.25,.12,2.6),slm=new THREE.MeshLambertMaterial({color:0x6b5a48});const sl=new THREE.InstancedMesh(slg,slm,n);const mm=new THREE.Matrix4();
-  for(let i=0;i<n;i++){mm.makeTranslation(x0+i*.65,.08,0);sl.setMatrixAt(i,mm);}sc.add(sl);
+  const bal=mesh(new THREE.BoxGeometry(L,.3,4.4),mat(0x8a8178,.95),false,true);bal.position.set(xc,0,0);sc.add(bal);
+  [-.72,.72].forEach(z=>bxm(sc,L,.16,.08,xc,.38,z,mat(0xc9d0d6,.3,.9),false));
+  const n=Math.floor(L/.65),sl=new THREE.InstancedMesh(new THREE.BoxGeometry(.25,.12,2.6),mat(0x6b5a48,.9),n);const mm=new THREE.Matrix4();
+  for(let i=0;i<n;i++){mm.makeTranslation(x0+i*.65,.25,0);sl.setMatrixAt(i,mm);}sl.receiveShadow=true;sc.add(sl);
+  for(let x=x0;x<x1;x+=50){cylm(sc,.12,.15,7,x,3.5,-3.2,mat(0x8a939c,.5,.6),"y",8);bxm(sc,.15,.15,3.4,x,6.8,-1.6,mat(0x8a939c,.5,.6));}
+  bxm(sc,L,.03,.03,xc,6.2,0,mat(0x333333,.5,.8),false);
  } else {
-  const road=new THREE.Mesh(new THREE.PlaneGeometry(L,10.5),new THREE.MeshPhongMaterial({shininess:2,color:night?0x232c36:0x5d6873}));road.rotation.x=-Math.PI/2;road.position.set(xc,0,1.75);sc.add(road);
-  [[-6.5,-3.5],[7,10]].forEach(([a,b])=>{const sw=box(L,.15,b-a,night?0x2b3642:0xc9cfd5);sw.position.set(xc,.075,(a+b)/2);sc.add(sw);});
-  const cl=box(L,.02,.15,0xe0b23a);cl.position.set(xc,.012,0);sc.add(cl);
-  const n=Math.floor(L/12),dg=new THREE.BoxGeometry(5,.02,.15),dm=new THREE.MeshLambertMaterial({color:0xf2f2f2});const ds=new THREE.InstancedMesh(dg,dm,n);const mm=new THREE.Matrix4();
+  const road=mesh(new THREE.PlaneGeometry(L,10.5),asphalt,false,true);road.rotation.x=-Math.PI/2;road.position.set(xc,0,1.75);sc.add(road);
+  [[-6.5,-3.5],[7,10]].forEach(([a,b])=>{bxm(sc,L,.15,b-a,xc,.075,(a+b)/2,concrete,false);bxm(sc,L,.18,.18,xc,.09,a<0?b:a,mat(0xd9dde0,.7),false);});
+  bxm(sc,L,.02,.15,xc,.012,-.08,yellow,false);bxm(sc,L,.02,.15,xc,.012,.08,yellow,false);
+  const n=Math.floor(L/12),ds=new THREE.InstancedMesh(new THREE.BoxGeometry(5,.02,.15),white,n);const mm=new THREE.Matrix4();
   for(let i=0;i<n;i++){mm.makeTranslation(x0+i*12,.012,3.5);ds.setMatrixAt(i,mm);}sc.add(ds);
+  // street lights
+  O.lamps=[];for(let x=x0;x<x1;x+=35){const z=9.6;cylm(sc,.07,.1,8,x,4,z,mat(0x6b737b,.5,.7),"y",10);bxm(sc,.12,.12,2.2,x,8,z-1.1,mat(0x6b737b,.5,.7));
+   const lm=lampMat(0xffe3a8,night);const l=bxm(sc,.6,.12,.35,x,7.9,z-2.1,lm,false);O.lamps.push(lm);}
  }
- // buildings / trees for depth
- const rb=rngB(91);const bm=new THREE.MeshLambertMaterial({color:night?0x26303b:0xaab4bf});const tm=new THREE.MeshLambertMaterial({color:night?0x1d2a20:0x6f8f5a});
+ // buildings and trees
+ const rb=rngB(91);
  for(let x=x0;x<x1;x+=rail?40:22){[-1,1].forEach(side=>{ if(rb()<.25) return;
-  if(rail){const t=new THREE.Mesh(new THREE.ConeGeometry(2+rb()*2,6+rb()*6,8),tm);t.position.set(x+rb()*20,4,side*(14+rb()*30));sc.add(t);}
-  else {const h=5+rb()*22,w=10+rb()*8,d=8+rb()*8;const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),bm);b.position.set(x+w/2,h/2,side<0?-12-d/2:13+d/2);sc.add(b);}});}
+  if(rail){const tr=new THREE.Group();cylm(tr,.18,.25,2.4,0,1.2,0,mat(0x5a4632,.9),"y",8);const fo=mesh(new THREE.IcosahedronGeometry(2+rb()*1.5,1),mat(night?0x16241a:0x4f7a3f,.9,0,{flatShading:true}));fo.position.y=3.6;tr.add(fo);tr.position.set(x+rb()*20,0,side*(14+rb()*30));sc.add(tr);}
+  else {const h=6+rb()*24,w=10+rb()*8,d=8+rb()*8;const tx=(night?X.windowsNight:X.windowsDay).clone();tx.needsUpdate=true;tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(Math.max(1,Math.round(w/3.2)),Math.max(1,Math.round(h/3.2)));
+   const bm=new THREE.MeshStandardMaterial({map:tx,roughness:.8,emissive:night?0xffffff:0x000000,emissiveMap:night?tx:null,emissiveIntensity:night?.55:0});
+   const b=mesh(new THREE.BoxGeometry(w,h,d),bm,true,true);b.position.set(x+w/2,h/2,side<0?-12-d/2:13+d/2);sc.add(b);
+   if(rb()<.6){const tr=new THREE.Group();cylm(tr,.12,.16,2,0,1,0,mat(0x5a4632,.9),"y",8);const fo=mesh(new THREE.IcosahedronGeometry(1.3,1),mat(night?0x16241a:0x557f42,.9,0,{flatShading:true}));fo.position.y=2.7;tr.add(fo);tr.position.set(x+rb()*15,0,side<0?-5.2:8.4);sc.add(tr);}}});}
  // ego
- const ego=vehicleMesh(cfg.veh,C3("--accent"));ego.position.set(0,0,lane);sc.add(ego);O.ego=ego;
- const sd=new THREE.Mesh(new THREE.PlaneGeometry(1,rail?3:1.8),new THREE.MeshBasicMaterial({color:C3("--accent"),transparent:true,opacity:.28,depthWrite:false}));sd.rotation.x=-Math.PI/2;sd.position.y=.03;sc.add(sd);O.stopBand=sd;
- if(night){const hl=new THREE.SpotLight(0xfff2d0,4,rail?420:120,.45,.55,1);hl.position.set(0,1.2,lane);sc.add(hl);sc.add(hl.target);O.head=hl;}
- // hazards
+ const ego=vehicleMesh(cfg.veh,C3("--accent").getHex());ego.position.set(0,rail?.31:0,lane);sc.add(ego);O.ego=ego;
+ const sd=new THREE.Mesh(new THREE.PlaneGeometry(1,rail?3:1.8),new THREE.MeshBasicMaterial({color:C3("--accent"),transparent:true,opacity:.22,depthWrite:false}));sd.rotation.x=-Math.PI/2;sd.position.y=.04;sc.add(sd);O.stopBand=sd;
+ if(night){const hl=new THREE.SpotLight(0xfff2d0,6,rail?420:120,.45,.55,1);hl.position.set(0,1.2,lane);sc.add(hl);sc.add(hl.target);O.head=hl;}
  const tVis=(run.trace.find(f=>f.vis)||{t:Infinity}).t; O.tVis=tVis;
+ const lim=SCN[cfg.scn].limit;
+ if(lim){const sx=(hz.pos||110)-75;signPost(sc,sx,7.6,-Math.PI/2,X.speed60,1.1,2.1,true);const z=mesh(new THREE.PlaneGeometry(1.1,.42),new THREE.MeshStandardMaterial({map:X.zone,roughness:.5,side:THREE.DoubleSide}));z.position.set(sx-.03,1.85,7.6);z.rotation.y=-Math.PI/2;sc.add(z);}
  if(hz.kind==="ped"){
-  for(let i=0;i<7;i++){const st_=box(3,.02,.55,0xf2f2f2);st_.position.set(hz.pos,.015,.4+i*.95);sc.add(st_);}
-  const bus=vehicleMesh("bus",0x7c8a99);bus.position.set(hz.pos-2,0,5.25);sc.add(bus);
-  const pd=person(C3("--warn"));pd.position.set(hz.pos,0,hz.present?5.4:8.6);sc.add(pd);O.ped=pd;
+  for(let i=0;i<7;i++)bxm(sc,3,.02,.55,hz.pos,.015,.4+i*.95,white,false);
+  O.beacons=[];[[7.6,-Math.PI/2],[-3.9,-Math.PI/2]].forEach(([z,face])=>{const sx=hz.pos-3.5;signPost(sc,sx,z,face,X.cross,.9,2.4,false);
+   [-.22,.22].forEach((dz,i)=>{const bm=lampMat(0xffa000,false);const bc=mesh(new THREE.SphereGeometry(.12,14,10),bm,false);bc.position.set(sx-.05,3.55,z+dz);sc.add(bc);O.beacons.push({m:bm,i});});
+   bxm(sc,.1,.08,.6,sx-.02,3.4,z,mat(0x2b3642,.5,.5),false);});
+  const bus=vehicleMesh("bus",0x5f86a8);bus.position.set(hz.pos-2,0,5.25);sc.add(bus);
+  const pd=person(C3("--warn").getHex());pd.position.set(hz.pos,0,hz.present?5.4:8.6);pd.rotation.y=Math.PI/2;sc.add(pd);O.ped=pd;
  }
  if(hz.kind==="side"){
-  const cr=new THREE.Mesh(new THREE.PlaneGeometry(8,240),new THREE.MeshPhongMaterial({shininess:2,color:night?0x232c36:0x5d6873}));cr.rotation.x=-Math.PI/2;cr.position.set(hz.pos,.005,1.75);sc.add(cr);
-  const sc_=vehicleMesh("car",C3("--c-l3"));sc_.rotation.y=-Math.PI/2;sc_.position.set(hz.pos+1.5,0,60);sc.add(sc_);O.side=sc_;
-  const pole=box(.2,4,.2,0x2b3642);pole.position.set(hz.pos-6,2,-4.2);sc.add(pole);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.28,12,10),new THREE.MeshBasicMaterial({color:0x2ecc40}));lamp.position.set(hz.pos-6,4.2,-4.2);sc.add(lamp);
+  const cr=mesh(new THREE.PlaneGeometry(8,240),asphalt,false,true);cr.rotation.x=-Math.PI/2;cr.position.set(hz.pos,.006,1.75);sc.add(cr);
+  const sc2=vehicleMesh("car",C3("--c-l3").getHex());sc2.rotation.y=-Math.PI/2;sc2.position.set(hz.pos+1.5,0,60);sc.add(sc2);O.side=sc2;
+  cylm(sc,.08,.08,4,hz.pos-6,2,-4.2,mat(0x2b3642,.5,.5),"y",10);bxm(sc,.4,1.1,.4,hz.pos-6,4.4,-4.2,mat(0x1a1a1a,.6));
+  [[0xff3030,4.75],[0xffb000,4.4],[0x2ecc40,4.05]].forEach(([c,y],i)=>{const m_=lampMat(c,i===2);const l=mesh(new THREE.SphereGeometry(.12,12,10),m_,false);l.position.set(hz.pos-6.22,y,-4.2);sc.add(l);});
  }
  if(hz.kind==="lead"){const ld=vehicleMesh("car",0x8a96a3);ld.position.set(0,0,lane);sc.add(ld);O.lead=ld;}
- if(hz.kind==="stall"){const sc_=vehicleMesh("car",0x8a96a3);sc_.position.set(hz.pos+4.6,0,lane);sc.add(sc_);O.stall=sc_;
-  O.blink=[-1,1].map(s=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.14,8,8),new THREE.MeshBasicMaterial({color:0xffa31a}));m.position.set(hz.pos+.02,.8,lane+s*.75);sc.add(m);return m;});}
+ if(hz.kind==="stall"){const s2=vehicleMesh("car",0x8a96a3);s2.position.set(hz.pos+4.6,0,lane);sc.add(s2);O.stall=s2;
+  O.blink=[-1,1].map(s=>{const m_=lampMat(0xffa31a,true);const o=mesh(new THREE.SphereGeometry(.1,8,8),m_,false);o.position.set(hz.pos+.02,.85,lane+s*.65);sc.add(o);return o;});
+  const tri=mesh(new THREE.ConeGeometry(.35,.6,3),lampMat(0xff3b1a,true));tri.position.set(hz.pos-25,.3,lane);sc.add(tri);}
  if(hz.kind==="signal"){
-  const mk=(x,col)=>{const p=box(.25,5,.25,0x2b3642);p.position.set(x,2.5,2.6);sc.add(p);const h=box(.5,1.2,.5,0x111111);h.position.set(x,5.4,2.6);sc.add(h);const l=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),new THREE.MeshBasicMaterial({color:col}));l.position.set(x-.27,5.4,2.6);sc.add(l);};
+  const mk=(x,col)=>{cylm(sc,.12,.12,5,x,2.5,2.6,mat(0x2b3642,.5,.5),"y",10);bxm(sc,.5,1.2,.5,x,5.4,2.6,mat(0x111111,.6));const l=mesh(new THREE.SphereGeometry(.2,12,10),lampMat(col,true),false);l.position.set(x-.27,5.4,2.6);sc.add(l);};
   mk(hz.pos,0xff3030); mk(hz.pos-(run.reveal||300),0xffc400);
  }
  if(hz.kind==="obst"){
-  const cr=new THREE.Mesh(new THREE.PlaneGeometry(8,240),new THREE.MeshPhongMaterial({shininess:2,color:night?0x232c36:0x5d6873}));cr.rotation.x=-Math.PI/2;cr.position.set(hz.pos,.01,0);sc.add(cr);
-  const car=vehicleMesh("car",0xc23b2a);car.rotation.y=-Math.PI/2;car.position.set(hz.pos,.2,-2.3);sc.add(car);O.stuck=car;
-  [-5,5].forEach(z=>{const arm=box(.12,.12,4,0xffffff);arm.position.set(hz.pos+(z<0?-5:5),1.1,z+(z<0?2:-2));sc.add(arm);});
+  const cr=mesh(new THREE.PlaneGeometry(8,240),asphalt,false,true);cr.rotation.x=-Math.PI/2;cr.position.set(hz.pos,.31,0);sc.add(cr);
+  const car=vehicleMesh("car",0xc23b2a);car.rotation.y=-Math.PI/2;car.position.set(hz.pos,.31,-2.3);sc.add(car);O.stuck=car;
+  [-5,5].forEach(z=>{const arm=bxm(sc,.12,.12,4,hz.pos+(z<0?-5:5),1.1,z+(z<0?2:-2),mat(0xffffff,.5));});
+  O.xbells=[-5,5].map(z=>{const m_=lampMat(0xff2020,true);const l=mesh(new THREE.SphereGeometry(.15,10,8),m_,false);l.position.set(hz.pos+(z<0?-5.2:5.2),2.4,z);sc.add(l);return m_;});
  }
+ // rain
+ if(cfg.surf!=="dry"&&!rail||cfg.surf==="wet"&&rail){const n=1600,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=(Math.random()-.5)*80;pos[i*3+1]=Math.random()*24;pos[i*3+2]=(Math.random()-.5)*50;}
+  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));const rn=new THREE.Points(g,new THREE.PointsMaterial({color:0xcfd9e3,size:.07,transparent:true,opacity:.7}));sc.add(rn);O.rain=rn;}
  R3.scene=sc;R3.obj=O;R3.run=run;
 }
 function draw3d(fr,run){
@@ -552,14 +1017,20 @@ function draw3d(fr,run){
  const f=fr||run.trace[0]||{t:0,x:run.start||0,v:cfg.v/3.6,lx:hz.pos,vis:false};
  const x=f.x,t=f.t;
  O.ego.position.x=x; O.ego.visible=st.view!=="driver";
- O.ego.children.forEach(c=>{ if(c.name==="rider") c.visible=st.view!=="driver"; if(c.name==="brake") c.material.color.set(f.phase==="brake"||f.phase==="stop"?0xff2a2a:0x551111); });
+ const braking=f.phase==="brake"||f.phase==="stop";
+ O.ego.children.forEach(c=>{ if(c.name==="rider") c.visible=st.view!=="driver"; });
+ (O.ego.userData.brake||[]).forEach(m=>m.emissiveIntensity=braking?2.2:.15);
+ if(O.sun){O.sun.position.set(x-30,60,40);O.sun.target.position.set(x+20,0,0);}
+ if(O.beacons){const ph=Math.floor(t*2.6)%2;O.beacons.forEach(b=>b.m.emissiveIntensity=(b.i===ph)?2.4:.08);}
+ if(O.xbells){const ph=Math.floor(t*2)%2;O.xbells.forEach((m,i)=>m.emissiveIntensity=(i===ph)?2.2:.1);}
+ if(O.rain){O.rain.position.set(cam.position.x,0,cam.position.z);const a=O.rain.geometry.attributes.position;for(let i=0;i<a.count;i++){let y=a.getY(i)-0.9;if(y<0)y+=24;a.setY(i,y);}a.needsUpdate=true;}
  const a=V.a*SURF[cfg.surf].m, sd=f.v*f.v/(2*a);
  O.stopBand.visible=sd>.5&&st.view!=="driver"; O.stopBand.scale.x=Math.max(.01,sd); O.stopBand.position.set(x+sd/2,.03,O.lane);
  if(O.head){O.head.position.set(x+.2,1.1,O.lane);O.head.target.position.set(x+40,0,O.lane);}
  if(O.ped){ let z=hz.present?5.4:8.6; if(hz.present&&t>=O.tVis) z=Math.max(O.lane,5.4-(t-O.tVis)*1.6); O.ped.position.z=z; O.ped.visible=st.view!=="other"; }
  if(O.side){ const ct=run.clearT||1.5, vz=14/ct; O.side.position.z = isFinite(O.tVis)? 8-(t-O.tVis)*vz : 60; if(O.side.position.z>60)O.side.position.z=60; }
  if(O.side) O.side.visible=st.view!=="other"; if(O.stuck) O.stuck.visible=st.view!=="other";
- if(O.lead){ O.lead.position.x=f.lx; O.lead.children.forEach(c=>{if(c.name==="brake")c.material.color.set(f.vis?0xff2a2a:0x551111);}); }
+ if(O.lead){ O.lead.position.x=f.lx; (O.lead.userData.brake||[]).forEach(m=>m.emissiveIntensity=f.vis?2.2:.15); }
  if(O.blink) O.blink.forEach(m=>m.visible=Math.floor(t*2)%2===0);
  // cameras
  const L=V.len;
@@ -580,14 +1051,14 @@ function draw3d(fr,run){
  R3.renderer.render(R3.scene,cam);
  document.getElementById("v3tag").textContent=`${(f.v*3.6).toFixed(0)} km/h · ${esc(viewLabel(st.view))}`;
 }
-function viewLabel(v){ const s=SCN[st.scn]; const k=lastRun&&lastRun.hazard?lastRun.hazard.kind:(s.ped?"ped":s.side?"side":s.hw?"lead":s.hwy?"stall":s.signal?"signal":"obst");
+function viewLabel(v){ const k=hazKind();
  if(v==="top")return tx(T.vTop); if(v==="chase")return tx(T.vChase); if(v==="driver")return tx(VEH[st.veh].kind==="rail"?T.vDriverRail:T.vDriver); return tx(T.vOther[k]); }
-function hazKind(){const s=SCN[st.scn];return s.ped?"ped":s.side?"side":s.hw?"lead":s.hwy?"stall":s.signal?"signal":"obst";}
+function hazKind(){const s=SCN[st.scn];if(isK2())return "gen";return s.ped?"ped":s.side?"side":s.hw?"lead":s.hwy?"stall":s.signal?"signal":"obst";}
 function syncViews(){
- const ok=has3D(); if(!ok&&st.view!=="top") st.view="top";
+ const ok=has3D()&&!isK2(); if(!ok&&st.view!=="top") st.view="top";
  document.getElementById("views").innerHTML=["top","chase","driver","other"].map(v=>`<button type="button" id="view-${v}" data-view="${v}" aria-pressed="${st.view===v}" ${v!=="top"&&!ok?"disabled":""}>${esc(viewLabel(v))}</button>`).join("");
  const is3=st.view!=="top"; document.getElementById("cv").hidden=is3; document.getElementById("v3wrap").hidden=!is3;
- const k=hazKind(); document.getElementById("viewcap").textContent=!ok?tx(T.no3d):st.view==="top"?tx(T.capTop):st.view==="chase"?tx(T.capChase):st.view==="driver"?tx(T.capDriver):tx(T.capOther[k]);
+ const k=hazKind(); document.getElementById("viewcap").textContent=isK2()?tx(T.no3dK2):!ok?tx(T.no3d):st.view==="top"?tx(T.capTop):st.view==="chase"?tx(T.capChase):st.view==="driver"?tx(T.capDriver):tx(T.capOther[k]);
  if(is3) size3d();
 }
 
@@ -596,8 +1067,9 @@ let anim=null,lastRun=null;
 function play(){
  cancelAnimationFrame(anim);
  const cfg=cfgNow();const run=trial(cfg,st.exp/100,st.seed,true);lastRun=run;
- if(run.outcome==="mrc"){draw(null,run);hud(null,run);result(run);return;}
- const tr=run.trace;let i=0,t0=null;const speed=SCN[cfg.scn].kind==="rail"?3:1;
+ if(run.outcome==="mrc"&&!run.k2){draw(null,run);hud(null,run);result(run);return;}
+ if(!run.trace.length){draw(null,run);hud(null,run);result(run);return;}
+ const tr=run.trace;let i=0,t0=null;const speed=run.speedUp||(SCN[cfg.scn].kind==="rail"?3:1);
  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
  if(reduce){draw(tr[tr.length-1],run);hud(tr[tr.length-1],run);result(run);return;}
  function step(ts){if(t0===null)t0=ts;const simT=(ts-t0)/1000*speed;while(i<tr.length-1&&tr[i+1].t<=simT)i++;draw(tr[i],run);hud(tr[i],run);
@@ -606,11 +1078,15 @@ function play(){
 }
 function hud(fr,run){
  const P=T.phase, ph=run.outcome==="mrc"?"mrc":fr?fr.phase:"idle";
+ if(run.k2&&fr&&fr.hud){$("hud").innerHTML=fr.hud.map(([k,v])=>`<div><span>${esc(tx(k))}</span> ${esc(v)}</div>`).join("")+`<div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P[fr.phase]||P.idle))}</span></div>`;return;}
+ if(run.k2){$("hud").innerHTML=`<div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P.idle))}</span></div>`;return;}
  const dist=fr?Math.max(0,(run.hazard.kind==="lead"?fr.lx-fr.x-VEH[st.veh].len:run.hazard.pos-fr.x)):null;
- $("hud").innerHTML=`<div><span>${esc(tx(T.hSpeed))}</span> ${fr?(fr.v*3.6).toFixed(0):"–"} km/h</div><div><span>${esc(tx(T.hDist))}</span> ${dist!=null?dist.toFixed(0)+" m":"–"}</div><div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P[ph]))}</span></div>`;
+ const lim=SCN[st.scn].limit,over=lim&&fr&&fr.v*3.6>lim+1;
+ $("hud").innerHTML=`<div><span>${esc(tx(T.hSpeed))}</span> <b style="color:${over?"var(--warn)":"inherit"}">${fr?(fr.v*3.6).toFixed(0):"–"} km/h</b>${lim?` <span>/ ${lang==="th"?"จำกัด":"limit"} ${lim}</span>`:""}</div><div><span>${esc(tx(T.hDist))}</span> ${dist!=null?dist.toFixed(0)+" m":"–"}</div><div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P[ph]))}</span></div>`;
 }
 function result(run){
  const el=$("one"),L=lang==="th";let cls="ok",m;
+ if(run.msg){el.className="result "+({safe:"ok",near:"mid",mrc:"mid",light:"bad",serious:"bad"}[run.outcome]||"");el.textContent=tx(run.msg);return;}
  const rt=run.react!=null?` ${L?"ตอบสนองใน":"reaction"} ${run.react.toFixed(1)} ${L?"วิ":"s"}.`:"";
  const hb=run.handback?(L?" ระบบระดับ 3 ใช้ไม่ได้ในสภาพนี้ จึงส่งคืนให้คนขับ.":" Level 3 isn't available in these conditions, so the human drives."):"";
  if(run.outcome==="mrc"){cls="mid";m=L?"สภาพเกินขอบเขตที่ระบบออกแบบไว้ ระบบจึงไม่ออกเดินทางหรือจอดในที่ปลอดภัย ปลอดภัย แต่ไม่ถึงปลายทาง":"Conditions are outside the system's design limits, so it won't depart or pulls over. Safe, but the trip doesn't happen.";}
@@ -619,6 +1095,7 @@ function result(run){
  else if(run.outcome==="near"){cls="mid";m=(L?`หยุดทัน แต่เหลือระยะไม่ถึง 2 ม.`:`Stopped, with under 2 m to spare.`)+rt;}
  else if(!run.hazard.present){m=L?"ครั้งนี้ไม่มีใครเดินออกมา":"Nobody stepped out this time.";if(run.lost>0.05)m+=L?` เสียเวลาไป ${run.lost.toFixed(1)} วิ จากการชะลอระวัง`:` Caution cost ${run.lost.toFixed(1)} s.`;}
  else m=(L?"หยุดหรือผ่านได้อย่างปลอดภัย":"Stopped or passed safely.")+rt;
+ const lim=SCN[st.scn].limit;if(lim&&st.spd>lim)m+=L?` ความเร็วตั้งต้น ${st.spd} กม./ชม. เกินป้ายจำกัด ${lim} กม./ชม.`:` The starting speed of ${st.spd} km/h breaks the ${lim} km/h limit.`;
  el.className="result "+cls;el.textContent=m+hb;
 }
 
@@ -653,15 +1130,15 @@ function info(){
  $("ctrl-std").innerHTML=I.std.map(x=>`<span class="code">${esc(tx(x))}</span>`).join("");
  $("ctrl-prob").innerHTML=I.prob.map(x=>`<li>${esc(tx(x))}</li>`).join("");
 }
-function hoursOf(e){return Math.round(Math.pow(10,3*e)-1);}
+function hoursOf(e){const m=HMAX[VEH[st.veh].kind]||1000;return Math.round(Math.pow(m+1,e)-1);}
 function mkmOf(e){return Math.pow(10,3*e)/10;}
 function path(){
- const e=st.exp/100,h=hoursOf(e),k=mkmOf(e);
+ const e=st.exp/100,h=hoursOf(e),k=mkmOf(e),KK=VEH[st.veh].kind,PH=PATHS_H[KK]||PATH_H,road=KK==="road"||KK==="rail";
  const row=(arr,val,key,unit,pc)=>{let now=-1;arr.forEach((s,i)=>{if(val>=s[key])now=i;});return arr.map((s,i)=>`<div class="${i<now?"done":i===now?"now":""}" style="--pc:${pc}">${esc(tx(s))}<small>${s[key]>0?(key==="h"?"≥ "+s[key]+" "+tx(T.hours):"≥ "+s[key]+" "+(lang==="th"?"ล้าน กม.":"M km")):""}</small></div>`).join("");};
- $("path-h").style.setProperty("--n",PATH_H.length);$("path-s").style.setProperty("--n",PATH_S.length);
+ $("path-h").style.setProperty("--n",PH.length);$("path-s").style.setProperty("--n",PATH_S.length);
  const learner=CTRL[st.ctrl].learner;
- $("path-h").innerHTML=row(PATH_H,learner==="human"?h:-1,"h","","var(--c-human)");
- $("path-s").innerHTML=row(PATH_S,learner==="sys"?k:-1,"k","","var(--c-l4)");
+ $("path-h").innerHTML=row(PH,learner==="human"?h:-1,"h","","var(--c-human)");
+ $("path-s").innerHTML=road?row(PATH_S,learner==="sys"?k:-1,"k","","var(--c-l4)"):PATH_S.map((s_,i)=>{let now=-1;PATH_S.forEach((q,j)=>{if(learner==="sys"&&e>=SYS_F[j])now=j;});return `<div class="${i<now?"done":i===now?"now":""}" style="--pc:var(--c-l4)">${esc(tx(s_))}<small>${i?"≥ "+Math.round(SYS_F[i]*100)+"%":""}</small></div>`;}).join("");
 }
 
 /* ---------- UI ---------- */
@@ -671,16 +1148,22 @@ function syncSetup(){
  const scs=Object.keys(SCN).filter(k=>SCN[k].kind===V.kind);if(!scs.includes(st.scn))st.scn=scs[0];
  $("scn").innerHTML=scs.map(k=>`<option value="${k}">${esc(tx(SCN[k]))}</option>`).join("");$("scn").value=st.scn;
  $("scn-desc").textContent=tx(SCN[st.scn].d);
- const sfs=V.kind==="rail"?["dry","wet"]:["dry","wet","flood"];if(!sfs.includes(st.surf))st.surf="dry";
- $("surf").innerHTML=sfs.map(k=>`<option value="${k}">${esc(V.kind==="rail"&&k==="wet"?(lang==="th"?"รางเปียก / ใบไม้":"Wet rail / leaves"):tx(SURF[k]))}</option>`).join("");$("surf").value=st.surf;
+ const K=V.kind;
+ const sfs=K==="rail"?["dry","wet"]:["dry","wet","flood"];if(!sfs.includes(st.surf))st.surf="dry";
+ $("surf").innerHTML=sfs.map(k=>`<option value="${k}">${esc(surfLabel(K,k))}</option>`).join("");$("surf").value=st.surf;
+ $("surf").parentElement.hidden=K==="space"; $("light").parentElement.hidden=K==="space"||K==="infra";
+ $("infra-row").hidden=K!=="infra"; $("force-row").hidden=!SCN[st.scn].ped;
+ $("force").innerHTML=[["rand",T.fRand],["on",T.fOn],["off",T.fOff]].map(([k,l])=>`<option value="${k}">${esc(tx(l))}</option>`).join("");$("force").value=st.force;
+ $("spec-o").textContent=st.spec+"%";$("age-o").textContent=st.age+" "+tx(T.years);$("ovl-o").textContent=st.ovl+"%";
  $("light").innerHTML=Object.keys(LIGHT).map(k=>`<option value="${k}">${esc(tx(LIGHT[k]))}</option>`).join("");$("light").value=st.light;
  $("atp-row").hidden=V.kind!=="rail";
- const sp=$("spd");sp.min=V.v[0];sp.max=V.v[1];sp.step=5;if(st.spd<V.v[0]||st.spd>V.v[1])st.spd=V.v[2];sp.value=st.spd;$("spd-o").textContent=st.spd+(lang==="th"?" กม./ชม.":" km/h");
+ const vr=SCN[st.scn].v||V.v; $("spd-row").hidden=!vr;
+ if(vr){const sp=$("spd");sp.min=vr[0];sp.max=vr[1];sp.step=5;if(st.spd<vr[0]||st.spd>vr[1])st.spd=vr[2];sp.value=st.spd;$("spd-o").textContent=st.spd+(lang==="th"?" กม./ชม.":" km/h")+(K==="sea"?` (${(st.spd/1.852).toFixed(0)} ${lang==="th"?"นอต":"kn"})`:"");}
  const cl=Object.keys(CTRL).filter(c=>CTRL[c].kind===V.kind);if(!cl.includes(st.ctrl))st.ctrl=cl[0];
  $("ctrls").innerHTML=cl.map(c=>`<label class="ctrl" style="--cc:var(${CTRL[c].cc})"><input type="radio" name="ctrl" id="ctrl-${c}" value="${c}" ${c===st.ctrl?"checked":""}><b>${esc(tx(CTRL[c]))}</b><span>${esc(tx(CTRL[c].s))}</span></label>`).join("");
  const learner=CTRL[st.ctrl].learner,e=st.exp/100;
- $("exp-l").textContent=tx(learner==="human"?T.expHuman:T.expSys);
- $("exp-o").textContent=learner==="human"?`${hoursOf(e)} ${tx(T.hours)}`:`${mkmOf(e).toFixed(mkmOf(e)<1?1:0)} ${tx(T.mkm)}`;
+ $("exp-l").textContent=tx(learner==="human"?(K==="infra"?T.expInfra:K==="sea"?T.expSea:(K==="air"||K==="heli"||K==="uav"||K==="space")?T.expPilot:T.expHuman):T.expSys);
+ $("exp-o").textContent=learner==="human"?`${hoursOf(e)} ${tx(T.hours)}`:(K==="road"||K==="rail")?`${mkmOf(e).toFixed(mkmOf(e)<1?1:0)} ${tx(T.mkm)}`:`${Math.round(e*100)}%`;
 }
 function render(){
  document.documentElement.lang=lang;
@@ -702,7 +1185,7 @@ document.addEventListener("click",ev=>{
 });
 document.addEventListener("change",ev=>{
  const t=ev.target;
- if(t.id==="scn")st.scn=t.value;else if(t.id==="surf")st.surf=t.value;else if(t.id==="light")st.light=t.value;else if(t.id==="atpfail")st.atpfail=t.checked;
+ if(t.id==="force")st.force=t.value;else if(t.id==="scn")st.scn=t.value;else if(t.id==="surf")st.surf=t.value;else if(t.id==="light")st.light=t.value;else if(t.id==="atpfail")st.atpfail=t.checked;
  else if(t.name==="ctrl")st.ctrl=t.value;else return;
  update(true);
 });
@@ -710,6 +1193,7 @@ document.addEventListener("input",ev=>{
  const t=ev.target;
  if(t.id==="spd"){st.spd=+t.value;update(false);laterCurves();}
  if(t.id==="exp"){st.exp=+t.value;update(false);laterCurves();}
+ if(t.id==="spec"||t.id==="age"||t.id==="ovl"){st[t.id]=+t.value;update(false);laterCurves();}
 });
 window.addEventListener("resize",()=>{sizeCanvas();size3d();if(lastRun)draw(lastRun.trace[0]||null,lastRun);});
 render();

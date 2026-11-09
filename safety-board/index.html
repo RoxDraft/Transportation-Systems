@@ -388,6 +388,9 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
       <figure class="scene" style="margin:0"><div id="corr-svg"></div><figcaption class="cap" data-i="corrCap"></figcaption></figure>
       <div class="opl" id="corr-txt"></div>
     </div>
+    <h4 style="margin-top:22px" data-i="xHead"></h4>
+    <p class="sec-sub" style="margin-bottom:12px" data-i="xSub"></p>
+    <div class="mon" id="xmode"></div>
   </section>
 
   <section id="airport-sec">
@@ -482,6 +485,8 @@ const T={
  sOpsSub:{th:"เส้นทางที่ดีต้องมีคนดูแลแบบเรียลไทม์ ทั้งศูนย์ควบคุมที่เห็นภาพรวม และทีมลงพื้นที่ที่จัดการหน้างาน",en:"Good routes need real-time care: control centres that see the whole network, and crews who manage things on site."},
  opsNormal:{th:"สถานการณ์ปกติ",en:"Normal conditions"},opsHard:{th:"สถานการณ์ท้าทาย",en:"Challenging conditions"},
  corrCap:{th:"ภาพประกอบช่องทางฉุกเฉิน (Rettungsgasse) แบบเยอรมนีและออสเตรียที่ขับชิดขวา รถเลนซ้ายสุดหลบซ้าย เลนอื่นหลบขวา ทำทันทีที่รถเริ่มติด",en:"Emergency corridor (Rettungsgasse) as used in right-hand-traffic Germany and Austria: the leftmost lane moves left, other lanes move right, as soon as traffic starts to jam."},
+ xHead:{th:"มีหอบังคับการรวมทุกโหมดไหม",en:"Is there one control tower for every mode?"},
+ xSub:{th:"ไม่มี อากาศ ทะเล ถนน ราง และอวกาศมีศูนย์ควบคุมแยกกัน เพราะความเร็ว กฎ และเครื่องมือต่างกันมาก แต่มีกลไกเชื่อมกันตรงจุดที่โหมดซ้อนทับกัน",en:"No. Air, sea, road, rail and space each have their own control centres, because speeds, rules and tools differ so much. They are linked where modes overlap."},
  sAir:{th:"จากรถไฟสู่ประตูขึ้นเครื่อง",en:"From train to departure gate"},
  sAirSub:{th:"สนามบินที่รับคนจากรถไฟเป็นจังหวะ ต้องให้ทุกหน่วยใช้ข้อมูลชุดเดียวกัน ทั้งผู้ให้บริการรถไฟ สนามบิน สายการบิน ผู้ให้บริการภาคพื้น ด่านตรวจ และหอบังคับการบิน เพื่อเปิดช่องบริการได้ก่อนคลื่นผู้โดยสารมาถึง",en:"An airport fed by trains receives passengers in waves. Every party, from the rail operator, airport and airlines to ground handlers, border control and air traffic control, has to work from the same data so counters open before each wave arrives."},
  qmH:{th:"ลองเอง: คิวตรวจค้นเมื่อรถไฟมาถึงเป็นระลอก",en:"Try it: the security queue when trains arrive in waves"},
@@ -712,6 +717,9 @@ const SRC=[
  {t:"Oesterreich.gv.at — Emergency lane (Rettungsgasse)",u:"https://www.oesterreich.gv.at/en/themen/mobilitaet/kfz/10/Seite.063130/Seite.065000",g:"law"},
  {t:"Thai PBS — วิธีให้ทางรถฉุกเฉิน ไม่หลบปรับ 500 บาท",u:"https://www.thaipbs.or.th/news/content/271526",g:"law"},
  {t:"Thai PBS — เปิดช่องทางพิเศษถนนมิตรภาพ",u:"https://www.thaipbs.or.th/news/content/271672",g:"2018"},
+ {t:"IMO — IAMSAR Manual",u:"https://www.imo.org/en/OurWork/Safety/Pages/IAMSARManual.aspx",g:"standard"},
+ {t:"FAA — The Space Data Integrator (SDI)",u:"https://www.faa.gov/newsroom/space-data-integrator-sdi-0",g:"agency"},
+ {t:"EUR-Lex — Regulation (EU) 2021/664 on U-space",u:"https://eur-lex.europa.eu/eli/reg_impl/2021/664/oj/eng",g:"law"},
  {t:"ICAO — Annex 13, Aircraft Accident and Incident Investigation",u:"https://www.icao.int/safety/airnavigation/AIG/Pages/default.aspx",g:"standard"},
  {t:"NTSB — About the NTSB",u:"https://www.ntsb.gov/about/Pages/default.aspx",g:"agency"},
  {t:"IMO — SOLAS convention",u:"https://www.imo.org/en/About/Conventions/Pages/International-Convention-for-the-Safety-of-Life-at-Sea-(SOLAS),-1974.aspx",g:"standard"},
@@ -765,6 +773,13 @@ const CORR=[
  {h:{th:"เยอรมนี ออสเตรีย และอีกหลายประเทศในยุโรป",en:"Germany, Austria and several European countries"},p:{th:"บนถนนสองเลนขึ้นไป ต้องเปิดช่องทางฉุกเฉินทันทีที่รถเริ่มติด ไม่ต้องรอได้ยินไซเรน ออสเตรียปรับได้ถึง 2,180 ยูโรถ้าขวางรถฉุกเฉิน",en:"On roads with two or more lanes, the corridor must form as soon as traffic jams, without waiting for sirens. Austria fines up to €2,180 for blocking an emergency vehicle."}},
  {h:{th:"ประเทศไทย",en:"Thailand"},p:{th:"พ.ร.บ.จราจรทางบก มาตรา 76 ให้หลบชิดซ้ายเมื่อได้ยินไซเรนหรือเห็นไฟวับวาบ ไม่หลบปรับไม่เกิน 500 บาท สถาบันการแพทย์ฉุกเฉินแนะนำว่าถ้ารถติดจนหลบไม่ได้ ให้ชะลอและหยุดนิ่ง เลือกฝั่งที่ปลอดภัยแล้วเปิดไฟเลี้ยว และห้ามขับตามรถฉุกเฉิน",en:"The Land Traffic Act, section 76, requires moving left at sirens or flashing lights; failing to yield is fined up to 500 baht. The national emergency medicine institute advises: if traffic is too dense, slow and stop steadily, pick the safer side and signal, and never follow an emergency vehicle."}},
  {h:{th:"เทคโนโลยีช่วย",en:"Technology that helps"},p:{th:"สั่งไฟเขียวให้รถฉุกเฉินล่วงหน้า (signal preemption) แอปเตือนรถข้างหน้า และช่องทางรถเมล์ที่รถกู้ภัยใช้ได้",en:"Green-light priority for emergency vehicles (signal preemption), apps that warn drivers ahead, and bus lanes rescue vehicles can use."}}
+];
+const XMODE=[
+ {h:{th:"อากาศ + ทะเล: ค้นหาและช่วยเหลือ",en:"Air + sea: search and rescue"},w:{th:"ศูนย์ประสานการค้นหาและช่วยเหลือร่วม (JRCC) ใช้คู่มือ IAMSAR ที่ ICAO และ IMO ทำร่วมกัน",en:"Joint rescue coordination centres (JRCC) use the IAMSAR Manual, published jointly by ICAO and IMO"},y:{th:"เครื่องบินตกทะเล หรือเฮลิคอปเตอร์ช่วยเรือ ใช้ขั้นตอนเดียวกัน",en:"A ditched aircraft or a helicopter rescuing a ship follows one procedure"}},
+ {h:{th:"อวกาศ + อากาศ + ทะเล: การปล่อยจรวด",en:"Space + air + sea: launches"},w:{th:"ประกาศปิดน่านฟ้า (NOTAM) และประกาศเตือนเรือ (NAVAREA) ล่วงหน้า FAA ใช้ Space Data Integrator ดูตำแหน่งจรวดแบบเรียลไทม์ร่วมกับการจราจรทางอากาศ",en:"Airspace closures (NOTAM) and navigational warnings (NAVAREA) in advance; the FAA's Space Data Integrator feeds live rocket positions into air traffic management"},y:{th:"ชิ้นส่วนตกในเขตที่ปิดไว้ แบบในตัวจำลองจรวด",en:"Debris falls inside the closed areas, as in the rocket simulator"}},
+ {h:{th:"โดรน + เครื่องบิน",en:"Drones + aircraft"},w:{th:"ระบบจัดการจราจรโดรน (UTM ในสหรัฐฯ, U-space ใน EU ตาม Regulation 2021/664) แบ่งน่านฟ้าชั้นต่ำและส่งข้อมูลให้หอบังคับการบิน",en:"Drone traffic management (UTM in the US, U-space in the EU under Regulation 2021/664) manages low airspace and shares data with ATC"},y:{th:"โดรนรู้ว่าเฮลิคอปเตอร์กู้ภัยกำลังเข้ามา",en:"Drones learn a rescue helicopter is inbound"}},
+ {h:{th:"ทะเล: หอควบคุมการจราจรทางเรือ",en:"Sea: vessel traffic services"},w:{th:"VTS ตาม SOLAS บทที่ 5 เฝ้าดูเรือด้วยเรดาร์และ AIS ในท่าเรือและช่องแคบ คล้ายหอบังคับการบินของเรือ",en:"VTS under SOLAS Chapter V watches ships by radar and AIS in ports and straits, much like ATC for ships"},y:{th:"ไม่ได้สั่งเรือทุกลำแบบ ATC หลายแห่งแค่ให้ข้อมูลและคำแนะนำ",en:"Unlike ATC, many only inform and advise"}},
+ {h:{th:"ถนน + ราง + อากาศ: เหตุใหญ่",en:"Road + rail + air: major incidents"},w:{th:"ระบบบัญชาการเหตุการณ์ (ICS) ตั้งศูนย์บัญชาการร่วมชั่วคราว ให้ตำรวจ กู้ภัย การแพทย์ และผู้ให้บริการแต่ละโหมดทำงานใต้โครงสร้างเดียว",en:"The Incident Command System sets up a temporary joint command so police, rescue, medical teams and each operator work under one structure"},y:{th:"เครื่องบินตกบนถนน หรือรถไฟชนรถเมล์ที่จุดตัด",en:"A plane down on a road, or a train hitting a bus at a crossing"}}
 ];
 const FLOW=[
  {h:{th:"รถไฟถึงสถานีสนามบิน",en:"Train arrives at the airport"},p:{th:"ผู้โดยสารมาเป็นระลอก ตามตารางรถไฟ",en:"Passengers arrive in waves, on the timetable"}},
@@ -1006,6 +1021,7 @@ function render(){
  document.getElementById("ops-h").innerHTML=opc(OPS_H,"--warn");
  document.getElementById("corr-svg").innerHTML=corridorSvg();
  document.getElementById("corr-txt").innerHTML=opc(CORR,"--ok");
+ document.getElementById("xmode").innerHTML=XMODE.map(x=>`<div class="card"><h3>${esc(tx(x.h))}</h3><dl><dt>${esc(tx(T.monHow))}</dt><dd>${esc(tx(x.w))}</dd><dt>${lang==="th"?"ตัวอย่าง":"Example"}</dt><dd>${esc(tx(x.y))}</dd></dl></div>`).join("");
  document.getElementById("flow").innerHTML=FLOW.map(x=>`<li><b>${esc(tx(x.h))}</b><span>${esc(tx(x.p))}</span></li>`).join("");
  document.getElementById("coord").innerHTML=COORD.map(x=>`<div class="card" style="border-top:4px solid var(--air)"><h3>${esc(tx(x.h))}</h3><p style="margin:0">${esc(tx(x.p))}</p></div>`).join("");
  airportRender();
