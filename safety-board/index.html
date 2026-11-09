@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <script src="../shared/project-language.js?v=1.4.2" data-bilingual="true"></script>
 <title>Transport Safety Board</title>
-<meta name="description" content="บอร์ดสรุปมาตรฐานความปลอดภัยยานพาหนะทุกโหมด หน่วยสอบสวน ระดับรถอัตโนมัติ ใบอนุญาตขับขี่ และจุดเปลี่ยนสำคัญ">
+<meta name="description" content="บอร์ดความปลอดภัยการขนส่งทุกโหมด ตั้งแต่ผู้ขับ ยานพาหนะ ใบอนุญาต รถอัตโนมัติ ไปจนถึงการสร้าง ดูแล และจัดจราจรบนเส้นทาง">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
@@ -14,7 +14,7 @@
 :root{
   --bg:#f3f5f7; --panel:#ffffff; --ink:#16202b; --muted:#5a6878; --line:#d5dce4;
   --accent:#e2640f; --accent-ink:#ffffff;
-  --air:#2a6fb5; --sea:#0f8a83; --rail:#b07a00; --rotor:#7b4fbf; --road:#4d7c0f; --space:#3346a8; --all:#3d4a58;
+  --air:#2a6fb5; --sea:#0f8a83; --rail:#b07a00; --rotor:#7b4fbf; --road:#4d7c0f; --space:#3346a8; --infra:#0b6e8a; --all:#3d4a58;
   --tag-bg:#e8edf2; --warn:#b3261e; --ok:#2e7d32;
   --asphalt:#cfd6de; --curb:#eef1f4; --stripe:#ffffff; --occl:#5a6878;
   --f-display:"Barlow Condensed","IBM Plex Sans Thai",system-ui,sans-serif;
@@ -24,13 +24,13 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0f151c; --panel:#17202a; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2a3644;
   --accent:#ff8a3d; --accent-ink:#1a0f05;
-  --air:#6aa8ec; --sea:#3cc2b8; --rail:#e0ad3a; --rotor:#a988e6; --road:#9ccc4a; --space:#8fa2ff; --all:#b8c4d0;
+  --air:#6aa8ec; --sea:#3cc2b8; --rail:#e0ad3a; --rotor:#a988e6; --road:#9ccc4a; --space:#8fa2ff; --infra:#4cc3e0; --all:#b8c4d0;
   --tag-bg:#1f2a36; --warn:#ff7b72; --ok:#6fcf73;
   --asphalt:#2b3642; --curb:#1c252f; --stripe:#cfd6de; --occl:#05080b; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0f151c; --panel:#17202a; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2a3644;
   --accent:#ff8a3d; --accent-ink:#1a0f05;
-  --air:#6aa8ec; --sea:#3cc2b8; --rail:#e0ad3a; --rotor:#a988e6; --road:#9ccc4a; --space:#8fa2ff; --all:#b8c4d0;
+  --air:#6aa8ec; --sea:#3cc2b8; --rail:#e0ad3a; --rotor:#a988e6; --road:#9ccc4a; --space:#8fa2ff; --infra:#4cc3e0; --all:#b8c4d0;
   --tag-bg:#1f2a36; --warn:#ff7b72; --ok:#6fcf73;
   --asphalt:#2b3642; --curb:#1c252f; --stripe:#cfd6de; --occl:#05080b; color-scheme:dark}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
@@ -189,6 +189,51 @@ td ul{margin:0;padding-left:16px}
 .simlink b{font:700 22px var(--f-display)}
 .simlink span{font-size:14px;color:var(--muted);max-width:60ch}
 .simlink:hover{border-color:var(--accent)}
+/* infrastructure */
+.pillars{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:18px}
+.pillars div{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--line);padding:10px;font-size:13.5px;min-width:0}
+.pillars div.focus{border-top-color:var(--infra)}
+.pillars b{display:block;font-size:14px}
+.pillars span{color:var(--muted)}
+@media (max-width:760px){.pillars{grid-template-columns:1fr 1fr}.pillars div:last-child{grid-column:1/-1}}
+.life{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:lc}
+.life li{display:grid;grid-template-columns:44px minmax(0,1fr) minmax(0,1fr);gap:4px 16px;background:var(--panel);border:1px solid var(--line);padding:12px 14px;counter-increment:lc;align-items:start}
+.life li::before{content:counter(lc);grid-row:span 3;font:700 30px var(--f-display);color:var(--infra);line-height:1}
+.life h3{margin:0;font-size:16px;grid-column:2/4}
+.life p{margin:0;font-size:14px;color:var(--muted)}
+.life .chk{font-size:13.5px}
+.life .chk b{display:block;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.life .stds{grid-column:2/4;display:flex;flex-wrap:wrap;gap:4px}
+@media (max-width:640px){.life li{grid-template-columns:34px minmax(0,1fr)}.life li::before{grid-row:span 4}.life h3,.life .stds{grid-column:2}}
+.mon{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.mon .card{border-top:4px solid var(--infra)}
+.mon dl{margin:0;display:grid;gap:6px;font-size:14px}
+.mon dt{font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mon dd{margin:0}
+.ops{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.ops{grid-template-columns:1fr}}
+.ops h4{margin-top:0}
+.opl{display:grid;gap:8px}
+.opl .card h3{font-size:15px}
+.corr{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start;margin-top:18px}
+@media (max-width:860px){.corr{grid-template-columns:1fr}}
+.corr svg{display:block;width:100%;height:auto;max-width:420px;margin:0 auto}
+.corr svg text{font-family:var(--f-body)}
+.flow{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;counter-reset:fl}
+.flow li{flex:1 1 130px;background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--air);padding:10px;font-size:13.5px;counter-increment:fl;min-width:0}
+.flow li::before{content:counter(fl) " · ";font:700 13px var(--f-mono);color:var(--air)}
+.flow b{font-size:14px}
+.flow span{display:block;color:var(--muted);margin-top:2px}
+.qm{background:var(--panel);border:1px solid var(--line);padding:16px;margin-top:16px;display:grid;gap:14px}
+.qm .ctrls{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.qchart svg{display:block;width:100%;height:auto;max-width:620px}
+.qchart text{font-family:var(--f-mono);fill:var(--muted)}
+.qstats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.qstats{grid-template-columns:1fr}}
+.qstats .col{border-left:4px solid var(--c);padding-left:12px;display:grid;gap:4px;font-size:13.5px}
+.qstats .col b.h{font-size:15px;color:var(--c)}
+.qstats .row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding:2px 0}
+.qstats .row span:last-child{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:600}
 /* layers */
 .layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
 .lyr{background:var(--panel);border:1px solid var(--line);padding:16px;min-width:0}
@@ -318,6 +363,54 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
     </table></div>
   </section>
 
+  <section id="infra-sec">
+    <h2 data-i="sInfra"></h2>
+    <p class="sec-sub" data-i="sInfraSub"></p>
+    <div class="pillars" id="pillars"></div>
+    <h4 data-i="lifeHead"></h4>
+    <ol class="life" id="life"></ol>
+  </section>
+
+  <section id="monitor-sec">
+    <h2 data-i="sMon"></h2>
+    <p class="sec-sub" data-i="sMonSub"></p>
+    <div class="mon" id="mon"></div>
+  </section>
+
+  <section id="ops-sec">
+    <h2 data-i="sOps"></h2>
+    <p class="sec-sub" data-i="sOpsSub"></p>
+    <div class="ops">
+      <div><h4 data-i="opsNormal"></h4><div class="opl" id="ops-n"></div></div>
+      <div><h4 data-i="opsHard"></h4><div class="opl" id="ops-h"></div></div>
+    </div>
+    <div class="corr">
+      <figure class="scene" style="margin:0"><div id="corr-svg"></div><figcaption class="cap" data-i="corrCap"></figcaption></figure>
+      <div class="opl" id="corr-txt"></div>
+    </div>
+  </section>
+
+  <section id="airport-sec">
+    <h2 data-i="sAir"></h2>
+    <p class="sec-sub" data-i="sAirSub"></p>
+    <ol class="flow" id="flow"></ol>
+    <div class="grid2" style="margin-top:14px" id="coord"></div>
+    <div class="qm">
+      <div><h3 style="margin:0 0 4px;font-size:17px" data-i="qmH"></h3><p class="cap" style="margin:0" data-i="qmP"></p></div>
+      <div class="ctrls">
+        <label for="q-f"><span data-i="qF"></span><output id="q-f-o"></output><input id="q-f" type="range" min="2" max="12" step="1" value="6"></label>
+        <label for="q-p"><span data-i="qP"></span><output id="q-p-o"></output><input id="q-p" type="range" min="50" max="400" step="10" value="220"></label>
+        <label for="q-l"><span data-i="qL"></span><output id="q-l-o"></output><input id="q-l" type="range" min="2" max="16" step="1" value="6"></label>
+        <label for="q-x"><span data-i="qX"></span><output id="q-x-o"></output><input id="q-x" type="range" min="0" max="12" step="1" value="6"></label>
+        <label for="q-b"><span data-i="qB"></span><output id="q-b-o"></output><input id="q-b" type="range" min="50" max="150" step="5" value="80"></label>
+      </div>
+      <div class="qchart" id="qchart"></div>
+      <div class="keys" id="qkeys"></div>
+      <div class="qstats" id="qstats"></div>
+      <div class="verdict" id="qverdict"></div>
+    </div>
+  </section>
+
   <section id="layers-sec">
     <h2 data-i="s5"></h2>
     <p class="sec-sub" data-i="s5sub"></p>
@@ -338,7 +431,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
 const T={
  eyebrow:{th:"บอร์ดสรุป · อัปเดต 9 พ.ย. 2026",en:"Case board · updated 9 Nov 2026"},
  title:{th:"บอร์ดความปลอดภัยยานพาหนะ",en:"Transport Safety Board"},
- lede:{th:"เริ่มจากเหตุ Learjet 60 ตกที่ฟลอริดา แล้วขยายไปทุกโหมด ตั้งแต่ถนน ราง ทะเล อากาศ จนถึงอวกาศ ว่าแต่ละโหมดเสี่ยงตรงไหน ใครสืบสาเหตุ ใครออกกฎ ใบอนุญาตต้องผ่านอะไร และรถไร้คนขับถูกฝึกให้ตัดสินใจอย่างไร",en:"It starts with the Learjet 60 crash in Florida and widens to every mode, from road, rail and sea to air and space: where each one is risky, who finds causes, who sets rules, what licences require, and how driverless cars are trained to decide."},
+ lede:{th:"เริ่มจากเหตุ Learjet 60 ตกที่ฟลอริดา แล้วขยายไปทุกโหมด ตั้งแต่ถนน ราง ทะเล อากาศ จนถึงอวกาศ ว่าแต่ละโหมดเสี่ยงตรงไหน ใครสืบสาเหตุ ใครออกกฎ ใบอนุญาตต้องผ่านอะไร รถไร้คนขับถูกฝึกให้ตัดสินใจอย่างไร และเส้นทาง สถานี สนามบิน ถูกสร้างและดูแลให้พร้อมอย่างไร",en:"It starts with the Learjet 60 crash in Florida and widens to every mode, from road, rail and sea to air and space: where each one is risky, who finds causes, who sets rules, what licences require, how driverless cars are trained to decide, and how routes, stations and airports are built and kept ready."},
  jRecap:{th:"สรุป",en:"Recap"},jLoop:{th:"วงจรสอบสวน",en:"Investigation loop"},jOrgs:{th:"องค์กร",en:"Organisations"},jTl:{th:"จุดเปลี่ยน",en:"Turning points"},jRoad:{th:"ถนน",en:"Road"},jSpace:{th:"อวกาศ",en:"Space"},jLv:{th:"ระดับอัตโนมัติ",en:"Automation levels"},jDec:{th:"รถไร้คนขับตัดสินใจ",en:"How AVs decide"},jLic:{th:"ใบอนุญาต",en:"Licences"},jLay:{th:"ชั้นป้องกัน",en:"Defence layers"},jSrc:{th:"อ้างอิง",en:"Sources"},
  s1:{th:"สิ่งที่คุยกันมา",en:"What we covered"},
  s1sub:{th:"เหตุตั้งต้นและประเด็นที่แตกออกมา เรียงตามลำดับที่ถาม",en:"The starting case and the threads that came out of it, in the order you asked."},
@@ -377,6 +470,26 @@ const T={
  sLic:{th:"ใบอนุญาตขับขี่ยานพาหนะทุกประเภท",en:"Licences for every kind of vehicle"},
  sLicSub:{th:"ทุกโหมดมีกรอบระหว่างประเทศให้แต่ละประเทศออกใบอนุญาตตาม ยกเว้นอวกาศและรถอัตโนมัติ ที่ตัวยานหรือผู้ให้บริการต้องได้รับอนุญาตแทนคนขับ",en:"Each mode has an international framework that countries license against. Space and automated vehicles are the exceptions: the vehicle or operator is licensed instead of a driver."},
  thFrame:{th:"กรอบระหว่างประเทศ",en:"International framework"},thClass:{th:"ประเภทใบอนุญาตหลัก",en:"Main licence types"},thTh:{th:"ในไทย",en:"In Thailand"},
+ jInfra:{th:"เส้นทาง & ก่อสร้าง",en:"Routes & construction"},jMon:{th:"ซ่อมบำรุง",en:"Maintenance"},jOps:{th:"ทีมภาคสนาม",en:"Field operations"},jAir:{th:"รถไฟ–สนามบิน",en:"Rail–airport"},
+ sInfra:{th:"ความพร้อมของเส้นทางและสถานที่",en:"Ready routes and places"},
+ sInfraSub:{th:"คนขับและยานพาหนะปลอดภัยแค่ไหน ก็ยังพึ่งเส้นทางที่ออกแบบ สร้าง และดูแลดี แนวคิด Safe System ยอมรับว่าคนพลาดได้ จึงแบ่งความรับผิดชอบเป็น 5 ด้าน ส่วนนี้โฟกัสที่ถนนและโครงสร้าง กับการดูแลหลังเกิดเหตุ",en:"However good drivers and vehicles are, they rely on routes that are well designed, built and maintained. The Safe System approach accepts that people make mistakes and shares responsibility across five pillars. This part covers roads and structures, and care after a crash."},
+ lifeHead:{th:"วงจรชีวิตโครงการ ตั้งแต่เริ่มคุยถึงปิดใช้",en:"Project lifecycle, from first idea to closure"},
+ chkL:{th:"ตรวจความปลอดภัย",en:"Safety checks"},
+ sMon:{th:"ซ่อมบำรุงและระบบเฝ้าระวัง",en:"Maintenance and monitoring"},
+ sMonSub:{th:"โครงสร้างเสื่อมทุกวัน ส่วนใหญ่พังจากสิ่งที่ตรวจไม่เจอหรือเจอแต่ไม่ได้แก้ ตัวอย่างในบอร์ดนี้ เช่น รอยเชื่อมรางที่ Adamuz และลูกปืนล้อประคองสายสีเหลือง เป็นสิ่งที่การเฝ้าระวังมีไว้จับ",en:"Structures wear every day. Most failures come from defects that were missed, or found and not fixed. Cases on this board, such as the Adamuz rail weld and the Yellow Line guide-wheel bearing, are what monitoring is meant to catch."},
+ monWhat:{th:"เฝ้าดูอะไร",en:"What is watched"},monHow:{th:"เครื่องมือและความถี่",en:"Tools and frequency"},monWhy:{th:"ป้องกันอะไร",en:"What it prevents"},
+ sOps:{th:"ทีมภาคสนามและการจัดจราจร",en:"Field teams and traffic management"},
+ sOpsSub:{th:"เส้นทางที่ดีต้องมีคนดูแลแบบเรียลไทม์ ทั้งศูนย์ควบคุมที่เห็นภาพรวม และทีมลงพื้นที่ที่จัดการหน้างาน",en:"Good routes need real-time care: control centres that see the whole network, and crews who manage things on site."},
+ opsNormal:{th:"สถานการณ์ปกติ",en:"Normal conditions"},opsHard:{th:"สถานการณ์ท้าทาย",en:"Challenging conditions"},
+ corrCap:{th:"ภาพประกอบช่องทางฉุกเฉิน (Rettungsgasse) แบบเยอรมนีและออสเตรียที่ขับชิดขวา รถเลนซ้ายสุดหลบซ้าย เลนอื่นหลบขวา ทำทันทีที่รถเริ่มติด",en:"Emergency corridor (Rettungsgasse) as used in right-hand-traffic Germany and Austria: the leftmost lane moves left, other lanes move right, as soon as traffic starts to jam."},
+ sAir:{th:"จากรถไฟสู่ประตูขึ้นเครื่อง",en:"From train to departure gate"},
+ sAirSub:{th:"สนามบินที่รับคนจากรถไฟเป็นจังหวะ ต้องให้ทุกหน่วยใช้ข้อมูลชุดเดียวกัน ทั้งผู้ให้บริการรถไฟ สนามบิน สายการบิน ผู้ให้บริการภาคพื้น ด่านตรวจ และหอบังคับการบิน เพื่อเปิดช่องบริการได้ก่อนคลื่นผู้โดยสารมาถึง",en:"An airport fed by trains receives passengers in waves. Every party, from the rail operator, airport and airlines to ground handlers, border control and air traffic control, has to work from the same data so counters open before each wave arrives."},
+ qmH:{th:"ลองเอง: คิวตรวจค้นเมื่อรถไฟมาถึงเป็นระลอก",en:"Try it: the security queue when trains arrive in waves"},
+ qmP:{th:"เทียบ 2 แบบด้วยพนักงานชุดเดียวกัน แบบตอบสนองเรียกคนเพิ่มเมื่อเห็นคิวยาว แต่ต้องรอ 15 นาทีกว่าจะเปิดช่องได้ แบบประสานงานรู้ล่วงหน้าว่ารถไฟขบวนไหนจะมาถึงพร้อมผู้โดยสารกี่คน จึงเปิดช่องรอไว้ก่อน ค่าทั้งหมดเป็นค่าสมมติ: ช่องละ 160 คน/ชม. เดินจากชานชาลา 8 นาที หลังตรวจค้นใช้อีก 25 นาทีถึงประตู และปิดประตู 20 นาทีก่อนออก",en:"Two approaches with the same staff pool. Reactive calls in staff when it sees a queue, but a new lane takes 15 minutes to open. Coordinated knows in advance which train arrives with how many flyers and opens lanes ahead. All values are assumptions: 160 passengers per lane per hour, 8 minutes from platform, 25 minutes from security to the gate, gate closing 20 minutes before departure."},
+ qF:{th:"รถไฟต่อชั่วโมง",en:"Trains per hour"},qP:{th:"ผู้โดยสารขึ้นเครื่องต่อขบวน",en:"Flyers per train"},qL:{th:"ช่องตรวจค้นประจำ",en:"Standing security lanes"},qX:{th:"ช่องเสริมที่เรียกคนมาเปิดได้",en:"Extra lanes staff can open"},qB:{th:"เวลาจากรถไฟถึงถึงเครื่องออก (นาที)",en:"Train arrival to departure (min)"},
+ qReact:{th:"แบบตอบสนอง",en:"Reactive"},qCoord:{th:"แบบประสานงาน (A-CDM)",en:"Coordinated (A-CDM)"},
+ qMax:{th:"รอนานสุด",en:"Longest wait"},qOver:{th:"รอเกิน 15 นาที",en:"Waited over 15 min"},qMiss:{th:"เสี่ยงตกเครื่อง",en:"At risk of missing the flight"},qStaff:{th:"ชั่วโมงทำงานของช่อง",en:"Lane-hours used"},
+ qAxis:{th:"แกนตั้ง: คนในคิว · แกนนอน: นาที",en:"Vertical: people queuing · horizontal: minutes"},
  s5:{th:"ชั้นป้องกันที่รั่วพร้อมกัน",en:"When the layers line up"},
  s5sub:{th:"แบบจำลอง Swiss cheese ของ James Reason อุบัติเหตุใหญ่มักเกิดเมื่อหลายชั้นมีช่องโหว่ตรงกัน เทียบสามเหตุ รวมถึงรถทดสอบไร้คนขับของ Uber ที่ NTSB สรุปผลแล้ว",en:"James Reason's Swiss-cheese model: big accidents happen when holes in several layers line up. Three cases side by side, including Uber's self-driving test car, which NTSB has closed."},
  layernote:{th:"✕ = ชั้นที่ไม่ทำงาน (Learjet และ Toledo อิงรายงานเบื้องต้น ส่วน Uber อิงรายงานฉบับสมบูรณ์ของ NTSB) · ? = ยังไม่ทราบ รอผลสอบสวน",en:"✕ = layer that failed (Learjet and Toledo from early reports; Uber from NTSB's final report) · ? = unknown, awaiting investigation"},
@@ -385,8 +498,8 @@ const T={
  foot:{th:"เหตุ Learjet 60 (พ.ย. 2026) รถไฟชนที่ Toledo (ต.ค. 2026) และรถไฟชนรถเมล์ที่มักกะสัน (พ.ค. 2026) ยังอยู่ระหว่างสอบสวน สาเหตุในบอร์ดนี้เป็นข้อมูลเบื้องต้น ตัวเลขในส่วนทดลองเบรกเป็นค่าสมมติเพื่อการเรียนรู้",en:"The Learjet 60 (Nov 2026), Toledo collision (Oct 2026) and Makkasan level-crossing crash (May 2026) are still under investigation; causes here are preliminary. Values in the braking demo are teaching assumptions."},
  all:{th:"ทั้งหมด",en:"All"}
 };
-const M={air:{th:"อากาศ",en:"Air"},sea:{th:"ทะเล",en:"Sea"},rail:{th:"ราง",en:"Rail"},rotor:{th:"ฮ. / โดรน",en:"Rotor / drone"},road:{th:"ถนน",en:"Road"},space:{th:"อวกาศ",en:"Space"}};
-const JUMP=[["recap-sec","jRecap"],["loop-sec","jLoop"],["orgs-sec","jOrgs"],["timeline-sec","jTl"],["road-sec","jRoad"],["space-sec","jSpace"],["levels-sec","jLv"],["decide-sec","jDec"],["license-sec","jLic"],["layers-sec","jLay"],["sources-sec","jSrc"]];
+const M={air:{th:"อากาศ",en:"Air"},sea:{th:"ทะเล",en:"Sea"},rail:{th:"ราง",en:"Rail"},rotor:{th:"ฮ. / โดรน",en:"Rotor / drone"},road:{th:"ถนน",en:"Road"},space:{th:"อวกาศ",en:"Space"},infra:{th:"โครงสร้างพื้นฐาน",en:"Infrastructure"}};
+const JUMP=[["recap-sec","jRecap"],["loop-sec","jLoop"],["orgs-sec","jOrgs"],["timeline-sec","jTl"],["road-sec","jRoad"],["space-sec","jSpace"],["levels-sec","jLv"],["decide-sec","jDec"],["license-sec","jLic"],["infra-sec","jInfra"],["monitor-sec","jMon"],["ops-sec","jOps"],["airport-sec","jAir"],["layers-sec","jLay"],["sources-sec","jSrc"]];
 const SIM_URL="./simulator.html";
 
 const CASE={k:{th:"เหตุตั้งต้น",en:"Starting case"},h:{th:"Learjet 60 (N722BD) ตกที่ Greenacres, Palm Beach County ผู้โดยสารและลูกเรือ 9 คนเสียชีวิต",en:"Learjet 60 (N722BD) crashes in Greenacres, Palm Beach County; all 9 aboard killed"},
@@ -462,12 +575,15 @@ const EV=[
  {y:2004,m:"rail",h:{th:"EU บังคับหน่วยสอบสวนรถไฟอิสระ",en:"EU requires independent rail investigators"},w:{th:"Railway Safety Directive 2004/49 ปรับปรุงเป็น 2016/798",en:"Railway Safety Directive 2004/49, updated as 2016/798."},c:{th:"ทุกประเทศสมาชิกต้องมีหน่วยเช่น RAIB, AITAT",en:"Every member state sets up a body such as RAIB or AITAT"}},
  {y:2005,m:"rail",h:{th:"Amagasaki ตกราง",en:"Amagasaki derailment"},w:{th:"เข้าโค้งเร็วเกินเพื่อชดเชยเวลา 107 คนเสียชีวิต",en:"Overspeed on a curve to recover lost time; 107 killed."},c:{th:"ATS-P บังคับลดความเร็วตรงโค้ง และทบทวนวัฒนธรรมลงโทษพนักงาน",en:"ATS-P speed enforcement on curves; review of punitive culture"}},
  {era:{th:"ยุคอัตโนมัติและข้อมูล · 2005–ปัจจุบัน",en:"Automation and data · 2005–now"}},
+ {y:2007,m:"infra",h:{th:"สะพาน I-35W ถล่มที่มินนิแอโพลิส",en:"I-35W bridge collapse, Minneapolis"},w:{th:"แผ่นเหล็กเชื่อมต่อ (gusset plate) บางเกินจากความผิดพลาดในการออกแบบ บวกน้ำหนักวัสดุซ่อมที่วางบนสะพาน 13 คนเสียชีวิต",en:"Gusset plates were undersized by a design error, and repair materials were stacked on the deck; 13 died."},c:{th:"NTSB: ทบทวนการคำนวณแบบ และคิดน้ำหนักงานก่อสร้างระหว่างซ่อมบำรุง",en:"NTSB: check design calculations and account for construction loads during maintenance"}},
+ {y:2008,m:"infra",h:{th:"EU ออก Directive จัดการความปลอดภัยโครงสร้างถนน",en:"EU Road Infrastructure Safety Management Directive"},w:{th:"Directive 2008/96/EC ขยายขอบเขตในปี 2019 (2019/1936)",en:"Directive 2008/96/EC, extended in 2019 (2019/1936)."},c:{th:"บังคับตรวจความปลอดภัยทางถนน (RSA) ทุกขั้น ตั้งแต่ออกแบบถึงก่อนเปิดใช้ และประเมินทั้งโครงข่ายเป็นระยะ",en:"Road safety audits at every stage from design to opening, plus periodic network-wide assessment"}},
  {y:2008,m:"rail",h:{th:"Chatsworth รถไฟชนกัน (สหรัฐฯ)",en:"Chatsworth collision (US)"},w:{th:"คนขับฝ่าไฟแดงขณะส่งข้อความ",en:"Engineer ran a red signal while texting."},c:{th:"Rail Safety Improvement Act: บังคับติด Positive Train Control",en:"Rail Safety Improvement Act mandates Positive Train Control"}},
  {y:2009,m:"air",h:{th:"Air France 447",en:"Air France 447"},w:{th:"ผลึกน้ำแข็งอุด pitot autopilot ตัด นักบินตอบสนองผิดจน stall",en:"Ice crystals blocked the pitots; autopilot dropped out and the crew stalled the A330."},c:{th:"เปลี่ยนท่อ pitot และบังคับฝึก UPRT ใน simulator ที่แม่นขึ้น",en:"Pitot replacements and mandatory UPRT in upgraded simulators"}},
  {y:2011,m:"road",h:{th:"ทศวรรษแห่งความปลอดภัยทางถนนของ UN",en:"UN Decade of Action for Road Safety"},w:{th:"2011–2020 ตามด้วยทศวรรษที่ 2 (2021–2030)",en:"2011–2020, followed by a second decade (2021–2030)."},c:{th:"เป้าลดการเสียชีวิตบนถนนลงครึ่งหนึ่งภายในปี 2030",en:"Target: halve road deaths by 2030"}},
  {y:2013,m:"rail",h:{th:"Santiago de Compostela ตกราง",en:"Santiago de Compostela derailment"},w:{th:"เข้าโค้งด้วย 179 กม./ชม. ในช่วงที่ไม่มี ETCS 80 คนเสียชีวิต",en:"Entered a curve at 179 km/h on a section without ETCS; 80 killed."},c:{th:"ติดระบบคุมความเร็วเพิ่มตรงจุดเปลี่ยนระบบสัญญาณ",en:"Speed supervision added where signalling systems hand over"}},
  {y:2014,m:"space",h:{th:"SpaceShipTwo แตกระหว่างทดสอบ",en:"SpaceShipTwo breaks up in test"},w:{th:"นักบินผู้ช่วยปลดล็อกระบบปีกพับเร็วเกินไป นักบิน 1 คนเสียชีวิต",en:"The co-pilot unlocked the feather system too early; 1 pilot died."},c:{th:"NTSB ชี้ว่าการออกแบบต้องกันความผิดพลาดของคนครั้งเดียว และ FAA ต้องตรวจเรื่อง human factors",en:"NTSB: designs must guard against a single human error, and FAA must review human factors"}},
  {y:2016,m:"road",h:{th:"EU บังคับ ABS ในมอเตอร์ไซค์ใหม่",en:"EU requires ABS on new motorcycles"},w:{th:"รถมากกว่า 125 cc ต้องมี ABS รุ่นเล็กต้องมี ABS หรือเบรกร่วม (CBS)",en:"Over 125 cc must have ABS; smaller bikes need ABS or combined braking."},c:{th:"ลดการล้มจากล้อล็อก ซึ่งเป็นสาเหตุใหญ่ของมอเตอร์ไซค์",en:"Cuts falls from locked wheels, a major motorcycle crash type"}},
+ {y:2018,m:"infra",h:{th:"สะพาน Morandi ถล่มที่เจนัว",en:"Morandi bridge collapse, Genoa"},w:{th:"ลวดเคเบิลค้ำที่หุ้มคอนกรีตผุกร่อนโดยตรวจไม่เห็น 43 คนเสียชีวิต",en:"Corroded stay cables hidden inside concrete went undetected; 43 died."},c:{th:"อิตาลีตั้งหน่วยงานกำกับความปลอดภัยโครงสร้างพื้นฐานใหม่ และยกเครื่องการตรวจสะพานทั่วประเทศ",en:"Italy set up a new infrastructure safety agency and overhauled bridge inspection nationwide"}},
  {y:2018,m:"road",h:{th:"รถทดสอบไร้คนขับของ Uber ชนคนเสียชีวิต",en:"Uber self-driving test car kills a pedestrian"},w:{th:"Tempe, Arizona ระบบเห็นคนล่วงหน้า 5.6 วินาที แต่จำแนกไม่ได้ และคนคุมดูโทรศัพท์",en:"Tempe, Arizona: the system detected her 5.6 s ahead but couldn't classify her, and the safety driver was watching a phone."},c:{th:"NTSB (2019): ต้องมีระบบจัดการความปลอดภัย และกฎกำกับการทดสอบบนถนน",en:"NTSB (2019): safety management systems and oversight of on-road testing"}},
  {y:2018,m:"space",h:{th:"Soyuz MS-10 ยกเลิกกลางอากาศ",en:"Soyuz MS-10 launch abort"},w:{th:"บูสเตอร์ชนกันตอนแยกตัว ระบบหนีภัยดึงแคปซูลออก ลูกเรือ 2 คนปลอดภัย",en:"A booster struck the core during separation; the escape system pulled the capsule clear; both crew survived."},c:{th:"ตัวอย่างชั้นป้องกันสุดท้ายที่ทำงานได้จริง",en:"A last line of defence that worked"}},
  {y:2019,m:"air",h:{th:"Boeing 737 MAX หยุดบินทั่วโลก",en:"Boeing 737 MAX grounded worldwide"},w:{th:"ระบบ MCAS พึ่งเซนเซอร์ตัวเดียว ตกสองลำ",en:"MCAS relied on a single sensor; two crashes."},c:{th:"แก้ซอฟต์แวร์ และกฎหมาย 2020 ปฏิรูปการรับรองแบบของ FAA",en:"Software fix and a 2020 law reforming FAA certification"}},
@@ -476,6 +592,7 @@ const EV=[
  {y:2022,m:"road",h:{th:"ทางม้าลายพญาไท และกฎความปลอดภัยใหม่ของ EU",en:"Phaya Thai crossing, and new EU safety rules"},w:{th:"ม.ค. 2022 แพทย์หญิงถูกบิ๊กไบค์ชนบนทางม้าลายในกรุงเทพฯ ส่วน EU บังคับระบบช่วยขับใหม่ตั้งแต่ ก.ค.",en:"Jan 2022: a doctor was hit by a big bike on a Bangkok zebra crossing. From July the EU mandated new driver-assist systems."},c:{th:"ไทยเร่งติดสัญญาณไฟที่ทางม้าลาย · EU บังคับ ISA, AEB, ตรวจความง่วง ในรถรุ่นใหม่",en:"Thailand adds signals at crossings · EU requires ISA, AEB and drowsiness warning on new models"}},
  {y:2022,m:"space",h:{th:"NTSB–FAA ตกลงเรื่องสอบสวนอวกาศเชิงพาณิชย์",en:"NTSB–FAA commercial space agreement"},w:{th:"แทนข้อตกลงเดิมที่ใช้มา 22 ปี",en:"Replaces an agreement 22 years old."},c:{th:"NTSB นำสอบเมื่อมีผู้เสียชีวิตหรือบาดเจ็บสาหัส FAA สอบกรณีอื่น",en:"NTSB leads when anyone is killed or seriously hurt; FAA handles the rest"}},
  {y:2023,m:"road",h:{th:"Cruise ถูกระงับใบอนุญาตในแคลิฟอร์เนีย",en:"Cruise loses its California permit"},w:{th:"รถไร้คนขับลากคนเดินถนนที่ถูกรถอื่นชนกระเด็นมา",en:"A driverless car dragged a pedestrian thrown into its path by another car."},c:{th:"หน่วยงานรัฐเข้มเรื่องการรายงานข้อมูลเหตุชนของรถอัตโนมัติ",en:"Regulators tighten crash-data reporting for automated vehicles"}},
+ {y:2026,m:"infra",h:{th:"เครนก่อสร้างรถไฟความเร็วสูงล้มทับรถไฟที่สีคิ้ว (ม.ค.)",en:"High-speed rail crane falls on a train at Sikhio (Jan)"},w:{th:"เครนยกชิ้นส่วนทางยกระดับล้มทับขบวนด่วนที่วิ่งอยู่ด้านล่าง 30 คนเสียชีวิต ผลเบื้องต้นพบการทำงานขณะมีรถไฟผ่าน ขัดคำสั่งห้าม และฐานยึดเครนไม่ได้มาตรฐาน",en:"A launching crane for the elevated deck collapsed onto an express train below; 30 died. Early findings: work continued while trains passed, against a ban, and the crane was under-anchored."},c:{th:"ยกเลิกสัญญาผู้รับเหมา ทบทวนมาตรการทำงานเหนือทางรถไฟที่เปิดเดินรถ",en:"Contracts cancelled; rules for working over a live railway reviewed"}},
  {y:2026,m:"rail",open:1,h:{th:"Adamuz ตกรางแล้วชน (ม.ค.)",en:"Adamuz derailment (Jan)"},w:{th:"น่าจะมาจากรอยเชื่อมรางขาด 46 คนเสียชีวิต",en:"A broken rail weld suspected; 46 killed."},c:{th:"รอผลสอบสวน",en:"Awaiting findings"}},
  {y:2026,m:"road",open:1,h:{th:"รถไฟชนรถเมล์ที่จุดตัดมักกะสัน (พ.ค.)",en:"Train hits bus at Makkasan crossing (May)"},w:{th:"รถไฟสินค้าชนรถเมล์สาย 206 และมอเตอร์ไซค์ที่จุดตัดทางรถไฟถนนอโศก–ดินแดง 8 คนเสียชีวิต",en:"A freight train hit a route 206 bus and a motorcycle at the Asok–Din Daeng level crossing; 8 killed."},c:{th:"รอผลสอบสวน จุดตัดทางรถไฟเป็นจุดที่ถนนกับรางเจอกัน",en:"Awaiting findings; level crossings are where road and rail meet"}},
  {y:2026,m:"rail",open:1,h:{th:"Toledo รถไฟความเร็วสูงชนท้าย (ต.ค.)",en:"Toledo high-speed collision (Oct)"},w:{th:"LZB ล่ม สั่งการด้วยคน ปล่อยรถผ่านไฟแดง อย่างน้อย 69 คนเสียชีวิต",en:"LZB failure, manual control, a train sent past red; at least 69 killed."},c:{th:"AITAT สอบสวน ศาลเปิดคดีแยก",en:"AITAT investigating; court opens a separate case"}},
@@ -591,6 +708,10 @@ const SRC=[
  {t:"SAE Mobilus — J3016_202104, taxonomy of driving automation levels",u:"https://saemobilus.sae.org/content/j3016_202104",g:"standard"},
  {t:"NTSB — Uber ATG collision report HAR-19/03",u:"https://www.ntsb.gov/investigations/AccidentReports/Reports/HAR1903.pdf",g:"report"},
  {t:"NTSB — NTSB and FAA sign commercial space mishap agreement",u:"https://ntsb.gov/news/press-releases/Pages/nr20220909.aspx",g:"2022"},
+ {t:"Wikipedia — Sikhio train disaster (2026)",u:"https://en.wikipedia.org/wiki/Sikhio_train_disaster",g:"2026"},
+ {t:"Oesterreich.gv.at — Emergency lane (Rettungsgasse)",u:"https://www.oesterreich.gv.at/en/themen/mobilitaet/kfz/10/Seite.063130/Seite.065000",g:"law"},
+ {t:"Thai PBS — วิธีให้ทางรถฉุกเฉิน ไม่หลบปรับ 500 บาท",u:"https://www.thaipbs.or.th/news/content/271526",g:"law"},
+ {t:"Thai PBS — เปิดช่องทางพิเศษถนนมิตรภาพ",u:"https://www.thaipbs.or.th/news/content/271672",g:"2018"},
  {t:"ICAO — Annex 13, Aircraft Accident and Incident Investigation",u:"https://www.icao.int/safety/airnavigation/AIG/Pages/default.aspx",g:"standard"},
  {t:"NTSB — About the NTSB",u:"https://www.ntsb.gov/about/Pages/default.aspx",g:"agency"},
  {t:"IMO — SOLAS convention",u:"https://www.imo.org/en/About/Conventions/Pages/International-Convention-for-the-Safety-of-Life-at-Sea-(SOLAS),-1974.aspx",g:"standard"},
@@ -599,6 +720,66 @@ const SRC=[
  {t:"BEA — Final report, Air France 447 (English PDF, FAA copy)",u:"https://www.faa.gov/sites/faa.gov/files/f-cp090601.en_.pdf",g:"report"},
  {t:"FAA — Airworthiness Directives",u:"https://www.faa.gov/regulations_policies/airworthiness_directives",g:"agency"},
  {t:"JTSB — Japan Transport Safety Board",u:"https://jtsb.mlit.go.jp/english.html",g:"agency"}
+];
+
+const PILLARS=[
+ {h:{th:"ผู้ใช้ทางปลอดภัย",en:"Safe road users"},p:{th:"ใบขับขี่ การอบรม การบังคับใช้กฎ",en:"Licensing, training, enforcement"}},
+ {h:{th:"ยานพาหนะปลอดภัย",en:"Safe vehicles"},p:{th:"มาตรฐานรถ NCAP ระบบช่วยขับ",en:"Vehicle standards, NCAP, driver assistance"}},
+ {h:{th:"ถนนและโครงสร้างปลอดภัย",en:"Safe roads and structures"},p:{th:"ออกแบบให้ผิดพลาดแล้วไม่ถึงตาย",en:"Designed so mistakes aren't fatal"},f:1},
+ {h:{th:"ความเร็วปลอดภัย",en:"Safe speeds"},p:{th:"จำกัดความเร็วตามสิ่งที่ร่างกายทนได้",en:"Limits matched to what bodies survive"}},
+ {h:{th:"การดูแลหลังเกิดเหตุ",en:"Post-crash care"},p:{th:"กู้ภัยถึงเร็ว ช่องทางฉุกเฉิน การแพทย์",en:"Fast rescue, emergency access, trauma care"},f:1}
+];
+const LIFE=[
+ {h:{th:"วางแผนและศึกษาความเป็นไปได้",en:"Planning and feasibility"},p:{th:"ศึกษาความต้องการเดินทาง ทางเลือกแนวเส้นทาง ต้นทุนและผลตอบแทน ตั้งบัญชีความเสี่ยงตั้งแต่ต้น",en:"Travel demand, route options, costs and benefits, and a risk register from day one."},c:{th:"ประเมินผลกระทบด้านความปลอดภัย (RIA) และ RSA ขั้นศึกษา",en:"Road safety impact assessment (RIA) and a feasibility-stage audit"},s:["EU 2008/96 · 2019/1936","ISO 55000","EN 50126 (rail phases 1–3)"]},
+ {h:{th:"ศึกษาผลกระทบและรับฟังความเห็น",en:"Impact studies and consultation"},p:{th:"สิ่งแวดล้อม น้ำท่วม ชุมชน และโบราณสถาน ตัวอย่างคือข้อพิพาทรถไฟความเร็วสูงในเขตมรดกโลกอยุธยา",en:"Environment, flooding, communities and heritage, as in the high-speed rail dispute at the Ayutthaya World Heritage site."},c:{th:"ทางข้ามสำหรับคนในชุมชน การเข้าถึงของรถฉุกเฉิน เส้นทางระหว่างก่อสร้าง",en:"Crossings for local people, emergency access, routes during construction"},s:["EIA","HIA"]},
+ {h:{th:"ออกแบบ",en:"Design"},p:{th:"ระยะมองเห็น รัศมีโค้ง การยกโค้ง การระบายน้ำ ตามรอบปีของฝนที่ออกแบบ น้ำหนักบรรทุกของสะพาน และพื้นที่ข้างทางที่ให้อภัย (clear zone, แบริเออร์)",en:"Sight distance, curve radius, superelevation, drainage for a design storm, bridge loads, and a forgiving roadside (clear zones, barriers)."},c:{th:"RSA ขั้นออกแบบเบื้องต้นและรายละเอียด โดยทีมที่ไม่ได้ออกแบบเอง",en:"Preliminary and detailed design audits by a team that didn't do the design"},s:["AASHTO Green Book · LRFD","Eurocodes","ICAO Annex 14","iRAP 3★+"]},
+ {h:{th:"ก่อสร้าง",en:"Construction"},p:{th:"แผนจัดการจราจรในเขตก่อสร้าง แยกพื้นที่ทำงานออกจากถนนหรือรางที่เปิดใช้ แผนยกของหนัก และทดสอบคุณภาพวัสดุ",en:"Work-zone traffic plans, separation from live roads or railways, heavy-lift plans, and material quality testing."},c:{th:"ใบอนุญาตทำงาน (permit-to-work) ห้ามยกของเหนือรถไฟที่วิ่งอยู่ วิศวกรอิสระตรวจงานชั่วคราว",en:"Permit-to-work, no lifting over running trains, independent checks of temporary works"},s:["MUTCD Part 6","ISO 45001","ISO 39001"]},
+ {h:{th:"ทดสอบและส่งมอบ",en:"Testing and handover"},p:{th:"ทดสอบรับน้ำหนักสะพาน ทดลองเดินรถเสมือนจริง ซ้อมเปิดสนามบินด้วยอาสาสมัคร (ORAT) ก่อนรับผู้โดยสารจริง",en:"Bridge load tests, trial running for railways, and airport trials with volunteers (ORAT) before real passengers."},c:{th:"RSA ก่อนเปิดใช้ ผู้ประเมินความปลอดภัยอิสระ (ISA) รับรอง safety case ใบรับรองสนามบิน",en:"Pre-opening audit, independent safety assessor sign-off on the safety case, aerodrome certificate"},s:["EN 50126 · 50129","ICAO Annex 14 cert."]},
+ {h:{th:"เปิดใช้และเดินระบบ",en:"Opening and operation"},p:{th:"ศูนย์ควบคุม ระบบจัดการความปลอดภัย (SMS) แผนเหตุฉุกเฉิน และการรายงานเหตุเกือบเกิด",en:"Control centres, a safety management system, emergency plans and near-miss reporting."},c:{th:"ตรวจติดตามช่วงแรกหลังเปิด ซึ่งเป็นช่วงที่ปัญหาซ่อนเร้นมักโผล่",en:"Close monitoring in the first months, when hidden problems tend to appear"},s:["ISO 39001","ICAO Annex 19 (SMS)","Rail SMS"]},
+ {h:{th:"ซ่อมบำรุงและเฝ้าระวัง",en:"Maintenance and monitoring"},p:{th:"ตรวจตามรอบ ซ่อมเชิงคาดการณ์ จัดอันดับจุดเสี่ยงของทั้งโครงข่าย แล้วแก้จุดอันตรายก่อน",en:"Scheduled inspection, predictive maintenance, and ranking risks across the network to fix the worst first."},c:{th:"รายละเอียดอยู่ในส่วนถัดไป",en:"Details in the next section"},s:["ISO 55000","iRAP network assessment"]},
+ {h:{th:"ปรับปรุง ปิดใช้ หรือรื้อถอน",en:"Renewal, closure or removal"},p:{th:"ยกระดับเมื่อการใช้งานเปลี่ยน เช่น เปลี่ยนจุดตัดทางรถไฟเป็นสะพาน หรือปิดและรื้อถอนอย่างปลอดภัย พร้อมเก็บบันทึกไว้ให้โครงการถัดไป",en:"Upgrade when use changes, such as replacing a level crossing with a bridge, or close and remove safely, keeping records for the next project."},c:{th:"จัดเส้นทางเลี่ยง ตรวจโครงสร้างข้างเคียงระหว่างรื้อ",en:"Diversions, checks on neighbouring structures during removal"},s:["ISO 55000"]}
+];
+const MON=[
+ {h:{th:"ถนนและผิวทาง",en:"Roads and pavement"},w:{th:"ความเรียบ ร่องล้อ ความฝืดผิวทาง หลุมบ่อ ท่อระบายน้ำ ป้ายและเส้นจราจร",en:"Roughness, rutting, skid resistance, potholes, drains, signs and markings"},t:{th:"รถสำรวจผิวทาง กล้อง AI แจ้งเหตุจากประชาชน ล้างท่อก่อนหน้าฝน",en:"Survey vehicles, AI cameras, public reports, drain clearing before the rains"},y:{th:"รถลื่นไถล น้ำขัง ผู้ขับขี่มอเตอร์ไซค์ล้ม",en:"Skids, flooding, motorcycle falls"}},
+ {h:{th:"สะพานและอุโมงค์",en:"Bridges and tunnels"},w:{th:"รอยร้าว สนิม การกัดเซาะตอม่อหลังน้ำท่วม การรับน้ำหนัก",en:"Cracks, corrosion, scour at piers after floods, load capacity"},t:{th:"ตรวจด้วยสายตาตามรอบ (สหรัฐฯ ไม่เกิน 24 เดือน) เซนเซอร์วัดแรงและการสั่น (SHM) จำกัดน้ำหนัก",en:"Routine visual inspection (no more than 24 months in the US), strain and vibration sensors (SHM), weight limits"},y:{th:"สะพานถล่มแบบ I-35W และ Morandi",en:"Collapses like I-35W and Morandi"}},
+ {h:{th:"รางและระบบรถไฟ",en:"Track and rail systems"},w:{th:"เรขาคณิตราง รอยร้าวในรางและรอยเชื่อม สายไฟเหนือหัว ระบบสัญญาณ",en:"Track geometry, cracks in rails and welds, overhead wires, signalling"},t:{th:"รถวัดทาง รถตรวจรางด้วยอัลตราซาวด์ ระบบตรวจสุขภาพสัญญาณแบบต่อเนื่อง",en:"Track recording cars, ultrasonic rail-flaw trains, continuous signalling health monitoring"},y:{th:"ตกรางจากรอยเชื่อมขาด แบบที่สงสัยในเหตุ Adamuz",en:"Derailment from broken welds, as suspected at Adamuz"}},
+ {h:{th:"ตัวรถไฟและรถไฟฟ้า",en:"Trains and metro vehicles"},w:{th:"ลูกปืนล้อ ล้อ เบรก ประตู",en:"Wheel bearings, wheels, brakes, doors"},t:{th:"เซนเซอร์ความร้อนและเสียงข้างราง (hot-box, acoustic) ตรวจตามระยะทางวิ่ง",en:"Trackside heat and acoustic detectors (hot-box), mileage-based checks"},y:{th:"ล้อหรือชิ้นส่วนหลุด แบบล้อประคองสายสีเหลือง",en:"Parts coming off, like the Yellow Line guide wheel"}},
+ {h:{th:"สนามบิน",en:"Airports"},w:{th:"เศษวัสดุบนรันเวย์ (FOD) ความฝืด ไฟนำร่อน นก",en:"Debris on runways (FOD), friction, lighting, birds"},t:{th:"ตรวจรันเวย์วันละหลายรอบ บินทดสอบเครื่องช่วยเดินอากาศ ทีมจัดการสัตว์",en:"Several runway inspections a day, flight checks of navaids, wildlife teams"},y:{th:"ยางระเบิด ไถลออกนอกรันเวย์ นกชน",en:"Tyre bursts, runway excursions, bird strikes"}},
+ {h:{th:"ข้อมูลและดิจิทัลทวิน",en:"Data and digital twins"},w:{th:"ข้อมูลจากเซนเซอร์ทุกจุดรวมเป็นแบบจำลองเสมือนของโครงข่าย",en:"Sensor data combined into a live model of the network"},t:{th:"IoT, AI คาดการณ์ชิ้นส่วนที่ใกล้เสีย จัดลำดับงานซ่อม",en:"IoT, AI predicting failing parts, prioritising repairs"},y:{th:"ข้อควรระวัง: มีข้อมูลแต่ไม่มีงบหรือคนตามแก้ ก็ไม่ปลอดภัยขึ้น",en:"Caveat: data without budget or crews to act on it changes nothing"}}
+];
+const OPS_N=[
+ {h:{th:"ศูนย์ควบคุมจราจร (TMC)",en:"Traffic management centre (TMC)"},p:{th:"กล้องและเซนเซอร์ทั้งเมือง ปรับรอบไฟสัญญาณตามปริมาณรถ ป้ายข้อความแจ้งเวลาเดินทางและเหตุข้างหน้า",en:"City-wide cameras and sensors, signal timing that adapts to traffic, message signs with travel times and incidents ahead."}},
+ {h:{th:"ตำรวจจราจรและทีมหน้างาน",en:"Traffic police and street crews"},p:{th:"คุมสัญญาณด้วยมือช่วงเร่งด่วน เขตโรงเรียน และจุดที่ระบบอัตโนมัติรับมือไม่ได้",en:"Manual signal control at peak hours, school zones and spots automation can't handle."}},
+ {h:{th:"ศูนย์เดินรถขนส่งสาธารณะ",en:"Public transport control"},p:{th:"รักษาระยะห่างระหว่างรถเมล์และขบวนรถ ปรับตารางแบบเรียลไทม์ แจ้งผู้โดยสาร",en:"Keep buses and trains evenly spaced, adjust schedules live, inform passengers."}},
+ {h:{th:"งานซ่อมถนนตามแผน",en:"Planned roadworks"},p:{th:"ปิดช่องจราจรช่วงกลางคืน มีรถกันชน (TMA) ปิดท้าย ป้ายเตือนล่วงหน้า จำกัดความเร็วในเขตก่อสร้าง",en:"Night-time lane closures, a crash-cushion truck (TMA) at the back, advance warning signs, work-zone speed limits."}}
+];
+const OPS_H=[
+ {h:{th:"อุบัติเหตุบนถนน",en:"Crashes on the road"},p:{th:"ขั้นตอนจัดการเหตุ (TIM): ตรวจพบ ยืนยัน ส่งทีม กั้นพื้นที่ เคลียร์ แล้วคืนสภาพจราจร เร่งเคลียร์เพราะรถท้ายแถวเสี่ยงชนซ้ำ",en:"Incident management (TIM): detect, verify, respond, secure, clear, recover. Speed matters because the back of the queue risks a second crash."}},
+ {h:{th:"เทศกาลและวันหยุดยาว",en:"Holidays and festivals"},p:{th:"กรมทางหลวงเปิดช่องทางพิเศษใช้เลนฝั่งตรงข้าม เช่น ถนนมิตรภาพช่วง กม. 76–79 หลังสงกรานต์ 2561 ตั้งด่าน จุดพักรถ และเพิ่มหน่วยกู้ภัย",en:"The Department of Highways opens special lanes using the opposite carriageway, as on Mittraphap Road km 76–79 after Songkran 2018, with checkpoints, rest stops and extra rescue units."}},
+ {h:{th:"ฝนหนักและน้ำท่วม",en:"Heavy rain and floods"},p:{th:"ปิดถนนเมื่อน้ำลึกเกินเกณฑ์ เปลี่ยนเส้นทาง เร่งสูบน้ำ น้ำไหลลึกราว 30 ซม. ก็พัดรถเก๋งได้ จึงไม่ควรขับฝ่า",en:"Close roads above depth thresholds, divert traffic, run pumps. Moving water about 30 cm deep can float a car, so don't drive through."}},
+ {h:{th:"อพยพและภัยพิบัติ",en:"Evacuation and disasters"},p:{th:"กลับทิศเลนทั้งหมดให้วิ่งออกทางเดียว (contraflow) ป้ายเส้นทางอพยพ เช่นเส้นทางหนีสึนามิฝั่งอันดามัน",en:"Turn every lane outbound (contraflow), signed evacuation routes such as Andaman tsunami routes."}},
+ {h:{th:"รถไฟฟ้าขัดข้อง",en:"Rail and metro failures"},p:{th:"รถเมล์รับส่งแทน คุมฝูงชนบนชานชาลา อพยพผู้โดยสารตามทางเดินฉุกเฉิน",en:"Replacement buses, crowd control on platforms, evacuation along emergency walkways."}},
+ {h:{th:"เหตุฉุกเฉินในสนามบิน",en:"Airport emergencies"},p:{th:"ICAO กำหนดให้รถดับเพลิงกู้ภัยถึงทุกจุดของรันเวย์ภายใน 3 นาที และซ้อมแผนฉุกเฉินเต็มรูปแบบไม่เกินทุก 2 ปี",en:"ICAO requires rescue and firefighting to reach any point on a runway within 3 minutes, and a full-scale emergency exercise at least every 2 years."}}
+];
+const CORR=[
+ {h:{th:"เยอรมนี ออสเตรีย และอีกหลายประเทศในยุโรป",en:"Germany, Austria and several European countries"},p:{th:"บนถนนสองเลนขึ้นไป ต้องเปิดช่องทางฉุกเฉินทันทีที่รถเริ่มติด ไม่ต้องรอได้ยินไซเรน ออสเตรียปรับได้ถึง 2,180 ยูโรถ้าขวางรถฉุกเฉิน",en:"On roads with two or more lanes, the corridor must form as soon as traffic jams, without waiting for sirens. Austria fines up to €2,180 for blocking an emergency vehicle."}},
+ {h:{th:"ประเทศไทย",en:"Thailand"},p:{th:"พ.ร.บ.จราจรทางบก มาตรา 76 ให้หลบชิดซ้ายเมื่อได้ยินไซเรนหรือเห็นไฟวับวาบ ไม่หลบปรับไม่เกิน 500 บาท สถาบันการแพทย์ฉุกเฉินแนะนำว่าถ้ารถติดจนหลบไม่ได้ ให้ชะลอและหยุดนิ่ง เลือกฝั่งที่ปลอดภัยแล้วเปิดไฟเลี้ยว และห้ามขับตามรถฉุกเฉิน",en:"The Land Traffic Act, section 76, requires moving left at sirens or flashing lights; failing to yield is fined up to 500 baht. The national emergency medicine institute advises: if traffic is too dense, slow and stop steadily, pick the safer side and signal, and never follow an emergency vehicle."}},
+ {h:{th:"เทคโนโลยีช่วย",en:"Technology that helps"},p:{th:"สั่งไฟเขียวให้รถฉุกเฉินล่วงหน้า (signal preemption) แอปเตือนรถข้างหน้า และช่องทางรถเมล์ที่รถกู้ภัยใช้ได้",en:"Green-light priority for emergency vehicles (signal preemption), apps that warn drivers ahead, and bus lanes rescue vehicles can use."}}
+];
+const FLOW=[
+ {h:{th:"รถไฟถึงสถานีสนามบิน",en:"Train arrives at the airport"},p:{th:"ผู้โดยสารมาเป็นระลอก ตามตารางรถไฟ",en:"Passengers arrive in waves, on the timetable"}},
+ {h:{th:"เช็กอินและโหลดกระเป๋า",en:"Check-in and bag drop"},p:{th:"บางเมืองทำได้ตั้งแต่สถานีในเมือง",en:"Some cities offer it at a city station"}},
+ {h:{th:"ตรวจค้น",en:"Security screening"},p:{th:"มักเป็นคอขวด",en:"Usually the bottleneck"}},
+ {h:{th:"ตรวจหนังสือเดินทาง",en:"Passport control"},p:{th:"เฉพาะเที่ยวบินระหว่างประเทศ",en:"International flights only"}},
+ {h:{th:"ถึงประตูขึ้นเครื่อง",en:"Reach the gate"},p:{th:"เดินหรือรถไฟฟ้าในอาคาร",en:"Walk or terminal train"}},
+ {h:{th:"ขึ้นเครื่องและออกตรงเวลา",en:"Board and depart on time"},p:{th:"ประตูปิดก่อนเครื่องออก",en:"Gates close before departure"}}
+];
+const COORD=[
+ {h:{th:"A-CDM: ตัดสินใจร่วมกัน",en:"A-CDM: collaborative decisions"},p:{th:"แนวทางของ EUROCONTROL ให้สนามบิน สายการบิน ผู้ให้บริการภาคพื้น และหอบังคับการบิน แชร์เวลาสำคัญชุดเดียวกัน เช่น เวลาที่เครื่องพร้อมถอยออกจากหลุมจอด (TOBT) ทุกฝ่ายจึงวางแผนจากตัวเลขเดียวกัน",en:"EUROCONTROL's approach: the airport, airlines, ground handlers and ATC share one set of milestones, such as target off-block time (TOBT), so everyone plans from the same numbers."}},
+ {h:{th:"เชื่อมข้อมูลรถไฟกับสนามบิน",en:"Linking rail and airport data"},p:{th:"รถไฟส่งเวลาถึงจริงและจำนวนผู้โดยสาร ระบบจัดสรรทรัพยากรของสนามบินใช้เปิดเคาน์เตอร์และช่องตรวจค้น บางประเทศขายตั๋วรถไฟ+เครื่องบินใบเดียว (air-rail)",en:"Rail sends live arrival times and loads; the airport's resource system uses them to open counters and lanes. Some countries sell one air-rail ticket."}},
+ {h:{th:"นับและคาดการณ์ฝูงชน",en:"Counting and forecasting crowds"},p:{th:"กล้อง เซนเซอร์ และข้อมูลบัตรขึ้นเครื่อง วัดเวลารอจริง แล้วคาดการณ์คิว 30–60 นาทีข้างหน้า",en:"Cameras, sensors and boarding-pass scans measure real waits and forecast queues 30–60 minutes ahead."}},
+ {h:{th:"เมื่อแผนพัง",en:"When plans break"},p:{th:"รถไฟล่าช้า สายการบินรู้ทันทีว่าผู้โดยสารคนไหนเสี่ยงตกเครื่อง จึงตัดสินใจรอหรือย้ายเที่ยวบิน และเปิดช่องเร่งด่วนให้กลุ่มนี้",en:"When a train runs late, airlines see at once who may miss their flight, decide whether to hold or rebook, and open a fast lane for them."}},
+ {h:{th:"ในไทย",en:"In Thailand"},p:{th:"Airport Rail Link เชื่อมเมืองกับสุวรรณภูมิ และโครงการรถไฟความเร็วสูงเชื่อม 3 สนามบิน (ดอนเมือง สุวรรณภูมิ อู่ตะเภา) อยู่ระหว่างดำเนินการ",en:"The Airport Rail Link connects the city with Suvarnabhumi; a high-speed line linking three airports (Don Mueang, Suvarnabhumi, U-Tapao) is in progress."}}
 ];
 
 let lang=(globalThis.ProjectLanguage&&ProjectLanguage.language)==="en"?"en":"th", filt="all";
@@ -676,6 +857,93 @@ function demo(){
  vd.className="verdict"+(h.tot>d?" bad":""); vd.textContent=msg;
 }
 
+function corridorSvg(){
+ const L=lang==="th";
+ const car=(x,y,c)=>`<rect x="${x}" y="${y}" width="26" height="12" rx="3" style="fill:${c||"var(--muted)"}"/>`;
+ const lab=(x,y,t,o={})=>`<text x="${x}" y="${y}" font-size="${o.s||10}" text-anchor="${o.a||"start"}" font-weight="${o.w||400}" style="fill:${o.f||"var(--ink)"}">${esc(t)}</text>`;
+ let a="",b="";
+ const lanesY=[20,44,68];
+ for(let i=0;i<6;i++){const x=20+i*34;lanesY.forEach(y=>a+=car(x,y+4));}
+ for(let i=0;i<6;i++){const x=20+i*34;b+=car(x,124+0);b+=car(x,168+8);b+=car(x,192+8);}
+ return `<svg viewBox="0 0 260 250" role="img" aria-label="${esc(L?"ภาพช่องทางฉุกเฉิน":"Emergency corridor diagram")}">
+ <rect x="0" y="0" width="260" height="250" style="fill:var(--panel)"/>
+ ${lab(8,12,L?"รถติด: 3 เลน (วิ่งไปทางขวา)":"Jam: 3 lanes (traffic heading right)",{s:10,w:600})}
+ <rect x="10" y="18" width="240" height="72" style="fill:var(--asphalt)"/>
+ <line x1="10" y1="42" x2="250" y2="42" style="stroke:var(--stripe)" stroke-dasharray="8 8"/><line x1="10" y1="66" x2="250" y2="66" style="stroke:var(--stripe)" stroke-dasharray="8 8"/>
+ ${a}
+ ${lab(8,114,L?"เปิดช่องฉุกเฉิน":"Corridor formed",{s:10,w:600})}
+ <rect x="10" y="118" width="240" height="96" style="fill:var(--asphalt)"/>
+ <rect x="10" y="140" width="240" height="30" style="fill:var(--ok)" fill-opacity=".14"/>
+ ${b}
+ <rect x="150" y="146" width="34" height="16" rx="3" style="fill:var(--warn)"/><rect x="160" y="148" width="6" height="12" style="fill:var(--panel)"/><rect x="157" y="151" width="12" height="6" style="fill:var(--panel)"/>
+ <path d="M60 154 H140" style="stroke:var(--warn)" stroke-width="1.6" stroke-dasharray="4 3"/><polygon points="140,150 148,154 140,158" style="fill:var(--warn)"/>
+ ${lab(250,232,L?"เลนซ้ายสุดหลบซ้าย ↑ · เลนอื่นหลบขวา ↓":"Leftmost lane moves left ↑ · others move right ↓",{s:9.5,a:"end",f:"var(--muted)"})}
+ ${lab(250,246,L?"รถฉุกเฉินวิ่งในช่องกลาง":"Emergency vehicle uses the gap",{s:9.5,a:"end",f:"var(--warn)",w:600})}
+ </svg>`;
+}
+function airportSim(prm,coord){
+ const T=240,mu=160/60,walk=8,post=25,closeBefore=20,delay=15;
+ const arr=new Array(T+30).fill(0);
+ const gap=60/prm.f;
+ for(let t0=5;t0<T-60;t0+=gap){const s=Math.round(t0)+walk;for(let k=0;k<6;k++){if(s+k<arr.length)arr[s+k]+=prm.p/6;}}
+ let q=0,lanes=prm.l,desired=[],served=0,arrived=0;const A=[],D=[],Q=[],Ln=[];let laneMin=0;
+ const maxL=prm.l+prm.x;
+ for(let t=0;t<T;t++){
+  const nxt=arr.slice(t,t+15).reduce((s,v)=>s+v,0);
+  const want=coord? Math.ceil((q+nxt)/(mu*15)) : Math.ceil(q/(mu*10));
+  desired[t]=Math.min(maxL,Math.max(prm.l,want));
+  if(coord) lanes=desired[t];
+  else { const opened=t>=delay?desired[t-delay]:prm.l; lanes=Math.max(prm.l,Math.min(opened,desired[t])); } // extra lanes need 15 min to staff; closing is immediate
+  arrived+=arr[t]; q+=arr[t];
+  const cap=lanes*mu, s=Math.min(q,cap); q-=s; served+=s;
+  A.push(arrived);D.push(served);Q.push(q);Ln.push(lanes);laneMin+=lanes;
+ }
+ // FIFO wait for each minute's arrivals
+ let maxW=0,over=0,miss=0,tot=0;
+ for(let t=0;t<T;t++){
+  const n=arr[t]; if(n<=0)continue;
+  const idx=(t>0?A[t-1]:0)+n/2;
+  let u=t; while(u<T&&D[u]<idx)u++;
+  const w=u-t; maxW=Math.max(maxW,w); tot+=n;
+  if(w>15)over+=n;
+  if(walk+w+post>prm.b-closeBefore)miss+=n;
+ }
+ return {Q,Ln,maxW,over:tot?over/tot:0,miss:tot?miss/tot:0,laneH:laneMin/60};
+}
+function airportRender(){
+ const g=id=>+document.getElementById(id).value;
+ const prm={f:g("q-f"),p:g("q-p"),l:g("q-l"),x:g("q-x"),b:g("q-b")};
+ const th=lang==="th";
+ document.getElementById("q-f-o").textContent=prm.f+(th?" ขบวน":" trains");
+ document.getElementById("q-p-o").textContent=prm.p+(th?" คน":" people");
+ document.getElementById("q-l-o").textContent=prm.l+(th?" ช่อง":" lanes");
+ document.getElementById("q-x-o").textContent="+"+prm.x+(th?" ช่อง":" lanes");
+ document.getElementById("q-b-o").textContent=prm.b+(th?" นาที":" min");
+ const R=airportSim(prm,false),C=airportSim(prm,true);
+ const W=460,H=210,pl=46,pr=10,pt=10,pb=28,iw=W-pl-pr,ih=H-pt-pb;
+ const top=Math.max(50,...R.Q,...C.Q)*1.1;
+ const pts=Qs=>Qs.map((q,i)=>`${(pl+iw*i/(Qs.length-1)).toFixed(1)},${(pt+ih*(1-q/top)).toFixed(1)}`).join(" ");
+ let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(tx(T.qAxis))}">`;
+ const step=top>1500?500:top>600?200:top>250?100:50;
+ for(let y=0;y<=top;y+=step){const yy=pt+ih*(1-y/top);svg+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" style="stroke:var(--line)"/><text x="${pl-6}" y="${yy+4}" font-size="13" text-anchor="end">${y}</text>`;}
+ [0,60,120,180,240].forEach(m=>{const xx=pl+iw*m/240;svg+=`<text x="${xx}" y="${H-8}" font-size="13" text-anchor="${m===0?"start":m===240?"end":"middle"}">${m}</text>`;});
+ svg+=`<polyline points="${pts(R.Q)}" fill="none" style="stroke:var(--warn)" stroke-width="2"/><polyline points="${pts(C.Q)}" fill="none" style="stroke:var(--ok)" stroke-width="2.4"/></svg>`;
+ document.getElementById("qchart").innerHTML=svg;
+ document.getElementById("qkeys").innerHTML=`<span style="--k:var(--warn)">${esc(tx(T.qReact))}</span><span style="--k:var(--ok)">${esc(tx(T.qCoord))}</span><span style="--k:transparent">${esc(tx(T.qAxis))}</span>`;
+ const col=(k,c,r)=>`<div class="col" style="--c:var(${c})"><b class="h">${esc(tx(T[k]))}</b>
+  <div class="row"><span>${esc(tx(T.qMax))}</span><span>${r.maxW.toFixed(0)} ${th?"นาที":"min"}</span></div>
+  <div class="row"><span>${esc(tx(T.qOver))}</span><span>${(r.over*100).toFixed(0)}%</span></div>
+  <div class="row"><span>${esc(tx(T.qMiss))}</span><span>${(r.miss*100).toFixed(0)}%</span></div>
+  <div class="row"><span>${esc(tx(T.qStaff))}</span><span>${r.laneH.toFixed(0)}</span></div></div>`;
+ document.getElementById("qstats").innerHTML=col("qReact","--warn",R)+col("qCoord","--ok",C);
+ const need=Math.ceil(prm.f*prm.p/160), cap=prm.l+prm.x, v=document.getElementById("qverdict");
+ let m;
+ if(need>cap) m=th?`ต้องการราว ${need} ช่องเพื่อรองรับ ${prm.f*prm.p} คน/ชม. แต่มีได้สูงสุด ${cap} ช่อง การประสานงานช่วยได้ไม่พอ ต้องเพิ่มพนักงานหรือช่องตรวจ`:`About ${need} lanes are needed for ${prm.f*prm.p} people an hour, but at most ${cap} can open. Coordination can't fix a capacity gap; more staff or lanes are needed.`;
+ else if(C.maxW+2<R.maxW) m=th?`ใช้พนักงานกลุ่มเดียวกัน (${R.laneH.toFixed(0)} เทียบ ${C.laneH.toFixed(0)} ชั่วโมงช่อง) แต่การรู้ล่วงหน้าลดเวลารอนานสุดจาก ${R.maxW.toFixed(0)} เหลือ ${C.maxW.toFixed(0)} นาที เพราะเปิดช่องก่อนคลื่นผู้โดยสารมาถึง แทนที่จะเปิดหลังคิวยาวไปแล้ว`:`Same staff pool (${R.laneH.toFixed(0)} vs ${C.laneH.toFixed(0)} lane-hours), but knowing ahead cuts the longest wait from ${R.maxW.toFixed(0)} to ${C.maxW.toFixed(0)} minutes, because lanes open before each wave instead of after the queue has grown.`;
+ else m=th?"ความต้องการต่ำกว่าช่องประจำ ทั้งสองแบบจึงให้ผลใกล้กัน ลองเพิ่มจำนวนขบวนหรือผู้โดยสารต่อขบวน":"Demand fits the standing lanes, so both approaches look similar. Try more trains or more flyers per train.";
+ v.className="verdict"+(need>cap||R.miss>0.05?" bad":""); v.textContent=m;
+}
+
 function render(){
  document.documentElement.lang=lang;
  document.querySelectorAll("[data-i]").forEach(el=>{el.textContent=tx(T[el.dataset.i])});
@@ -695,7 +963,7 @@ function render(){
  const list=a=>`<ul>${a.map(x=>`<li>${esc(tx(x))}</li>`).join("")}</ul>`;
  document.getElementById("orgs").innerHTML=ORGS.map(o=>`<tr><th style="--c:${col(o.m)}">${esc(tx(M[o.m]))}</th><td>${esc(tx(o.g))}</td><td>${list(o.i)}</td><td>${list(o.r)}</td><td>${o.s.map(s=>`<span class="code">${esc(s)}</span>`).join(" ")}</td></tr>`).join("");
 
- const modes=["all","road","rail","sea","air","rotor","space"];
+ const modes=["all","road","rail","sea","air","rotor","space","infra"];
  document.getElementById("chips").innerHTML=modes.map(m=>`<button type="button" class="chip" id="chip-${m}" data-m="${m}" style="--c:${col(m)}" aria-pressed="${filt===m}">${esc(m==="all"?tx(T.all):tx(M[m]))}</button>`).join("");
  let out="", pendingEra=null;
  EV.forEach(e=>{
@@ -730,6 +998,18 @@ function render(){
 
  document.getElementById("lic").innerHTML=LIC.map(l=>`<tr><th style="--c:${col(l.m)}">${esc(l.av?(lang==="th"?"รถอัตโนมัติ":"Automated car"):tx(M[l.m]))}</th><td>${esc(tx(l.f))}</td><td>${esc(tx(l.c))}</td><td>${esc(tx(l.t))}</td></tr>`).join("");
 
+ document.getElementById("pillars").innerHTML=PILLARS.map(x=>`<div class="${x.f?"focus":""}"><b>${esc(tx(x.h))}</b><span>${esc(tx(x.p))}</span></div>`).join("");
+ document.getElementById("life").innerHTML=LIFE.map(x=>`<li><h3>${esc(tx(x.h))}</h3><p>${esc(tx(x.p))}</p><div class="chk"><b>${esc(tx(T.chkL))}</b>${esc(tx(x.c))}</div><div class="stds">${x.s.map(c=>`<span class="code">${esc(c)}</span>`).join("")}</div></li>`).join("");
+ document.getElementById("mon").innerHTML=MON.map(x=>`<div class="card"><h3>${esc(tx(x.h))}</h3><dl><dt>${esc(tx(T.monWhat))}</dt><dd>${esc(tx(x.w))}</dd><dt>${esc(tx(T.monHow))}</dt><dd>${esc(tx(x.t))}</dd><dt>${esc(tx(T.monWhy))}</dt><dd>${esc(tx(x.y))}</dd></dl></div>`).join("");
+ const opc=(a,c)=>a.map(x=>`<div class="card" style="border-left:4px solid var(${c})"><h3>${esc(tx(x.h))}</h3><p style="margin:0">${esc(tx(x.p))}</p></div>`).join("");
+ document.getElementById("ops-n").innerHTML=opc(OPS_N,"--infra");
+ document.getElementById("ops-h").innerHTML=opc(OPS_H,"--warn");
+ document.getElementById("corr-svg").innerHTML=corridorSvg();
+ document.getElementById("corr-txt").innerHTML=opc(CORR,"--ok");
+ document.getElementById("flow").innerHTML=FLOW.map(x=>`<li><b>${esc(tx(x.h))}</b><span>${esc(tx(x.p))}</span></li>`).join("");
+ document.getElementById("coord").innerHTML=COORD.map(x=>`<div class="card" style="border-top:4px solid var(--air)"><h3>${esc(tx(x.h))}</h3><p style="margin:0">${esc(tx(x.p))}</p></div>`).join("");
+ airportRender();
+
  const mk={ok:"✓",x:"✕",q:"?"};
  document.getElementById("layers").innerHTML=LAYERS.map(L=>`<div class="lyr"><h3>${esc(tx(L.h))}</h3><ol>${L.l.map(([s,t])=>`<li><span class="mk ${s}">${mk[s]}</span><span>${esc(tx(t))}</span></li>`).join("")}</ol></div>`).join("");
  document.getElementById("src").innerHTML=SRC.map(s=>`<li><a href="${esc(s.u)}" target="_blank" rel="noopener">${esc(s.t)}</a> <span class="tag">· ${esc(s.g)}</span></li>`).join("");
@@ -738,7 +1018,7 @@ document.addEventListener("click",ev=>{
  const b=ev.target.closest("button"); if(!b) return;
  if(b.dataset.m){filt=b.dataset.m; render(); document.getElementById("chip-"+filt)?.focus();}
 });
-document.addEventListener("input",ev=>{if(ev.target.closest(".demo"))demo();});
+document.addEventListener("input",ev=>{if(ev.target.closest(".demo"))demo();if(ev.target.closest(".qm"))airportRender();});
 document.getElementById("dm-road").value="wet";
 render();
 </script>
