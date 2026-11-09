@@ -73,6 +73,7 @@ select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);backgrou
 .views button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .views button:disabled{opacity:.45;cursor:not-allowed}
 .v3wrap{position:relative}
+.v3dark{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
 #v3 canvas{display:block;width:100%;border-radius:6px;background:#0a1018}
 .v3tag{position:absolute;left:10px;top:10px;font:600 12px var(--f-mono);color:#fff;background:rgba(10,16,24,.62);padding:3px 9px;border-radius:999px;pointer-events:none}
 .viewcap{font-size:13px;color:var(--muted);margin:8px 0 0}
@@ -130,6 +131,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
   </div>
   <div style="display:grid;gap:8px;justify-items:end">
    <a class="back" id="board-link" href="./index.html" data-i="backBoard"></a>
+   <a class="back" id="resp-link" href="./response.html" data-i="toResp"></a>
   </div>
  </header>
 
@@ -138,6 +140,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
    <div><span class="lbl" data-i="lVeh"></span><div class="seg" id="veh" role="group"></div></div>
    <div><label class="lbl" for="scn" data-i="lScn"></label><select id="scn"></select><p class="note" id="scn-desc" style="margin:6px 0 0"></p></div>
    <div id="force-row" hidden><label class="lbl" for="force" data-i="lForce"></label><select id="force"></select></div>
+   <div id="tun-row" hidden><label class="lbl" for="tun" data-i="lTun"></label><select id="tun"></select></div>
+   <div id="trk-row" hidden><label class="lbl" for="trk" data-i="lTrk"></label><select id="trk"></select></div>
    <div class="row2">
     <div><label class="lbl" for="surf" data-i="lSurf"></label><select id="surf"></select></div>
     <div><label class="lbl" for="light" data-i="lLight"></label><select id="light"></select></div>
@@ -157,7 +161,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);paddin
    <div class="track-card">
     <div class="views" id="views" role="group" aria-label="View"></div>
     <canvas id="cv" width="900" height="300" aria-label="Simulation view"></canvas>
-    <div class="v3wrap" id="v3wrap" hidden><div id="v3"></div><span class="v3tag" id="v3tag"></span></div>
+    <div class="v3wrap" id="v3wrap" hidden><div id="v3"></div><div class="v3dark" id="v3dark"></div><span class="v3tag" id="v3tag"></span></div>
     <p class="viewcap" id="viewcap"></p>
     <div class="hud" id="hud"></div>
     <div class="btns">
@@ -213,7 +217,7 @@ const T={
  expInfra:{th:"ประสบการณ์ทีมตรวจ",en:"Inspection team experience"},expPilot:{th:"ชั่วโมงบิน / ชั่วโมงฝึก",en:"Flight or training hours"},expSea:{th:"ชั่วโมงเข้ายามเรือ",en:"Watchkeeping hours"},
  no3dK2:{th:"มุมมอง 3D มีสำหรับถนนและรางในตอนนี้ โหมดนี้ใช้ภาพ 2D แบบแผนผัง",en:"3D views cover road and rail for now; this mode uses a 2D schematic."},
  lede:{th:"เลือกยานพาหนะ สถานการณ์ และผู้ควบคุม ตั้งแต่คนขับมือใหม่ ระบบช่วยขับ (copilot) ไปจนถึงระบบขับเอง แล้วดูว่าแต่ละแบบรับมือความไม่แน่นอนอย่างไร ทั้งในการวิ่งครั้งเดียว และเมื่อสุ่มซ้ำหลายร้อยครั้ง",en:"Pick a vehicle, a situation and a controller, from a learner driver through driver assistance (copilot) to self-driving systems, and see how each handles uncertainty, in one run and across hundreds of randomised runs."},
- backBoard:{th:"← กลับไปบอร์ดความปลอดภัย",en:"← Back to the safety board"},
+ backBoard:{th:"← กลับไปบอร์ดความปลอดภัย",en:"← Back to the safety board"},toResp:{th:"แผนช่วยเหลือหลังเกิดเหตุ 3D →",en:"After the crash: response in 3D →"},
  lVeh:{th:"ยานพาหนะ",en:"Vehicle"},lScn:{th:"สถานการณ์",en:"Situation"},lSurf:{th:"ผิวทาง",en:"Surface"},lLight:{th:"แสง",en:"Light"},lSpd:{th:"ความเร็วตั้งต้น",en:"Starting speed"},lCtrl:{th:"ผู้ควบคุม",en:"Controller"},
  atpFail:{th:"ระบบสัญญาณ/ATP ขัดข้อง (แบบเหตุ Toledo)",en:"Signalling / ATP failure (like Toledo)"},
  expHuman:{th:"ประสบการณ์คนขับ",en:"Driver experience"},expSys:{th:"ระดับการฝึกของระบบ (ข้อมูล + การทดสอบ)",en:"System training (data + testing)"},
@@ -233,13 +237,16 @@ const T={
  phase:{avoid:{th:"หลบหลีก",en:"Avoiding"},lost:{th:"สัญญาณหาย",en:"Link lost"},rth:{th:"บินกลับจุดขึ้น",en:"Returning home"},land:{th:"ลงจอดทันที",en:"Landing in place"},fly:{th:"บินหลุดควบคุม",en:"Fly-away"},anomaly:{th:"ตรวจพบความผิดปกติ",en:"Anomaly"},escape:{th:"แคปซูลหนีภัย",en:"Capsule escaping"},boom:{th:"ระเบิด",en:"Explosion"},term:{th:"สั่งทำลายในเขตปลอดภัย",en:"Terminated in safe zone"},deviate:{th:"ออกนอกเส้นทาง",en:"Off course"},ascent:{th:"ไต่ระดับ",en:"Ascending"},roll:{th:"วิ่งขึ้น",en:"Take-off roll"},cloud:{th:"อยู่ในเมฆ",en:"In cloud"},turn:{th:"เลี้ยวกลับออกจากเมฆ",en:"Turning out of cloud"},spiral:{th:"หลงท่า เสียการควบคุม",en:"Disoriented, losing control"},traffic:{th:"รถวิ่งผ่าน",en:"Traffic crossing"},cascade:{th:"พังต่อเนื่อง",en:"Cascading failure"},closed:{th:"ปิดทาง",en:"Closed"},collapse:{th:"ถล่ม",en:"Collapse"},repair:{th:"ซ่อมจุดเสีย",en:"Repairing"},
  idle:{th:"พร้อม",en:"Ready"},cruise:{th:"วิ่งปกติ",en:"Cruising"},caution:{th:"ชะลอระวัง",en:"Slowing as a precaution"},react:{th:"กำลังตอบสนอง",en:"Reacting"},brake:{th:"เบรก",en:"Braking"},stop:{th:"หยุดแล้ว",en:"Stopped"},hit:{th:"ชน",en:"Impact"},clear:{th:"ผ่านไปแล้ว",en:"Passed"},mrc:{th:"ไม่ออกเดินทาง",en:"Not departing"}},
  hSpeed:{th:"ความเร็ว",en:"Speed"},
+ lTun:{th:"ไฟใต้สะพาน / อุโมงค์",en:"Underpass lighting"},lTrk:{th:"ประเภททางรถไฟ",en:"Track type"},
+ capDriverUph:{th:"แผ่นมืดจำลองช่วงที่ตายังปรับแสงไม่ทัน กลางวันเกิดตอนเข้าใต้สะพาน กลางคืนถ้าไฟข้างในสว่างจ้าเกินจะเกิดตอนออกสู่ที่มืด ระยะเวลาขึ้นกับแบบไฟที่เลือก",en:"The dark overlay stands in for eyes that haven't adapted yet: by day on entering the underpass, at night (with over-bright lighting) on leaving it into the dark. How long it lasts depends on the lighting chosen."},
+ hAdapt:{th:"ตาปรับแสง",en:"Eye adaptation"},
  vTop:{th:"2D มุมบน",en:"2D top-down"},vChase:{th:"3D มุมติดตาม",en:"3D chase"},vDriver:{th:"มุมคนขับ",en:"Driver's view"},vDriverRail:{th:"มุมพนักงานขับ",en:"Train driver's view"},
- vOther:{gen:{th:"มุมอีกฝ่าย",en:"Other road user"},ped:{th:"มุมคนข้ามถนน",en:"Pedestrian's view"},side:{th:"มุมรถที่ฝ่าไฟแดง",en:"Red-light runner's view"},lead:{th:"มุมคนข้างทาง",en:"Roadside view"},stall:{th:"มุมคนข้างทาง",en:"Roadside view"},signal:{th:"มุมข้างราง",en:"Trackside view"},obst:{th:"มุมรถที่ติดบนราง",en:"From the stuck car"}},
+ vOther:{gen:{th:"มุมอีกฝ่าย",en:"Other road user"},ped:{th:"มุมคนข้ามถนน",en:"Pedestrian's view"},side:{th:"มุมรถที่ฝ่าไฟแดง",en:"Red-light runner's view"},lead:{th:"มุมคนข้างทาง",en:"Roadside view"},uph:{th:"มุมคนขับคันหน้า (กระจกหลัง)",en:"Car ahead (rear view)"},obstTrk:{th:"มุมคนงานบนราง",en:"Track worker's view"},stall:{th:"มุมคนข้างทาง",en:"Roadside view"},signal:{th:"มุมข้างราง",en:"Trackside view"},obst:{th:"มุมรถที่ติดบนราง",en:"From the stuck car"}},
  no3d:{th:"เบราว์เซอร์นี้แสดง 3D ไม่ได้ จึงใช้มุมบนแบบ 2D",en:"This browser can't show 3D, so the 2D top view is used."},
  capTop:{th:"มุมบนเห็นทุกอย่าง ซึ่งเป็นภาพที่คนขับจริงไม่มีวันได้เห็น",en:"The top view shows everything, which real drivers never get to see."},
  capChase:{th:"3D จากด้านหลังรถ ช่วยดูระยะห่างและจังหวะการเบรก แถบจางหน้ารถคือระยะที่ต้องใช้หยุดในตอนนั้น",en:"3D from behind the vehicle, for judging gaps and braking. The faint band ahead is the distance needed to stop right now."},
  capDriver:{th:"เห็นเท่าที่คนขับเห็นจริง หมอกจำลองระยะมองเห็นตามแสงและสภาพถนน สิ่งที่ถูกบังจะโผล่มาเมื่อสายเกินไปแล้ว",en:"Only what the driver can see. Fog stands in for sight distance in this light and weather; hidden hazards appear late."},
- capOther:{gen:{th:"",en:""},ped:{th:"คนเดินก็มองไม่เห็นรถเหมือนกัน รถเมล์บังทั้งสองฝั่ง จึงควรชะเง้อดูก่อนก้าวออกจากหลังรถใหญ่",en:"The pedestrian can't see the car either; the bus blocks both ways. Peek out before stepping past a large vehicle."},side:{th:"รถที่ฝ่าไฟแดงเห็นรถเราช้าเพราะมุมตึกบัง เป็นเหตุผลที่ระบบและคนขับที่ดีชะลอเมื่อเข้าทางแยก",en:"The red-light runner sees us late because buildings block the corner, which is why good drivers and systems ease off into junctions."},lead:{th:"มองจากข้างทาง จะเห็นว่าระยะห่างที่ดูเหมือนพอ หายไปเร็วแค่ไหนเมื่อคันหน้าเบรก",en:"From the roadside you can see how fast a gap that looked fine disappears when the car ahead brakes."},stall:{th:"รถเสียกะพริบไฟฉุกเฉิน แต่กลางคืนคนขับจะเห็นได้แค่ในระยะไฟหน้า",en:"The stalled car flashes its hazard lights, but at night a driver only sees as far as the headlights reach."},signal:{th:"สัญญาณเหลืองก่อนหน้าคือคำเตือนให้เริ่มเบรก เพราะรถไฟต้องใช้ระยะหยุดหลายร้อยเมตร",en:"The earlier yellow signal is the cue to start braking, because a train needs hundreds of metres to stop."},obst:{th:"จากรถที่ติดบนราง รถไฟปรากฏให้เห็นแต่ไกล แต่ก็ยังหยุดไม่ทัน ทางรอดคือออกจากรถแล้วเดินออกห่างจากราง",en:"From the stuck car the train is visible from far away and still can't stop. The way out is to leave the car and move away from the track."}},hDist:{th:"ระยะถึงอันตราย",en:"To hazard"},hPhase:{th:"สถานะ",en:"Phase"}
+ capOther:{gen:{th:"",en:""},uph:{th:"คนขับคันหน้าเบรกตรงทางเข้าเพราะตาเขาก็ปรับแสงไม่ทันเหมือนกัน รถที่ตามมาเห็นไฟเบรกช้าลงในที่มืด จึงควรเว้นระยะมากกว่าปกติก่อนลอดใต้สะพานหรือเข้าอุโมงค์",en:"The car ahead brakes at the entrance because its driver's eyes are adapting too, and in the dark the brake lights are seen late. Leave a bigger gap before an underpass or tunnel."},obstTrk:{th:"คนงานมักได้ยินเสียงก่อนเห็น ในอุโมงค์ไฟหน้ารถไฟโผล่ที่โค้งเมื่อเหลือไม่กี่ร้อยเมตร จึงต้องปิดกั้นช่วงทางและมีคนเฝ้าระวังก่อนลงทำงาน",en:"Workers often hear a train before they see it; in a tunnel the headlight appears round the curve only a few hundred metres away, so the section must be blocked and a lookout posted before work starts."},ped:{th:"คนเดินก็มองไม่เห็นรถเหมือนกัน รถเมล์บังทั้งสองฝั่ง จึงควรชะเง้อดูก่อนก้าวออกจากหลังรถใหญ่",en:"The pedestrian can't see the car either; the bus blocks both ways. Peek out before stepping past a large vehicle."},side:{th:"รถที่ฝ่าไฟแดงเห็นรถเราช้าเพราะมุมตึกบัง เป็นเหตุผลที่ระบบและคนขับที่ดีชะลอเมื่อเข้าทางแยก",en:"The red-light runner sees us late because buildings block the corner, which is why good drivers and systems ease off into junctions."},lead:{th:"มองจากข้างทาง จะเห็นว่าระยะห่างที่ดูเหมือนพอ หายไปเร็วแค่ไหนเมื่อคันหน้าเบรก",en:"From the roadside you can see how fast a gap that looked fine disappears when the car ahead brakes."},stall:{th:"รถเสียกะพริบไฟฉุกเฉิน แต่กลางคืนคนขับจะเห็นได้แค่ในระยะไฟหน้า",en:"The stalled car flashes its hazard lights, but at night a driver only sees as far as the headlights reach."},signal:{th:"สัญญาณเหลืองก่อนหน้าคือคำเตือนให้เริ่มเบรก เพราะรถไฟต้องใช้ระยะหยุดหลายร้อยเมตร",en:"The earlier yellow signal is the cue to start braking, because a train needs hundreds of metres to stop."},obst:{th:"จากรถที่ติดบนราง รถไฟปรากฏให้เห็นแต่ไกล แต่ก็ยังหยุดไม่ทัน ทางรอดคือออกจากรถแล้วเดินออกห่างจากราง",en:"From the stuck car the train is visible from far away and still can't stop. The way out is to leave the car and move away from the track."}},hDist:{th:"ระยะถึงอันตราย",en:"To hazard"},hPhase:{th:"สถานะ",en:"Phase"}
 };
 const VEH={
  car:{th:"รถยนต์",en:"Car",a:7.0,len:4.6,w:1.8,v:[20,130,60],kind:"road"},
@@ -256,6 +263,7 @@ const VEH={
 const SCN={
  ped:{kind:"road",limit:60,th:"คนเดินออกมาจากหลังรถเมล์ที่จอดอยู่",en:"Pedestrian steps out from behind a stopped bus",d:{th:"เขตชุมชนจำกัด 60 กม./ชม. ทางม้าลายมีป้ายไฟกะพริบ มองเห็นรถเมล์ได้ไกล แต่คนจะโผล่ให้เห็นเมื่อเหลือ 12–25 ม. ตั้งค่าว่าจะมีคนออกมาหรือไม่ได้ด้านล่าง",en:"Urban zone limited to 60 km/h; the crossing has a flashing sign. The bus is visible from afar, but a person appears only at 12–25 m. Choose below whether someone steps out."},ped:1},
  lead:{kind:"road",th:"รถคันหน้าเบรกกะทันหัน",en:"Car ahead brakes hard",d:{th:"ระยะห่างขึ้นกับผู้ควบคุม คันหน้าเบรกเต็มที่ในเวลาสุ่ม",en:"Following gap depends on the controller; the car ahead brakes fully at a random moment."},hw:1},
+ uph:{kind:"road",hw:1,uph:1,v:[40,120,90],th:"ลอดใต้สะพาน: คันหน้าเบรกตรงทางเข้า",en:"Underpass: car ahead brakes at the entrance",d:{th:"ตาต้องใช้เวลาปรับแสงเมื่อเข้าที่มืดจากที่สว่าง (กลางวัน) หรือออกจากที่ไฟจ้าสู่ที่มืด (กลางคืน) ช่วงนั้นเห็นไฟเบรกคันหน้าช้าลง ฝนและละอองน้ำบนทางด่วนทำให้แย่ลงอีก เลือกแบบไฟได้",en:"Eyes need time to adapt going from bright to dark (by day) or from over-lit to dark (at night), so the brake lights ahead are seen late. Rain and spray on an expressway make it worse. Choose the lighting."}},
  junc:{kind:"road",limit:60,th:"รถฝ่าไฟแดงตัดหน้าที่ทางแยก",en:"Red-light runner at a junction",d:{th:"รถจากด้านข้างโผล่ให้เห็นที่ 25–45 ม. (กลางคืนสั้นกว่า) และผ่านจุดตัดภายใน 1.2–1.8 วินาที",en:"A side car becomes visible at 25–45 m (less at night) and clears the conflict point within 1.2–1.8 s."},side:1},
  stall:{kind:"road",th:"รถเสียจอดนิ่งบนทางหลวง",en:"Stalled car on the highway",d:{th:"กลางวันเห็นได้ 150–250 ม. กลางคืนตาคนเห็นได้แค่ระยะไฟหน้า 60–90 ม. ส่วนลิดาร์และเรดาร์ไม่ต้องใช้แสง ฝนลดระยะลงอีก",en:"Visible at 150–250 m by day; at night eyes see only as far as headlights, 60–90 m, while lidar and radar don't need light; rain cuts range further."},hwy:1},
  sig:{kind:"rail",th:"สัญญาณไฟแดงข้างหน้า",en:"Red signal ahead",d:{th:"สัญญาณเหลืองก่อนหน้าเตือนให้เริ่มเบรกตั้งแต่ไกล คนขับอาจพลาดไม่เห็น (SPAD) ส่วน ATP บังคับเบรกให้หยุดก่อนไฟแดงเสมอ",en:"An earlier yellow signal warns the driver to start braking far ahead. A driver can miss it (SPAD); ATP always enforces a stop before the red."},signal:1},
@@ -327,7 +335,11 @@ const INFO={
  imshm:{learn:{th:"เซนเซอร์วัดแรง การสั่น การเอียง และการกัดเซาะ ส่งข้อมูลต่อเนื่อง ระบบเรียนรู้รูปแบบปกติแล้วเตือนเมื่อผิดปกติ ร่วมกับด่านชั่งน้ำหนักขณะวิ่ง (WIM)",en:"Strain, vibration, tilt and scour sensors stream data; the system learns normal patterns and alarms on anomalies, together with weigh-in-motion checks."},std:["ISO 55000","SHM guidelines","Weigh-in-motion"],prob:[{th:"เซนเซอร์เสียหรือเตือนผิด",en:"Sensor failures and false alarms"},{th:"มีข้อมูลแต่ไม่มีอำนาจหรืองบสั่งปิดทาง",en:"Data without the authority or budget to close a road"}]},
  goa4:{learn:{th:"ระบบเดินรถอัตโนมัติ (ATO) ทำงานบน ATP และ CBTC ส่วนการตรวจสิ่งกีดขวางเป็นส่วนเสริมที่ยังจำกัดระยะ จึงต้องพึ่งรั้วกั้นและประตูกั้นชานชาลา",en:"Automatic train operation (ATO) runs on ATP and CBTC. Obstacle detection is an add-on with limited range, so it relies on fencing and platform screen doors."},std:["IEC 62290 (GoA)","IEEE 1474 (CBTC)","EN 50126 · 50128 · 50129"],prob:[{th:"ระยะตรวจจับสั้นกว่าระยะหยุดที่ความเร็วสูง",en:"Detection range is shorter than stopping distance at speed"},{th:"ใช้ได้ดีในระบบปิด เช่น รถไฟฟ้าในเมือง มากกว่าเส้นทางที่มีจุดตัดถนน",en:"Works best on closed systems like metros, not lines with road crossings"}]}
 };
-const SURF={dry:{th:"แห้ง",en:"Dry",m:1,vis:1,rm:1},wet:{th:"ฝนตก / เปียก",en:"Rain / wet",m:.65,vis:.75,rm:.8},flood:{th:"น้ำขัง",en:"Standing water",m:.35,vis:.65,rm:.75}};
+const SURF={dry:{th:"แห้ง",en:"Dry",m:1,vis:1,rm:1},wet:{th:"ฝนตก / เปียก",en:"Rain / wet",m:.65,vis:.75,rm:.8},flood:{th:"น้ำขัง",en:"Standing water",m:.35,vis:.65,rm:.75},snow:{th:"หิมะ / น้ำแข็ง",en:"Snow / ice",m:.25,vis:.55,rm:.7}};
+const TUN={std:{th:"ไฟไล่ระดับตามมาตรฐาน",en:"Graded lighting (standard)"},dark:{th:"ไม่มีไฟ / ไฟดับ",en:"No lighting"},bright:{th:"ไฟสว่างจ้าเกินไป",en:"Over-bright lighting"}};
+const TRK={ground:{th:"ระดับดิน",en:"At grade"},elevated:{th:"ยกระดับ",en:"Elevated"},underground:{th:"ใต้ดิน",en:"Underground"}};
+const LX2={th:"รถซ่อมบำรุงและคนงานบนราง",en:"Maintenance trolley and worker on the track",d:{th:"ทางยกระดับและใต้ดินไม่มีจุดตัดกับถนน แต่ยังมีงานซ่อมบำรุงบนราง ใต้ดินมองเห็นได้แค่ 150–250 ม. เพราะทางโค้งและมีแค่แสงไฟหน้า ฝนและกลางวันกลางคืนไม่มีผล",en:"Elevated and underground lines have no level crossings, but crews still work on the track. Underground, sight is 150–250 m because of curves and headlights only; rain and daylight make no difference."}};
+function scnT(k){return k==="lx"&&st.track!=="ground"&&VEH[st.veh].kind==="rail"?LX2:SCN[k];}
 const LIGHT={day:{th:"กลางวัน",en:"Day"},night:{th:"กลางคืน",en:"Night"}};
 const PATH_H=[{th:"ตรวจร่างกาย สายตา ปฏิกิริยา",en:"Medical, vision and reaction checks",h:0},{th:"อบรม 5 ชม. + สอบข้อเขียน/ปฏิบัติ",en:"5 h training + written and practical tests",h:5},{th:"ใบขับขี่ชั่วคราว 2 ปี",en:"2-year temporary licence",h:60},{th:"ใบขับขี่ 5 ปี",en:"5-year licence",h:300},{th:"ขับเชิงป้องกัน มองอันตรายล่วงหน้า",en:"Defensive driving, anticipating hazards",h:900}];
 const PATH_S=[{th:"เก็บและติดป้ายข้อมูล",en:"Collect and label data",k:0.1},{th:"ทดสอบในโลกจำลอง",en:"Simulation testing",k:1},{th:"สนามทดสอบปิด",en:"Closed-course testing",k:3},{th:"ถนนจริงมีคนคุม",en:"Public roads with safety driver",k:10},{th:"ไร้คนขับในพื้นที่จำกัด",en:"Driverless in a limited area",k:30},{th:"ขยายพื้นที่และสภาพอากาศ",en:"Expand area and weather",k:100}];
@@ -336,7 +348,7 @@ let lang=(globalThis.ProjectLanguage&&ProjectLanguage.language)==="en"?"en":"th"
 const tx=o=>typeof o==="string"?o:(o[lang]??o.en);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
-const st={veh:"car",scn:"ped",surf:"dry",light:"day",ctrl:"human",spd:50,exp:40,atpfail:false,seed:7,view:"top",force:"rand",spec:70,age:25,ovl:15};
+const st={veh:"car",scn:"ped",surf:"dry",light:"day",ctrl:"human",spd:50,exp:40,atpfail:false,seed:7,view:"top",force:"rand",spec:70,age:25,ovl:15,tun:"std",track:"ground"};
 
 /* ---------- random ---------- */
 function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
@@ -347,7 +359,7 @@ const N=(r,m,sd)=>{let u=r()||1e-9,v=r();return m+sd*Math.sqrt(-2*Math.log(u))*M
 function inODD(c,cfg){
  const s=SCN[cfg.scn];
  if(c==="l3") return (s.hwy||s.hw) && cfg.surf==="dry" && cfg.light==="day" && cfg.v<=95;
- if(c==="l4") return cfg.surf!=="flood";
+ if(c==="l4") return cfg.surf!=="flood"&&cfg.surf!=="snow";
  if(c==="goa4") return true;
  return true;
 }
@@ -381,6 +393,11 @@ function trial(cfg,e,seed,record){
  if(K2.has(VEH[cfg.veh].kind)) return trial2(cfg,e,seed,record);
  const r=rng(seed), s=SCN[cfg.scn], V=VEH[cfg.veh], sf=SURF[cfg.surf], night=cfg.light==="night";
  const p=profile(cfg.ctrl,e,cfg,r);
+ let adapt=0;
+ if(s.uph&&!p.mrc){const sen=p.sensor||"eye",tn=cfg.tun||"std";
+  let b=!night?(tn==="dark"?U(r,.8,1.5):tn==="bright"?U(r,.1,.3):U(r,.2,.5)):(tn==="bright"?U(r,.5,1.0):tn==="dark"?U(r,.3,.6):U(r,0,.2));
+  if(cfg.surf!=="dry")b+=U(r,.2,.5);
+  adapt=sen==="eye"?b:sen==="cam"?b*.4:(cfg.surf!=="dry"?.05:0);}
  const a=V.a*sf.m*(cfg.veh==="train"?(cfg.surf==="dry"?1:.8):1);
  const v0=cfg.v/3.6;
  const out={outcome:"safe",impact:0,react:null,miss:false,lost:0,gapMin:1e9,trace:[],hazard:null,start:0};
@@ -395,8 +412,9 @@ function trial(cfg,e,seed,record){
  if(s.side){reveal=U(r,25,45)*nightMul*rainMul;hazPos=110;clearT=U(r,1.2,1.8);visKnown=60;}
  if(s.hwy){reveal=(night&&sen==="eye"?U(r,60,90):U(r,150,250)*nightMul)*rainMul;hazPos=Math.max(220,v0*v0/(2*a)+v0*3+60);}
  if(s.hw){gap0=Math.max(4,p.hw*v0);leadV=v0;leadBrakeT=U(r,2,5);hazPos=gap0;}
+ if(s.uph){const ux=gap0+v0*leadBrakeT-3;out.uph=(night&&cfg.tun==="bright")?[ux-45,ux]:[ux,ux+45];out.adapt=adapt;}
  if(s.signal){reveal=v0*v0/(2*a*.7)+200;hazPos=reveal+v0*4+200;}
- if(s.obst){reveal=(night?U(r,150,250):U(r,300,500));hazPos=Math.max(900,reveal+300);}
+ if(s.obst){reveal=cfg.track==="underground"?U(r,150,250):(night?U(r,150,250):U(r,300,500));hazPos=Math.max(900,reveal+300);}
  if(p.range&&s.obst) reveal=Math.min(reveal,p.range);
  out.hazard={pos:hazPos,kind:s.ped?"ped":s.side?"side":s.hw?"lead":s.hwy?"stall":s.signal?"signal":"obst",present};
  out.clearT=clearT; out.reveal=reveal;
@@ -410,6 +428,7 @@ function trial(cfg,e,seed,record){
  else if(p.sys && p.fallback){ reactT=p.fallback.react + (r()<(p.fallback.distract||0)?U(r,1,2):0); }
  else if(p.sys && !p.fallback){ reactT=null; } // no human: late detection only
  else reactT=p.react+(distracted?U(r,1,2.5):0);
+ if(reactT!==null)reactT+=adapt;
  out.miss = (p.sys&&!sysSees) || distracted || missSignal;
  // precaution: slow so we can stop within a margin before the hidden area
  let vTarget=v0;
@@ -467,7 +486,7 @@ function trial(cfg,e,seed,record){
  if(p.handback) out.handback=1;
  return out;
 }
-function cfgNow(){return {veh:st.veh,scn:st.scn,surf:st.surf,light:st.light,ctrl:st.ctrl,v:st.spd,atpfail:st.atpfail,force:st.force,spec:st.spec,age:st.age,ovl:st.ovl};}
+function cfgNow(){const rail=VEH[st.veh].kind==="rail",ug=rail&&st.track==="underground";return {veh:st.veh,scn:st.scn,surf:ug?"dry":st.surf,light:ug?"day":st.light,ctrl:st.ctrl,v:st.spd,atpfail:st.atpfail,force:st.force,spec:st.spec,age:st.age,ovl:st.ovl,tun:st.tun,track:rail?st.track:"ground"};}
 function monte(cfg,e,n){
  const res={safe:0,near:0,light:0,serious:0,mrc:0,spad:0,react:0,rc:0,imp:0,ic:0,lost:0,miss:0,handback:0};
  for(let i=0;i<n;i++){const o=trial(cfg,e,1000+i*7919);
@@ -494,7 +513,7 @@ const PATHS_H={
  infra:[{th:"ใบอนุญาตวิศวกร",en:"Engineering licence",h:0},{th:"หลักสูตรผู้ตรวจสะพาน/ถนน",en:"Bridge / road inspector course",h:40},{th:"ตรวจภาคสนามกับพี่เลี้ยง",en:"Field inspections with a mentor",h:150},{th:"หัวหน้าทีมตรวจ",en:"Inspection team lead",h:500},{th:"ประเมินความสามารถรับน้ำหนัก",en:"Load-rating specialist",h:900}]
 };
 function surfLabel(K,k){const L={
- road:{dry:SURF.dry,wet:SURF.wet,flood:SURF.flood},rail:{dry:SURF.dry,wet:{th:"รางเปียก / ใบไม้",en:"Wet rail / leaves"}},
+ road:{dry:SURF.dry,wet:SURF.wet,flood:SURF.flood,snow:SURF.snow},rail:{dry:SURF.dry,wet:{th:"รางเปียก / ใบไม้",en:"Wet rail / leaves"}},
  sea:{dry:{th:"ทะเลเปิด อากาศดี",en:"Clear, open sea"},wet:{th:"ฝนหนัก",en:"Heavy rain"},flood:{th:"หมอกหนา",en:"Dense fog"}},
  air:{dry:{th:"ฟ้าโปร่ง",en:"Clear sky"},wet:{th:"ฝน / ในเมฆ",en:"Rain / in cloud"},flood:{th:"พายุ / รันเวย์น้ำขัง",en:"Storm / standing water"}},
  heli:{dry:{th:"ฟ้าโปร่ง",en:"Clear sky"},wet:{th:"ฝน",en:"Rain"},flood:{th:"ลมแรงและเมฆต่ำ",en:"Strong wind, low cloud"}},
@@ -809,7 +828,7 @@ function draw2d(fr,run){
  const view=rail?Math.max(500,cfg.v*4):(s.hwy?Math.max(160,cfg.v*2):120);
  const ex=fr?fr.x:(run?run.start:0), left=ex-view*.18, k=W/view;
  const X=wx=>(wx-left)*k;
- ctx.fillStyle=css("--curb");ctx.fillRect(0,0,W,H);
+ ctx.fillStyle=rail&&cfg.track==="underground"?"#15181c":rail&&cfg.track==="elevated"?"#8fa3b5":cfg.surf==="snow"?"#e4e9ee":css("--curb");ctx.fillRect(0,0,W,H);
  const top=H*.28,bot=H*.78,mid=(top+bot)/2;
  if(rail){
   ctx.fillStyle=css("--asphalt");ctx.fillRect(0,mid-22,W,44);
@@ -819,6 +838,8 @@ function draw2d(fr,run){
   ctx.fillStyle=css("--asphalt");ctx.fillRect(0,top,W,bot-top);
   ctx.strokeStyle=css("--stripe");ctx.lineWidth=2;ctx.setLineDash([14,12]);ctx.lineDashOffset=(left*k)%26;ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(W,mid);ctx.stroke();ctx.setLineDash([]);
  }
+ if(run&&run.uph){const u0=X(run.uph[0]),u1=X(run.uph[1]),nb=cfg.light==="night"&&cfg.tun==="bright";ctx.fillStyle=nb?"rgba(255,236,170,.35)":cfg.tun==="dark"||cfg.light!=="night"?"rgba(0,0,0,.5)":"rgba(0,0,0,.3)";ctx.fillRect(u0,0,u1-u0,H);
+  ctx.fillStyle=css("--muted");ctx.fillRect(u0,top-12,u1-u0,8);ctx.fillRect(u0,bot+4,u1-u0,8);ctx.fillStyle=css("--ink");ctx.font="11px "+css("--f-mono");ctx.fillText(lang==="th"?"ใต้สะพาน":"Underpass",u0+4,top-16);}
  const hz=run&&run.hazard;
  if(hz){
   const hx=X(fr&&hz.kind==="lead"?fr.lx:hz.pos);
@@ -932,26 +953,34 @@ function signPost(parent,x,z,face,tex,size,height,round){const pole=cylm(parent,
  const geo=round?new THREE.CircleGeometry(size/2,40):new THREE.PlaneGeometry(size,size);const m=new THREE.MeshStandardMaterial({map:tex,roughness:.5,side:THREE.DoubleSide});
  const s_=mesh(geo,m);s_.position.set(x-.03,height+size/2-.05,z);s_.rotation.y=face;parent.add(s_);return s_;}
 function build3d(run){
+ if(run.k2){build3dK2(run);return;}
  const cfg=cfgNow(), V=VEH[cfg.veh], rail=V.kind==="rail", night=cfg.light==="night", sf=SURF[cfg.surf];
+ const ug=rail&&cfg.track==="underground", el=rail&&cfg.track==="elevated", snow=cfg.surf==="snow", gy=el?-12:0;
  const sc=new THREE.Scene(); const O={}; const X=textures();
- const sky=night?0x0a1018:(cfg.surf==="dry"?0xa9c7e3:0x8d9ba6);
+ const sky=ug?0x06080b:night?0x0a1018:(snow?0xc9d3dc:cfg.surf==="dry"?0xa9c7e3:0x8d9ba6);
  sc.background=lin(sky);
- const far=rail?(night?450:1600)*(cfg.surf==="dry"?1:.75):(night?95:(cfg.surf==="dry"?650:cfg.surf==="wet"?230:160));
+ const far=ug?260:rail?(night?450:1600)*(cfg.surf==="dry"?1:.75):(night?95:(cfg.surf==="dry"?650:cfg.surf==="wet"?230:snow?200:160));
  sc.fog=new THREE.Fog(lin(sky),far*.25,far);
- sc.add(new THREE.HemisphereLight(night?0x30405a:0xdfefff,night?0x0b0f14:0x6b6a5a,night?.3:.65));
- const sun=new THREE.DirectionalLight(night?0x8fa8d8:0xfff1dc,night?.12:1.6);sun.castShadow=!night;sun.shadow.mapSize.set(1024,1024);
+ sc.add(new THREE.HemisphereLight(night||ug?0x30405a:0xdfefff,night||ug?0x0b0f14:0x6b6a5a,ug?.22:night?.3:.65));
+ const sun=new THREE.DirectionalLight(night?0x8fa8d8:0xfff1dc,ug?0:night?.12:1.6);sun.castShadow=!night&&!ug;sun.shadow.mapSize.set(1024,1024);
  const sc_=sun.shadow.camera;sc_.left=-60;sc_.right=60;sc_.top=40;sc_.bottom=-40;sc_.near=1;sc_.far=200;sun.shadow.bias=-.0004;sc.add(sun);sc.add(sun.target);O.sun=sun;
  const hz=run.hazard, x0=(run.start||0)-80, x1=Math.max(hz.pos,run.trace.length?run.trace[run.trace.length-1].lx||0:0)+(rail?400:220), L=x1-x0, xc=(x0+x1)/2;
- const ground=mesh(new THREE.PlaneGeometry(L,320),mat(night?0x141a14:(rail?0x7f9461:0x8a9a72),.95),false,true);ground.rotation.x=-Math.PI/2;ground.position.set(xc,-.02,0);sc.add(ground);
- const lane=rail?0:1.75; O.lane=lane;
- const asphalt=mat(night?0x1d232a:0x4b535b,.92), concrete=mat(night?0x3a4048:0xbfc4c8,.85), white=mat(0xf2f2f2,.6), yellow=mat(0xe0b23a,.6);
+ if(!ug){const ground=mesh(new THREE.PlaneGeometry(L,320),mat(snow?(night?0x8a939c:0xe9eef2):night?0x141a14:(rail?0x7f9461:0x8a9a72),.95),false,true);ground.rotation.x=-Math.PI/2;ground.position.set(xc,gy-.02,0);sc.add(ground);}
+ const lane=rail?0:1.75; O.lane=lane; O.ug=ug;
+ const asphalt=mat(night?0x1d232a:snow?0x6c737a:0x4b535b,.92), concrete=mat(night?0x3a4048:0xbfc4c8,.85), white=mat(0xf2f2f2,.6), yellow=mat(0xe0b23a,.6);
  if(rail){
   const bal=mesh(new THREE.BoxGeometry(L,.3,4.4),mat(0x8a8178,.95),false,true);bal.position.set(xc,0,0);sc.add(bal);
   [-.72,.72].forEach(z=>bxm(sc,L,.16,.08,xc,.38,z,mat(0xc9d0d6,.3,.9),false));
   const n=Math.floor(L/.65),sl=new THREE.InstancedMesh(new THREE.BoxGeometry(.25,.12,2.6),mat(0x6b5a48,.9),n);const mm=new THREE.Matrix4();
   for(let i=0;i<n;i++){mm.makeTranslation(x0+i*.65,.25,0);sl.setMatrixAt(i,mm);}sl.receiveShadow=true;sc.add(sl);
-  for(let x=x0;x<x1;x+=50){cylm(sc,.12,.15,7,x,3.5,-3.2,mat(0x8a939c,.5,.6),"y",8);bxm(sc,.15,.15,3.4,x,6.8,-1.6,mat(0x8a939c,.5,.6));}
+  if(!ug)for(let x=x0;x<x1;x+=50){cylm(sc,.12,.15,7,x,3.5,-3.2,mat(0x8a939c,.5,.6),"y",8);bxm(sc,.15,.15,3.4,x,6.8,-1.6,mat(0x8a939c,.5,.6));}
   bxm(sc,L,.03,.03,xc,6.2,0,mat(0x333333,.5,.8),false);
+  if(ug){const wm=mat(0x5a6068,.9);[-3.4,3.4].forEach(z=>bxm(sc,L,7,.4,xc,3.3,z,wm,false));bxm(sc,L,.4,7.2,xc,6.9,0,wm,false);bxm(sc,L,.6,1.0,xc,.9,2.6,mat(0x7a8088,.85),false);
+   const nl=Math.floor(L/18),wl=new THREE.InstancedMesh(new THREE.BoxGeometry(1.2,.12,.12),lampMat(0xdfe8ff,true),nl),mm2=new THREE.Matrix4();for(let i=0;i<nl;i++){mm2.makeTranslation(x0+i*18,4.6,-3.15);wl.setMatrixAt(i,mm2);}sc.add(wl);}
+  if(el){const cm=mat(night?0x3a4048:0xbfc4c8,.85);bxm(sc,L,1.3,5.6,xc,-.8,0,cm,false);[-2.75,2.75].forEach(z=>bxm(sc,L,1.1,.2,xc,.4,z,cm,false));
+   for(let x=x0;x<x1;x+=32)cylm(sc,1,1.2,10.6,x,-6.75,0,cm,"y",14);
+   const rd=mesh(new THREE.PlaneGeometry(L,10),mat(night?0x1d232a:0x4b535b,.92),false,true);rd.rotation.x=-Math.PI/2;rd.position.set(xc,gy+.01,12);sc.add(rd);
+   const rbb=rngB(17);for(let i=0;i<10;i++){const c=vehicleMesh("car",[0x2e86c1,0xd4ac0d,0xf2f2f2,0xc0392b][i%4]);c.position.set(x0+rbb()*L,gy,i%2?10:14);if(i%2)c.rotation.y=Math.PI;sc.add(c);}}
  } else {
   const road=mesh(new THREE.PlaneGeometry(L,10.5),asphalt,false,true);road.rotation.x=-Math.PI/2;road.position.set(xc,0,1.75);sc.add(road);
   [[-6.5,-3.5],[7,10]].forEach(([a,b])=>{bxm(sc,L,.15,b-a,xc,.075,(a+b)/2,concrete,false);bxm(sc,L,.18,.18,xc,.09,a<0?b:a,mat(0xd9dde0,.7),false);});
@@ -959,21 +988,29 @@ function build3d(run){
   const n=Math.floor(L/12),ds=new THREE.InstancedMesh(new THREE.BoxGeometry(5,.02,.15),white,n);const mm=new THREE.Matrix4();
   for(let i=0;i<n;i++){mm.makeTranslation(x0+i*12,.012,3.5);ds.setMatrixAt(i,mm);}sc.add(ds);
   // street lights
-  O.lamps=[];for(let x=x0;x<x1;x+=35){const z=9.6;cylm(sc,.07,.1,8,x,4,z,mat(0x6b737b,.5,.7),"y",10);bxm(sc,.12,.12,2.2,x,8,z-1.1,mat(0x6b737b,.5,.7));
+  O.lamps=[];for(let x=x0;x<x1;x+=35){if(run.uph&&x>run.uph[0]-3&&x<run.uph[1]+3)continue;const z=9.6;cylm(sc,.07,.1,8,x,4,z,mat(0x6b737b,.5,.7),"y",10);bxm(sc,.12,.12,2.2,x,8,z-1.1,mat(0x6b737b,.5,.7));
    const lm=lampMat(0xffe3a8,night);const l=bxm(sc,.6,.12,.35,x,7.9,z-2.1,lm,false);O.lamps.push(lm);}
  }
  // buildings and trees
  const rb=rngB(91);
- for(let x=x0;x<x1;x+=rail?40:22){[-1,1].forEach(side=>{ if(rb()<.25) return;
-  if(rail){const tr=new THREE.Group();cylm(tr,.18,.25,2.4,0,1.2,0,mat(0x5a4632,.9),"y",8);const fo=mesh(new THREE.IcosahedronGeometry(2+rb()*1.5,1),mat(night?0x16241a:0x4f7a3f,.9,0,{flatShading:true}));fo.position.y=3.6;tr.add(fo);tr.position.set(x+rb()*20,0,side*(14+rb()*30));sc.add(tr);}
+ if(!ug)for(let x=x0;x<x1;x+=rail?40:22){[-1,1].forEach(side=>{ if(rb()<.25) return; if(run.uph&&x>run.uph[0]-30&&x<run.uph[1]+8) return;
+  if(rail){const tr=new THREE.Group();cylm(tr,.18,.25,2.4,0,1.2,0,mat(0x5a4632,.9),"y",8);const fo=mesh(new THREE.IcosahedronGeometry(2+rb()*1.5,1),mat(night?0x16241a:0x4f7a3f,.9,0,{flatShading:true}));fo.position.y=3.6;tr.add(fo);tr.position.set(x+rb()*20,gy,side*(14+rb()*30)+(el&&side>0?14:0));sc.add(tr);}
   else {const h=6+rb()*24,w=10+rb()*8,d=8+rb()*8;const tx=(night?X.windowsNight:X.windowsDay).clone();tx.needsUpdate=true;tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(Math.max(1,Math.round(w/3.2)),Math.max(1,Math.round(h/3.2)));
    const bm=new THREE.MeshStandardMaterial({map:tx,roughness:.8,emissive:night?0xffffff:0x000000,emissiveMap:night?tx:null,emissiveIntensity:night?.55:0});
    const b=mesh(new THREE.BoxGeometry(w,h,d),bm,true,true);b.position.set(x+w/2,h/2,side<0?-12-d/2:13+d/2);sc.add(b);
    if(rb()<.6){const tr=new THREE.Group();cylm(tr,.12,.16,2,0,1,0,mat(0x5a4632,.9),"y",8);const fo=mesh(new THREE.IcosahedronGeometry(1.3,1),mat(night?0x16241a:0x557f42,.9,0,{flatShading:true}));fo.position.y=2.7;tr.add(fo);tr.position.set(x+rb()*15,0,side<0?-5.2:8.4);sc.add(tr);}}});}
+ if(run.uph){const [u0,u1]=run.uph,ul=u1-u0,uc=(u0+u1)/2,tn=cfg.tun;
+  const ucm=mat(night?0x2a2f35:tn==="bright"?0xbfc4c8:0x60666d,.9);bxm(sc,ul,1.6,46,uc,7.4,1.75,ucm);[-4.6,8.1].forEach(z=>bxm(sc,ul,6.6,.8,uc,3.3,z,ucm));
+  for(let z=-20;z<24;z+=3.2)bxm(sc,ul,.15,.15,uc,8.3,z,mat(0xd9dde0,.6),false);
+  const lv=tn==="dark"?0:tn==="bright"?(night?3.2:1.6):(night?.7:1.4);
+  if(lv>0){const lm=new THREE.MeshStandardMaterial({color:0xfff1d0,emissive:0xfff1d0,emissiveIntensity:lv});for(let x=u0+3;x<u1;x+=5)[-.5,4].forEach(z=>bxm(sc,1.4,.08,.3,x,6.55,z,lm,false));
+   const pl=new THREE.PointLight(0xfff1d0,lv*(night?2.2:1.2),46,1.6);pl.position.set(uc,5.6,1.75);sc.add(pl);}
+  O.uph=run.uph;O.tEdge=((run.trace.find(q=>q.x>=((night&&tn==="bright")?u1:u0)-1))||{t:Infinity}).t;
+  if(!rail){const ov=vehicleMesh("car",0xd4ac0d);ov.rotation.y=-Math.PI/2;ov.position.set(uc-2,8.2,-6);sc.add(ov);O.over=ov;}}
  // ego
  const ego=vehicleMesh(cfg.veh,C3("--accent").getHex());ego.position.set(0,rail?.31:0,lane);sc.add(ego);O.ego=ego;
  const sd=new THREE.Mesh(new THREE.PlaneGeometry(1,rail?3:1.8),new THREE.MeshBasicMaterial({color:C3("--accent"),transparent:true,opacity:.22,depthWrite:false}));sd.rotation.x=-Math.PI/2;sd.position.y=.04;sc.add(sd);O.stopBand=sd;
- if(night){const hl=new THREE.SpotLight(0xfff2d0,6,rail?420:120,.45,.55,1);hl.position.set(0,1.2,lane);sc.add(hl);sc.add(hl.target);O.head=hl;}
+ if(night||ug){const hl=new THREE.SpotLight(0xfff2d0,6,rail?420:120,.45,.55,1);hl.position.set(0,1.2,lane);sc.add(hl);sc.add(hl.target);O.head=hl;}
  const tVis=(run.trace.find(f=>f.vis)||{t:Infinity}).t; O.tVis=tVis;
  const lim=SCN[cfg.scn].limit;
  if(lim){const sx=(hz.pos||110)-75;signPost(sc,sx,7.6,-Math.PI/2,X.speed60,1.1,2.1,true);const z=mesh(new THREE.PlaneGeometry(1.1,.42),new THREE.MeshStandardMaterial({map:X.zone,roughness:.5,side:THREE.DoubleSide}));z.position.set(sx-.03,1.85,7.6);z.rotation.y=-Math.PI/2;sc.add(z);}
@@ -999,20 +1036,25 @@ function build3d(run){
   const mk=(x,col)=>{cylm(sc,.12,.12,5,x,2.5,2.6,mat(0x2b3642,.5,.5),"y",10);bxm(sc,.5,1.2,.5,x,5.4,2.6,mat(0x111111,.6));const l=mesh(new THREE.SphereGeometry(.2,12,10),lampMat(col,true),false);l.position.set(x-.27,5.4,2.6);sc.add(l);};
   mk(hz.pos,0xff3030); mk(hz.pos-(run.reveal||300),0xffc400);
  }
- if(hz.kind==="obst"){
+ if(hz.kind==="obst"&&cfg.track!=="ground"){const tg=new THREE.Group();bxm(tg,4,.5,2.4,0,.75,0,mat(0xe0b23a,.6,.2));bxm(tg,1.2,1,1.2,-1,1.5,0,mat(0x2b3642,.6));[-1.3,1.3].forEach(x=>[-.72,.72].forEach(z=>wheel(tg,x,z,.3,.12)));
+  const bl=lampMat(0xffa31a,true);bxm(tg,.3,.3,.3,1.6,1.25,0,bl,false);tg.position.set(hz.pos+2,.31,0);sc.add(tg);O.stuck=tg;O.blinkM=bl;
+  const w=person(0xff7a00);w.position.set(hz.pos-1,.31,.5);w.rotation.y=Math.PI;sc.add(w);O.worker=w;}
+ else if(hz.kind==="obst"){
   const cr=mesh(new THREE.PlaneGeometry(8,240),asphalt,false,true);cr.rotation.x=-Math.PI/2;cr.position.set(hz.pos,.31,0);sc.add(cr);
   const car=vehicleMesh("car",0xc23b2a);car.rotation.y=-Math.PI/2;car.position.set(hz.pos,.31,-2.3);sc.add(car);O.stuck=car;
   [-5,5].forEach(z=>{const arm=bxm(sc,.12,.12,4,hz.pos+(z<0?-5:5),1.1,z+(z<0?2:-2),mat(0xffffff,.5));});
   O.xbells=[-5,5].map(z=>{const m_=lampMat(0xff2020,true);const l=mesh(new THREE.SphereGeometry(.15,10,8),m_,false);l.position.set(hz.pos+(z<0?-5.2:5.2),2.4,z);sc.add(l);return m_;});
  }
  // rain
- if(cfg.surf!=="dry"&&!rail||cfg.surf==="wet"&&rail){const n=1600,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=(Math.random()-.5)*80;pos[i*3+1]=Math.random()*24;pos[i*3+2]=(Math.random()-.5)*50;}
-  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));const rn=new THREE.Points(g,new THREE.PointsMaterial({color:0xcfd9e3,size:.07,transparent:true,opacity:.7}));sc.add(rn);O.rain=rn;}
+ if(!ug&&(cfg.surf!=="dry"&&!rail||cfg.surf==="wet"&&rail)){const n=1600,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=(Math.random()-.5)*80;pos[i*3+1]=Math.random()*24;pos[i*3+2]=(Math.random()-.5)*50;}
+  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));const rn=new THREE.Points(g,new THREE.PointsMaterial({color:snow?0xffffff:0xcfd9e3,size:snow?.14:.07,transparent:true,opacity:snow?.95:.7}));sc.add(rn);O.rain=rn;O.rainV=snow?.1:.9;}
  R3.scene=sc;R3.obj=O;R3.run=run;
 }
 function draw3d(fr,run){
  if(!has3D()){draw2d(fr,run);return;}
+ {const dk=document.getElementById("v3dark");if(dk)dk.style.opacity=0;}
  if(R3.run!==run) build3d(run);
+ if(run.k2){draw3dK2(fr,run);return;}
  const cfg=cfgNow(),V=VEH[cfg.veh],rail=V.kind==="rail",O=R3.obj,hz=run.hazard,cam=R3.camera;
  const f=fr||run.trace[0]||{t:0,x:run.start||0,v:cfg.v/3.6,lx:hz.pos,vis:false};
  const x=f.x,t=f.t;
@@ -1023,28 +1065,38 @@ function draw3d(fr,run){
  if(O.sun){O.sun.position.set(x-30,60,40);O.sun.target.position.set(x+20,0,0);}
  if(O.beacons){const ph=Math.floor(t*2.6)%2;O.beacons.forEach(b=>b.m.emissiveIntensity=(b.i===ph)?2.4:.08);}
  if(O.xbells){const ph=Math.floor(t*2)%2;O.xbells.forEach((m,i)=>m.emissiveIntensity=(i===ph)?2.2:.1);}
- if(O.rain){O.rain.position.set(cam.position.x,0,cam.position.z);const a=O.rain.geometry.attributes.position;for(let i=0;i<a.count;i++){let y=a.getY(i)-0.9;if(y<0)y+=24;a.setY(i,y);}a.needsUpdate=true;}
+ if(O.rain){O.rain.position.set(cam.position.x,0,cam.position.z);const a=O.rain.geometry.attributes.position;for(let i=0;i<a.count;i++){let y=a.getY(i)-(O.rainV||.9);if(y<0)y+=24;a.setY(i,y);if(O.rainV<.5)a.setX(i,a.getX(i)+Math.sin(y+i)*.03);}a.needsUpdate=true;}
  const a=V.a*SURF[cfg.surf].m, sd=f.v*f.v/(2*a);
  O.stopBand.visible=sd>.5&&st.view!=="driver"; O.stopBand.scale.x=Math.max(.01,sd); O.stopBand.position.set(x+sd/2,.03,O.lane);
  if(O.head){O.head.position.set(x+.2,1.1,O.lane);O.head.target.position.set(x+40,0,O.lane);}
  if(O.ped){ let z=hz.present?5.4:8.6; if(hz.present&&t>=O.tVis) z=Math.max(O.lane,5.4-(t-O.tVis)*1.6); O.ped.position.z=z; O.ped.visible=st.view!=="other"; }
  if(O.side){ const ct=run.clearT||1.5, vz=14/ct; O.side.position.z = isFinite(O.tVis)? 8-(t-O.tVis)*vz : 60; if(O.side.position.z>60)O.side.position.z=60; }
  if(O.side) O.side.visible=st.view!=="other"; if(O.stuck) O.stuck.visible=st.view!=="other";
- if(O.lead){ O.lead.position.x=f.lx; (O.lead.userData.brake||[]).forEach(m=>m.emissiveIntensity=f.vis?2.2:.15); }
+ if(O.lead){ O.lead.position.x=f.lx; (O.lead.userData.brake||[]).forEach(m=>m.emissiveIntensity=f.vis?2.2:.15); O.lead.visible=!(O.uph&&st.view==="other"); }
+ if(O.worker) O.worker.visible=st.view!=="other"; if(O.blinkM) O.blinkM.emissiveIntensity=Math.floor(t*2)%2?2.2:.1;
+ if(O.over) O.over.position.z=-6+((t*12)%40);
+ {const dk=document.getElementById("v3dark");let op=0,bgc="#000";
+  if(O.uph&&st.view==="driver"){const nt=cfg.light==="night",tn=cfg.tun,amp=!nt?(tn==="dark"?.88:tn==="std"?.5:.18):(tn==="bright"?.82:tn==="dark"?.35:.12),dur=Math.max(.6,(run.adapt||.3)*2.2);
+   if(t>=O.tEdge)op=amp*Math.max(0,1-(t-O.tEdge)/dur);
+   if(nt&&tn==="bright"&&x>O.uph[0]&&x<O.uph[1]){op=.22;bgc="#fff6dc";}}
+  if(dk){dk.style.opacity=op;dk.style.background=bgc;}}
  if(O.blink) O.blink.forEach(m=>m.visible=Math.floor(t*2)%2===0);
  // cameras
  const L=V.len;
- if(st.view==="chase"){ const back=rail?95:(cfg.veh==="bus"?L+10:L+9), up=rail?12:(cfg.veh==="bus"?7:5);
-  cam.fov=60; cam.position.set(x-back,up,O.lane-(rail?12:7)); cam.lookAt(x+(rail?70:30),0,O.lane); }
+ if(st.view==="chase"&&O.ug){cam.fov=62;cam.position.set(x-12,5.5,0);cam.lookAt(x+70,2,0);}
+ else if(st.view==="chase"){ const back=rail?95:(cfg.veh==="bus"?L+10:L+9), up=rail?(O.ug?4.6:12):(cfg.veh==="bus"?7:5);
+  cam.fov=60; cam.position.set(x-back,up,O.lane-(rail?(O.ug?1.4:12):7)); cam.lookAt(x+(rail?70:30),0,O.lane); }
  else if(st.view==="driver"){ const eye={car:[1.9,1.15],moto:[1.2,1.55],bus:[.8,2.5],train:[1.6,3.1]}[cfg.veh];
   cam.fov=70; cam.position.set(x-eye[0]+1.5,eye[1],O.lane+(cfg.veh==="car"?-.35:0)); cam.lookAt(x+60,eye[1]-.25,O.lane); }
  else { // the other road user
   cam.fov=72;
   if(hz.kind==="ped"){const pz=O.ped?O.ped.position.z:5.4;cam.position.set(hz.pos+.2,1.6,pz);cam.lookAt(hz.pos-40,1.1,1.75);}
   else if(hz.kind==="side"){const sz=O.side.position.z;cam.position.set(hz.pos+1.5,1.2,sz+1.2);cam.lookAt(hz.pos-14,1,sz-20);}
+  else if(hz.kind==="lead"&&O.uph){cam.position.set(f.lx-2.4,1.25,O.lane-.3);cam.lookAt(x-30,.9,O.lane);}
   else if(hz.kind==="lead"){cam.position.set(f.lx+12,1.6,10);cam.lookAt(x-6,1,O.lane);}
   else if(hz.kind==="stall"){cam.position.set(hz.pos+14,1.6,10);cam.lookAt(x,1,O.lane);}
-  else if(hz.kind==="signal"){cam.position.set(hz.pos+8,1.7,4.5);cam.lookAt(x-20,2,0);}
+ else if(hz.kind==="signal"){cam.position.set(hz.pos+8,1.7,O.ug?2.4:4.5);cam.lookAt(x-20,2,0);}
+  else if(O.worker){cam.position.set(hz.pos-1,2.0,.5);cam.lookAt(hz.pos-120,1.8,0);}
   else {cam.position.set(hz.pos+.4,1.15,-1.6);cam.lookAt(hz.pos-120,2.2,0);}
  }
  cam.updateProjectionMatrix();
@@ -1052,15 +1104,297 @@ function draw3d(fr,run){
  document.getElementById("v3tag").textContent=`${(f.v*3.6).toFixed(0)} km/h · ${esc(viewLabel(st.view))}`;
 }
 function viewLabel(v){ const k=hazKind();
- if(v==="top")return tx(T.vTop); if(v==="chase")return tx(T.vChase); if(v==="driver")return tx(VEH[st.veh].kind==="rail"?T.vDriverRail:T.vDriver); return tx(T.vOther[k]); }
-function hazKind(){const s=SCN[st.scn];if(isK2())return "gen";return s.ped?"ped":s.side?"side":s.hw?"lead":s.hwy?"stall":s.signal?"signal":"obst";}
+ if(v==="top")return tx(T.vTop); if(v==="chase")return tx(T.vChase); if(isK2()){const q=K2V[k2key()];return tx(v==="driver"?q.d:q.o);} if(v==="driver")return tx(VEH[st.veh].kind==="rail"?T.vDriverRail:T.vDriver); return tx(T.vOther[k]); }
+function hazKind(){const s=SCN[st.scn];if(isK2())return "gen";return s.ped?"ped":s.side?"side":s.uph?"uph":s.hw?"lead":s.hwy?"stall":s.signal?"signal":(VEH[st.veh].kind==="rail"&&st.track!=="ground")?"obstTrk":"obst";}
 function syncViews(){
- const ok=has3D()&&!isK2(); if(!ok&&st.view!=="top") st.view="top";
+ const ok=has3D(); if(!ok&&st.view!=="top") st.view="top";
  document.getElementById("views").innerHTML=["top","chase","driver","other"].map(v=>`<button type="button" id="view-${v}" data-view="${v}" aria-pressed="${st.view===v}" ${v!=="top"&&!ok?"disabled":""}>${esc(viewLabel(v))}</button>`).join("");
  const is3=st.view!=="top"; document.getElementById("cv").hidden=is3; document.getElementById("v3wrap").hidden=!is3;
- const k=hazKind(); document.getElementById("viewcap").textContent=isK2()?tx(T.no3dK2):!ok?tx(T.no3d):st.view==="top"?tx(T.capTop):st.view==="chase"?tx(T.capChase):st.view==="driver"?tx(T.capDriver):tx(T.capOther[k]);
+ const k=hazKind(); const q=isK2()?K2V[k2key()]:null;document.getElementById("viewcap").textContent=!ok?tx(T.no3d):st.view==="top"?tx(T.capTop):st.view==="chase"?tx(q?CAP_CHASE_K2:T.capChase):st.view==="driver"?tx(q?q.cd:SCN[st.scn].uph?T.capDriverUph:T.capDriver):tx(q?q.co:T.capOther[k]);
  if(is3) size3d();
 }
+
+/* ---------- 3D for ships, aircraft, drones, rockets and infrastructure ---------- */
+const K2V={
+ ship:{d:B("สะพานเดินเรือ","Ship's bridge"),o:B("สะพานเดินเรือของลำที่ตัดหน้า","Crossing ship's bridge"),
+  cd:B("มองจากสะพานเดินเรือ ตู้คอนเทนเนอร์บังด้านหน้าบางส่วน หมอกจำลองระยะที่ตามองเห็นจริง เรือใหญ่ต้องเริ่มหลบตั้งแต่ยังมองไม่เห็นกัน จึงต้องพึ่งเรดาร์และ AIS","From the bridge, containers block part of the view and fog sets how far eyes can see. Big ships must start turning before they can see each other, so radar and AIS do the work."),
+  co:B("ตามกฎ COLREG เรือที่เห็นอีกลำอยู่ทางขวามือต้องหลีกทาง ส่วนอีกลำต้องคงเส้นทางและความเร็ว แต่ถ้าดูแล้วจะชนก็ต้องหลบด้วย","Under COLREG, the ship that has the other on its starboard side gives way. The other holds course and speed, but must still act if a collision looks likely.")},
+ small:{d:B("สะพานเดินเรือ","Ship's bridge"),o:B("ชาวประมงบนเรือเล็ก","Fisherman on the small boat"),
+  cd:B("เรือประมงสูงจากน้ำแค่ไม่กี่เมตร ท่ามกลางฝนและคลื่นจึงเป็นจุดเล็กนิดเดียว","A fishing boat sits only a few metres above the water, a speck among rain and waves."),
+  co:B("จากเรือเล็ก เรือสินค้าดูเหมือนกำแพงที่เคลื่อนเข้ามา คนบนสะพานเดินเรือที่สูงหลายสิบเมตรอาจมองไม่เห็นเรือลำนี้เลย การติด AIS และตัวสะท้อนเรดาร์ช่วยให้ถูกเห็น","From the small boat the cargo ship is a moving wall, and its bridge, tens of metres up, may never see the boat. AIS and a radar reflector help it be seen.")},
+ mid:{d:B("ห้องนักบิน","Cockpit"),o:B("ห้องนักบินของอีกลำ","Other aircraft's cockpit"),
+  cd:B("เมื่อเข้าหากันที่ความเร็วรวมเกือบ 1,900 กม./ชม. อีกลำจะเป็นจุดเล็กที่แทบไม่ขยับในกระจก จนเหลือไม่กี่วินาทีก่อนถึงกัน นี่คือเหตุผลที่ต้องมี TCAS","Closing at nearly 1,900 km/h, the other aircraft is a dot that barely moves in the windscreen until seconds before. That's why TCAS exists."),
+  co:B("TCAS ของทั้งสองลำประสานกัน ให้ลำหนึ่งไต่ อีกลำร่อน ถ้านักบินทำตามคำสั่ง ATC ที่ขัดกับ TCAS อาจหลบไปทางเดียวกันได้ (เหตุการณ์ Überlingen ปี 2002)","Both TCAS units coordinate: one aircraft climbs, the other descends. Following an ATC instruction that conflicts with TCAS can send both the same way (Überlingen, 2002).")},
+ uheli:{d:B("กล้องโดรน (FPV)","Drone camera (FPV)"),o:B("นักบินเฮลิคอปเตอร์กู้ภัย","Rescue helicopter pilot"),
+  cd:B("จอ FPV เห็นได้แคบและไม่มีเสียง เฮลิคอปเตอร์ที่มาจากด้านข้างหรือด้านหลังจะไม่ปรากฏในจอเลย ผู้บังคับต้องฟังเสียงและมองด้วยตาเองด้วย","An FPV screen is narrow and silent; a helicopter coming from the side or behind never shows up. The pilot has to listen and look as well."),
+  co:B("นักบินแทบมองไม่เห็นโดรนขนาดครึ่งเมตร หน้าที่หลีกทางจึงเป็นของผู้บังคับโดรน ต้องลดระดับหรือลงจอดทันทีเมื่อได้ยินเสียงเฮลิคอปเตอร์","The pilot can hardly see a half-metre drone, so giving way is the drone pilot's job: descend or land as soon as a helicopter is heard.")},
+ wire:{d:B("ห้องนักบินเฮลิคอปเตอร์","Helicopter cockpit"),o:B("ช่างไฟฟ้าที่เสา","Lineman at the pylon"),
+  cd:B("สายไฟเส้นเล็กกลืนไปกับพื้นหลัง สิ่งที่เห็นง่ายกว่าคือเสา จึงควรมองหาเสา แล้วคิดไว้เสมอว่ามีสายพาดอยู่ระหว่างเสา","Thin wires vanish into the background; the pylons are what you can see, so look for pylons and assume a wire runs between them."),
+  co:B("จากพื้นจะเห็นว่าเฮลิคอปเตอร์บินต่ำอยู่ระดับเดียวกับสาย ลูกบอลสีส้มบนสายไฟช่วยให้มองเห็นได้ แต่ไม่ได้ติดทุกช่วง","From the ground you can see the helicopter is level with the wires. Orange marker balls help, but not every span has them.")},
+ rwy:{d:B("ห้องนักบิน","Cockpit"),o:B("คนขับรถลากบนรันเวย์","Tug driver on the runway"),
+  cd:B("ระหว่างวิ่งขึ้น สิ่งกีดขวางที่อยู่ไกลเป็นแค่จุดเล็กบนรันเวย์ ไฟสถานะรันเวย์ (RWSL) สีแดงเตือนได้ก่อนที่ตาจะเห็น","During the take-off roll a distant obstacle is a small dot on the runway. Red runway status lights (RWSL) warn before eyes can."),
+  co:B("รถลากอาจเข้ารันเวย์เพราะเข้าใจคำสั่งผิด หรือหลงทางตอนทัศนวิสัยต่ำ ไฟหยุด (stop bar) และเรดาร์ภาคพื้นช่วยป้องกันเรื่องนี้","A tug can end up on the runway through a misheard clearance or getting lost in low visibility. Stop bars and ground radar guard against it.")},
+ imc:{d:B("ห้องนักบินเฮลิคอปเตอร์","Helicopter cockpit"),o:B("คนบนพื้นใต้เมฆ","Person under the cloud"),
+  cd:B("ในเมฆเห็นแต่สีขาว ไม่มีขอบฟ้าให้รู้ว่าเอียงอยู่ หูชั้นในหลอกให้รู้สึกว่าบินตรงทั้งที่กำลังเลี้ยว ต้องเชื่อเครื่องวัดเท่านั้น","In cloud there is only white and no horizon to show the bank. The inner ear says level while the aircraft turns; only the instruments can be trusted."),
+  co:B("จากพื้นได้ยินแค่เสียงเครื่องยนต์ในเมฆ ถ้าเสียงดังขึ้นและเปลี่ยนจังหวะ มักแปลว่าเครื่องกำลังดิ่งหมุนลงมา","From the ground you only hear the engine in the cloud. A sound that grows and changes pitch usually means a descending spiral.")},
+ link:{d:B("กล้องโดรน (FPV)","Drone camera (FPV)"),o:B("คนในฝูงชน","Person in the crowd"),
+  cd:B("เมื่อสัญญาณหาย ภาพจากกล้องก็ค้างหรือหายไปด้วย สิ่งที่เกิดต่อจึงขึ้นกับ failsafe ที่ตั้งไว้ก่อนบิน","When the link drops, the video freezes or disappears too, so what happens next depends on the failsafe set before take-off."),
+  co:B("คนข้างล่างไม่รู้ว่าโดรนเหนือหัวยังมีคนบังคับอยู่หรือไม่ กฎหลายประเทศจึงห้ามบินเหนือฝูงชน","People below can't tell whether the drone overhead is still under control, which is why many countries ban flying over crowds.")},
+ abort:{d:B("หน้าต่างแคปซูลลูกเรือ","Crew capsule window"),o:B("ช่างภาพห่าง 6 กม. (เลนส์เทเล)","Photographer 6 km away (telephoto)"),
+  cd:B("ลูกเรือแทบไม่มีเวลาตัดสินใจเอง ระบบหนีภัยจึงต้องสั่งงานอัตโนมัติ จรวดหนีภัยดึงแคปซูลออกด้วยแรงหลายเท่าของแรงโน้มถ่วง","The crew has almost no time to decide, so the escape system fires automatically and pulls the capsule away at many g."),
+  co:B("ที่ระยะนี้เสียงมาถึงช้ากว่าภาพราว 20 วินาทีขึ้นไป การระเบิดหรือการหนีภัยจบไปแล้วก่อนจะได้ยิน","At this distance the sound arrives 20 seconds or more after the picture; the explosion or escape is over before it is heard.")},
+ fts:{d:B("กล้องบนจรวด","On-board camera"),o:B("คนในเมืองริมฝั่ง","Townsperson on the coast"),
+  cd:B("กล้องบนจรวดมองย้อนลงมาที่พื้นโลก เส้นทางที่เบี้ยวไปดูได้จากแนวชายฝั่งที่เลื่อนในภาพ","The on-board camera looks back down at Earth; the drift shows as the coastline sliding across the frame."),
+  co:B("คนในเมืองเห็นจรวดเป็นแค่จุดสว่าง สิ่งที่ปกป้องเขาคือเขตทะเลและน่านฟ้าที่ประกาศปิดไว้ก่อนปล่อย และระบบสั่งทำลาย ไม่ใช่การหลบเอง","To the town the rocket is a bright dot. What protects people is the sea and airspace closed before launch and the termination system, not getting out of the way.")},
+ bridge:{d:B("คนขับรถบรรทุกบนสะพาน","Truck driver on the bridge"),o:B("ผู้ตรวจใต้สะพาน","Inspector under the bridge"),
+  cd:B("คนขับมองไม่เห็นความเสียหายใต้พื้นสะพานเลย ต้องพึ่งการตรวจ ป้ายจำกัดน้ำหนัก และการปิดสะพานเมื่อมีสัญญาณเตือน","A driver can't see any damage under the deck; safety rests on inspections, weight limits and closing the bridge when warnings show."),
+  co:B("จากใต้สะพานเห็นรอยร้าว สนิม และการกัดเซาะที่ตอม่อ ซึ่งคนบนสะพานมองไม่เห็น สีของชิ้นส่วนแสดงแรงเทียบกับกำลังรับ","From below you see cracks, rust and scour at the piers that nobody on the deck can. Member colours show load against capacity.")},
+ road:{d:B("คนขับรถบรรทุก","Truck driver"),o:B("คนขี่มอเตอร์ไซค์","Motorcyclist"),
+  cd:B("รถบรรทุกหนักแทบไม่รู้สึกถึงหลุม แต่ตามกฎกำลังสี่ รถหนักหนึ่งเที่ยวทำให้ผิวทางเสียหายมากกว่ารถเก๋งหลายหมื่นเท่า","A heavy truck barely feels a pothole, yet by the fourth-power law each pass does tens of thousands of times more damage than a car."),
+  co:B("สำหรับมอเตอร์ไซค์ หลุมที่มีน้ำขังดูไม่ออกว่าลึกแค่ไหน และอาจทำให้ล้อหน้าจมจนล้ม โดยเฉพาะตอนกลางคืน","On a motorcycle you can't judge how deep a water-filled pothole is; it can catch the front wheel and throw you off, especially at night.")}
+};
+const CAP_CHASE_K2=B("3D จากด้านหลังหรือมุมสูง ใช้ดูระยะห่างและจังหวะการหลบ ระยะทางในฉากเป็นสเกลจริง","3D from behind or above, for judging distances and timing. Distances are to real scale.");
+function k2key(){const s=SCN[st.scn];return s.enc||(s.rwy?"rwy":s.imc?"imc":s.link?"link":s.abort?"abort":s.fts?"fts":s.bridge?"bridge":"road");}
+function flat(sc,w,d,color,x,y,z,r=.9,o={}){const sg=Math.min(48,Math.max(1,Math.ceil(Math.max(w,d)/400)));const p=mesh(new THREE.PlaneGeometry(w,d,sg,sg),mat(color,r,o.metal||0,o.extra||{}),false,true);p.rotation.x=-Math.PI/2;p.position.set(x,y,z);sc.add(p);return p;}
+function lights3(sc,night,k=1){sc.add(new THREE.HemisphereLight(night?0x30405a:0xdfefff,night?0x0b0f14:0x6b6a5a,(night?.4:.8)*k));const s=new THREE.DirectionalLight(night?0x8fa8d8:0xfff1dc,night?.2:1.5*k);s.position.set(-.4,1,.6);sc.add(s);return s;}
+function rainPts(sc,O,snow){const n=1400,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=(Math.random()-.5)*80;pos[i*3+1]=Math.random()*24;pos[i*3+2]=(Math.random()-.5)*60;}
+ const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));O.rain=new THREE.Points(g,new THREE.PointsMaterial({color:snow?0xffffff:0xcfd9e3,size:snow?.14:.07,transparent:true,opacity:snow?.9:.7}));O.rainV=snow?.12:.9;sc.add(O.rain);}
+function stepRain(O,cam){if(!O.rain)return;O.rain.position.set(cam.position.x,cam.position.y-10,cam.position.z);const a=O.rain.geometry.attributes.position;for(let i=0;i<a.count;i++){let y=a.getY(i)-O.rainV;if(y<0)y+=24;a.setY(i,y);if(O.rainV<.5)a.setX(i,a.getX(i)+Math.sin(y+i)*.03);}a.needsUpdate=true;}
+function trees(sc,n,x0,x1,z0,z1,y,night,seed,avoid){const rb=rngB(seed);const g=new THREE.IcosahedronGeometry(1,1),im=new THREE.InstancedMesh(g,mat(night?0x16241a:0x4f7a3f,.9,0,{flatShading:true}),n);const mm=new THREE.Matrix4();
+ for(let i=0;i<n;i++){let x,z;do{x=x0+rb()*(x1-x0);z=z0+rb()*(z1-z0);}while(avoid&&avoid(x,z));const s=3+rb()*4;mm.compose(new THREE.Vector3(x,y+s*.9,z),new THREE.Quaternion(),new THREE.Vector3(s,s*1.2,s));im.setMatrixAt(i,mm);}sc.add(im);return im;}
+/* models */
+function shipMesh(L,B_,D,col){const g=new THREE.Group();
+ const hull=extrudeProfile([[-L/2,0],[L/2-L*.1,0],[L/2,D*.9],[L/2-L*.02,D],[-L/2,D]],B_,mat(col,.6,.1),Math.min(.4,B_*.02));hull.position.y=-D*.45;g.add(hull);
+ bxm(g,L*.95,.5,B_*.92,-L*.01,D*.55+.7,0,mat(0x7a7f85,.8),false);
+ if(L>100){const cols=[0xc0392b,0x2e86c1,0xd4ac0d,0x1e8449,0x7d3c98,0xe67e22,0x95a5a6];const n=Math.floor(L*.6/13.2),per=Math.floor(B_*.85/2.5),tiers=4;
+  const im=new THREE.InstancedMesh(new THREE.BoxGeometry(12,2.6,2.4),mat(0xffffff,.7),n*per*tiers);const mm=new THREE.Matrix4(),c=new THREE.Color();let i=0;
+  for(let a=0;a<n;a++)for(let b=0;b<per;b++)for(let h=0;h<tiers;h++){mm.makeTranslation(L*.4-a*13.2,D*.55+1.6+h*2.6,-B_*.425+1.25+b*2.5);im.setMatrixAt(i,mm);c.set(cols[(a*7+b*3+h*5)%cols.length]).convertSRGBToLinear();im.setColorAt(i,c);i++;}
+  g.add(im);bxm(g,L*.06,D*1.1,B_*.8,-L*.4,D*1.1,0,mat(0xf2f2f2,.6));bxm(g,L*.075,1.4,B_*.98,-L*.4,D*1.67,0,mat(0xf2f2f2,.6));bxm(g,L*.04,D*.5,B_*.18,-L*.46,D*1.4,0,mat(0x333333,.6));
+  bxm(g,L*.062,1.6,B_*.81,-L*.4,D*1.5,0,GLASS(),false);g.userData.eye=[-L*.37,D*1.5];
+ } else {bxm(g,L*.3,D*1.1,B_*.7,-L*.12,D*1.1,0,mat(0xf2f2f2,.6));bxm(g,L*.31,D*.35,B_*.71,-L*.12,D*1.35,0,GLASS(),false);cylm(g,.08,.08,L*.45,L*.15,D*.55+L*.22,0,mat(0x555555,.5,.5),"y",6);g.userData.eye=[-L*.05,D*1.4];}
+ g.userData.nav=lampMat(0xfff4d6,true);bxm(g,.8,.8,.8,L*.3,D*.55+(L>100?16:L*.45),0,g.userData.nav,false);
+ return g;}
+function airliner(col){const g=new THREE.Group(),w=mat(0xf4f6f8,.4,.2),a=mat(col,.4,.2);
+ cylm(g,2,2,30,0,0,0,w,"x",24);const nose=mesh(new THREE.SphereGeometry(2,24,16),w);nose.scale.set(2.2,1,1);nose.position.x=15;g.add(nose);
+ const tail=mesh(new THREE.ConeGeometry(2,9,24),w);tail.rotation.z=Math.PI/2;tail.position.x=-19.5;g.add(tail);
+ bxm(g,1.6,.5,2.6,17.2,.7,0,GLASS(),false);
+ [1,-1].forEach(s=>{const wg=bxm(g,5,.4,17,-3.8,-.8,s*8.5,w);wg.rotation.y=-s*.45;cylm(g,.95,.95,4,1.2,-2.1,s*6.2,mat(0x9aa3ab,.4,.6),"x",18);
+  const st_=bxm(g,3,.25,6,-19,1,s*3,w);st_.rotation.y=-s*.4;});
+ const fin=bxm(g,5,7,.35,-18,4.6,0,a);fin.rotation.z=.35;bxm(g,26,.35,.05,0,0,2.02,a,false);bxm(g,26,.35,.05,0,0,-2.02,a,false);
+ [[12,-2.6],[-1,-2.6]].forEach(([x,y])=>{cylm(g,.12,.12,1.6,x,y,0,mat(0x555555,.5,.5),"y",8);wheel(g,x,0,.55,.4);g.children[g.children.length-2].position.y=y-.6;g.children[g.children.length-1].position.y=y-.6;});
+ g.userData.strobe=lampMat(0xffffff,true);[1,-1].forEach(s=>bxm(g,.3,.3,.3,-7.5,-.8,s*16.5,g.userData.strobe,false));
+ return g;}
+function heliMesh(col){const g=new THREE.Group(),p=mat(col,.35,.25),dk=mat(0x333333,.5,.5);
+ const b=mesh(new THREE.SphereGeometry(1.4,24,16),p);b.scale.set(2.1,1,1);b.position.y=1.6;g.add(b);
+ const gl=mesh(new THREE.SphereGeometry(1.25,20,14),GLASS(),false);gl.scale.set(1.2,.9,1);gl.position.set(1.7,1.75,0);g.add(gl);
+ cylm(g,.35,.18,7,-5.5,2,0,p,"x",12);bxm(g,1.2,1.6,.15,-9,2.8,0,p);
+ [-.9,.9].forEach(z=>{bxm(g,4.2,.1,.1,0,.05,z,dk);[-1,1].forEach(x=>bxm(g,.08,.8,.08,x,.45,z,dk));});
+ cylm(g,.15,.15,.6,0,3.0,0,dk,"y",8);
+ const rot=new THREE.Group();rot.position.set(0,3.3,0);[0,1].forEach(i=>{const bl=bxm(rot,11,.06,.35,0,0,0,mat(0x222222,.6),false);bl.rotation.y=i*Math.PI/2;});g.add(rot);g.userData.rotor=rot;
+ const tr=new THREE.Group();tr.position.set(-9.1,2.9,.2);[0,1].forEach(i=>{const bl=bxm(tr,1.6,.2,.04,0,0,0,mat(0x222222,.6),false);bl.rotation.z=i*Math.PI/2;});g.add(tr);g.userData.trotor=tr;
+ g.userData.bcn=lampMat(0xff2020,true);bxm(g,.2,.2,.2,-2,2.7,0,g.userData.bcn,false);
+ return g;}
+function droneMesh(col){const g=new THREE.Group();bxm(g,.26,.1,.26,0,0,0,mat(col,.4,.3));const rs=[];
+ [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([a,b])=>{const arm=bxm(g,.46,.03,.03,a*.16,0,b*.16,mat(0x222222,.5));arm.rotation.y=a*b>0?-Math.PI/4:Math.PI/4;
+  const r_=mesh(new THREE.CylinderGeometry(.14,.14,.01,18),mat(0x111111,.3,0,{transparent:true,opacity:.45}),false);r_.position.set(a*.32,.05,b*.32);g.add(r_);rs.push(r_);});
+ bxm(g,.08,.06,.08,.15,-.07,0,GLASS(),false);g.userData.led=lampMat(0x2ecc40,true);bxm(g,.05,.05,.05,-.14,.03,0,g.userData.led,false);g.userData.rot=rs;
+ return g;}
+function rocketMesh(){const g=new THREE.Group(),w=mat(0xeef1f4,.5,.2);
+ cylm(g,1.8,1.8,40,0,20,0,w,"y",24);cylm(g,1.83,1.83,1.2,0,30,0,mat(0x222222,.6),"y",24);cylm(g,1.83,1.83,.8,0,8,0,mat(0x222222,.6),"y",24);
+ [0,1,2,3].forEach(i=>{const a=i*Math.PI/2;const f_=bxm(g,.2,4,2.2,Math.cos(a)*2.4,2.2,Math.sin(a)*2.4,mat(0x333333,.6));f_.rotation.y=-a;});
+ cylm(g,1.3,1.6,1.4,0,-.6,0,mat(0x555555,.4,.7),"y",16);
+ const fl=mesh(new THREE.ConeGeometry(1.7,16,16,1,true),new THREE.MeshBasicMaterial({color:0xffb347,transparent:true,opacity:.85,depthWrite:false}),false);fl.rotation.x=Math.PI;fl.position.y=-9;g.add(fl);g.userData.flame=fl;
+ const anom=mesh(new THREE.SphereGeometry(1.4,16,12),new THREE.MeshBasicMaterial({color:0xff3b1a,transparent:true,opacity:0,depthWrite:false}),false);anom.position.set(1.4,4,0);g.add(anom);g.userData.anom=anom;
+ const cap=new THREE.Group();const cone=mesh(new THREE.ConeGeometry(1.8,4,24),mat(0xdfe3e8,.5,.3));cone.position.y=2;cap.add(cone);
+ cylm(cap,.15,.15,6,0,7,0,mat(0xc0392b,.5,.3),"y",8);const lf=mesh(new THREE.ConeGeometry(.9,7,12,1,true),new THREE.MeshBasicMaterial({color:0xffd28a,transparent:true,opacity:0,depthWrite:false}),false);lf.rotation.x=Math.PI;lf.position.y=-1;cap.add(lf);cap.userData.flame=lf;
+ cap.position.y=40;g.add(cap);g.userData.cap=cap;return g;}
+function truckMesh(col){const g=new THREE.Group();bxm(g,2.3,2.6,2.4,4.4,1.8,0,mat(col,.4,.2));bxm(g,.1,1.0,2.1,5.56,2.4,0,GLASS(),false);
+ bxm(g,8,2.8,2.5,-1,2.1,0,mat(0xd9dde0,.6));[4.6,0,-3.5].forEach(x=>[-1.05,1.05].forEach(z=>wheel(g,x,z,.5,.3)));return g;}
+function boom(sc){const m=mesh(new THREE.SphereGeometry(1,24,16),new THREE.MeshBasicMaterial({color:0xff7a28,transparent:true,opacity:.85,depthWrite:false}),false);m.visible=false;sc.add(m);return m;}
+function crowd(sc,n,x0,x1,z0,z1,seed){const rb=rngB(seed),cols=[0xc0392b,0x2e86c1,0xd4ac0d,0x1e8449,0x7d3c98,0xf2f2f2];const ps=[];for(let i=0;i<n;i++){const p=person(cols[i%cols.length]);p.position.set(x0+rb()*(x1-x0),0,z0+rb()*(z1-z0));p.rotation.y=rb()*6.3;sc.add(p);ps.push(p);}return ps;}
+function imcState(run,t){const v=run.v,Tt=run.exit,R=v*Tt/Math.PI,rc=run.recog,spiral=isFinite(run.Lt)&&run.Lt<rc+run.exit,tl=spiral?Math.min(t,run.Lt):t;
+ let x,z,yaw,bank=0,y=300;
+ if(tl<=rc){x=v*tl;z=0;yaw=0;} else if(tl<=rc+Tt){const a=(tl-rc)/Tt*Math.PI;x=v*rc+R*Math.sin(a);z=R-R*Math.cos(a);yaw=a;bank=.4;} else {x=v*rc-v*(tl-rc-Tt);z=2*R;yaw=Math.PI;}
+ if(spiral&&t>run.Lt){const s=t-run.Lt,ang=yaw+s*.9;x+=60*(Math.sin(ang)-Math.sin(yaw));z+=60*(Math.cos(yaw)-Math.cos(ang));y=Math.max(2,300-1.25*s*s);yaw=ang;bank=1.0;}
+ return {x,y,z,yaw,bank,R};}
+
+function build3dK2(run){
+ const cfg=cfgNow(),night=cfg.light==="night"&&VEH[cfg.veh].kind!=="space"&&VEH[cfg.veh].kind!=="infra",sf=cfg.surf,k=run.k2;
+ const sc=new THREE.Scene(),O={key:k2key(),night};R3.scene=sc;R3.obj=O;R3.run=run;
+ const bg=(c,fogN,fogF,fc)=>{O.bg=c;sc.background=lin(c);if(fogF)sc.fog=new THREE.Fog(lin(fc||c),fogN,fogF);};
+ if(k==="enc"){const e=run.enc;O.enc=e;
+  if(e==="ship"||e==="small"){
+   const fogC=night?0x0b1220:sf==="flood"?0xc9d1d8:sf==="wet"?0x7d8a96:0xa9c7e3, far=sf==="flood"?(night?300:700):sf==="wet"?(night?1500:3500):(night?6000:24000);bg(fogC,far*.12,far);lights3(sc,night);
+   flat(sc,120000,120000,night?0x0a1a2a:0x1f4e6b,0,0,0,.22,{metal:.15});
+   O.C=e==="ship"?900:300;O.own=shipMesh(260,40,22,C3("--accent").getHex());sc.add(O.own);
+   O.oth=e==="ship"?shipMesh(300,45,24,0x8a2a2a):shipMesh(14,4.5,2.5,0x2e86c1);O.oth.rotation.y=-Math.PI/2;sc.add(O.oth);
+   if(sf!=="dry")rainPts(sc,O,false);
+  } else if(e==="mid"){
+   const inC=sf!=="dry";bg(night?0x05070c:inC?(sf==="flood"?0x59616b:0xb9c3cc):0x6fa8dc,inC?60:20000,inC?(sf==="flood"?900:1800):90000,night?0x05070c:inC?(sf==="flood"?0x59616b:0xb9c3cc):0x9cc3e0);lights3(sc,night);
+   flat(sc,400000,400000,night?0x0b0f14:0x5d7a4a,0,0,0,.95);
+   const cl=new THREE.InstancedMesh(new THREE.SphereGeometry(1,16,10),mat(0xffffff,.95,0,{transparent:true,opacity:.92}),90),mm=new THREE.Matrix4(),rb=rngB(21);
+   for(let i=0;i<90;i++){mm.compose(new THREE.Vector3((rb()-.5)*140000,6500+rb()*800,(rb()-.5)*60000),new THREE.Quaternion(),new THREE.Vector3(2500+rb()*3000,300+rb()*300,1800+rb()*2500));cl.setMatrixAt(i,mm);}sc.add(cl);
+   O.own=airliner(C3("--accent").getHex());O.oth=airliner(0x2b6cb0);O.oth.rotation.y=Math.PI;sc.add(O.own);sc.add(O.oth);if(sf!=="dry")rainPts(sc,O,false);
+  } else if(e==="uheli"){
+   const far=(sf==="flood"?1200:sf==="wet"?2500:7000)*(night?.5:1);bg(night?0x0a1018:sf==="dry"?0xa9c7e3:0x8d9ba6,far*.2,far);lights3(sc,night);
+   flat(sc,30000,30000,night?0x141a14:0x7f9461,0,0,0,.95);flat(sc,30000,12,night?0x1d232a:0x4b535b,0,.05,-60,.9);
+   trees(sc,260,-2500,2500,-1200,1200,0,night,33,(x,z)=>Math.abs(z+60)<15);
+   O.own=droneMesh(C3("--accent").getHex());O.own.scale.setScalar(1.4);O.oth=heliMesh(0xd0451b);O.oth.rotation.y=Math.PI;sc.add(O.own);sc.add(O.oth);
+   if(sf!=="dry")rainPts(sc,O,false);
+  } else { // wires
+   const far=(sf==="flood"?900:sf==="wet"?1800:5000)*(night?.4:1);bg(night?0x0a1018:sf==="dry"?0xa9c7e3:0x8d9ba6,far*.2,far);lights3(sc,night);
+   flat(sc,30000,30000,night?0x141a14:0x7f9461,0,0,0,.95);trees(sc,220,-2500,1500,-1500,1500,0,night,44,(x,z)=>Math.abs(x)<25);
+   const pm=mat(0x9aa3ab,.5,.6);[-480,-160,160,480].forEach(z=>{cylm(sc,.8,2.6,48,0,24,z,pm,"y",4);bxm(sc,14,1,1,0,46,z,pm);});
+   const wm=mat(0x2a2a2a,.6,.5);[[-5,0],[0,3],[5,0]].forEach(([dz,dy])=>{for(let span=0;span<3;span++){const za=-480+span*320,zb=za+320;const pts=[];for(let i=0;i<=24;i++){const u=i/24,z=za+(zb-za)*u;pts.push(new THREE.Vector3(dz,46+dy-16*Math.sin(Math.PI*u)*(span===1?1:.9),z));}
+    const tube=mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),40,.05,6,false),wm,false);sc.add(tube);}});
+   O.own=heliMesh(C3("--accent").getHex());sc.add(O.own);if(sf!=="dry")rainPts(sc,O,false);
+  }
+  O.flash=boom(sc);
+ }
+ if(k==="rwy"){const far=(sf==="flood"?700:sf==="wet"?1400:6000)*(night?.5:1);bg(night?0x0a1018:sf==="dry"?0xa9c7e3:0x8d9ba6,far*.15,far);lights3(sc,night);
+  flat(sc,20000,20000,night?0x141a14:0x6f8f5a,0,0,0,.95);const x0=run.start-400,L=-x0+900;flat(sc,L,45,night?0x22272d:0x4a535c,x0+L/2,.25,0,.85);
+  const n=Math.floor(L/50),ds=new THREE.InstancedMesh(new THREE.BoxGeometry(30,.02,.9),mat(0xf2f2f2,.6),n),mm=new THREE.Matrix4();for(let i=0;i<n;i++){mm.makeTranslation(x0+i*50,.3,0);ds.setMatrixAt(i,mm);}sc.add(ds);
+  [-21,21].forEach(z=>bxm(sc,L,.02,.9,x0+L/2,.3,z,mat(0xf2f2f2,.6),false));
+  const nl=Math.floor(L/60),el=new THREE.InstancedMesh(new THREE.SphereGeometry(.35,8,6),lampMat(0xfff4d6,night),nl*2);for(let i=0;i<nl;i++)[-23,23].forEach((z,j)=>{mm.makeTranslation(x0+i*60,.35,z);el.setMatrixAt(i*2+j,mm);});sc.add(el);
+  O.rwsl=lampMat(0xff2020,false);for(let x=-1500;x<0;x+=60)bxm(sc,1.2,.08,.6,x,.32,0,O.rwsl,false);
+  flat(sc,30,500,night?0x22272d:0x4a535c,6,.2,-260,.85);
+  O.tug=truckMesh(0xe0b23a);O.tug.scale.setScalar(.8);O.tug.rotation.y=-Math.PI/2;O.tug.position.set(6,.25,-2);sc.add(O.tug);
+  O.tugB=lampMat(0xffa31a,true);bxm(sc,.4,.4,.4,6,3.1,-1.2,O.tugB,false);
+  O.own=airliner(C3("--accent").getHex());sc.add(O.own);O.flash=boom(sc);if(sf!=="dry")rainPts(sc,O,false);
+ }
+ if(k==="imc"){bg(night?0x0a1018:sf==="dry"?0xa9c7e3:0x8d9ba6,1,9000,night?0x0a1018:0xa9c7e3);O.skyC=O.bg;lights3(sc,night);
+  flat(sc,60000,60000,night?0x141a14:0x6f8f5a,0,0,0,.95);trees(sc,300,-3000,12000,-3000,6000,0,night,55);
+  const S=imcState(run,run.recog+run.exit+1),xr=run.v*run.recog;O.cloud={x0:-10,x1:xr+S.R+1500,z0:-1500,z1:2*S.R-10,y0:150,y1:1500};
+  const c=O.cloud,cb=mesh(new THREE.BoxGeometry(c.x1-c.x0,c.y1-c.y0,c.z1-c.z0),mat(night?0x3a4250:0xe9edf1,.95,0,{transparent:true,opacity:.93,side:THREE.DoubleSide,depthWrite:false}),false);cb.position.set((c.x0+c.x1)/2,(c.y0+c.y1)/2,(c.z0+c.z1)/2);sc.add(cb);
+  O.own=heliMesh(C3("--accent").getHex());sc.add(O.own);O.flash=boom(sc);
+ }
+ if(k==="link"){const far=(night?900:4000);bg(night?0x0a1018:sf==="dry"?0xa9c7e3:0x8d9ba6,far*.2,far);lights3(sc,night);
+  const S=run.v*4*2.4+60;O.S=S;flat(sc,6000,6000,night?0x141a14:0x7f9461,0,0,0,.95);
+  flat(sc,S*.48,S*.34,night?0x1d232a:0x9aa0a6,S*.67,.03,-.045*S,.9);
+  const pad=mesh(new THREE.CircleGeometry(3,32),new THREE.MeshStandardMaterial({map:canvasTex(128,128,(c,w,h)=>{c.fillStyle="#2b3642";c.fillRect(0,0,w,h);c.strokeStyle="#fff";c.lineWidth=8;c.beginPath();c.arc(64,64,52,0,7);c.stroke();c.fillStyle="#fff";c.font="bold 70px Arial";c.textAlign="center";c.textBaseline="middle";c.fillText("H",64,68);}),roughness:.8}),false,true);pad.rotation.x=-Math.PI/2;pad.position.y=.04;sc.add(pad);
+  const rb=rngB(66);O.crowd=crowd(sc,40,S*.47,S*.88,-.2*S,.1*S,77);trees(sc,60,-S,2*S,-S,S,0,night,88,(x,z)=>x>S*.4&&x<S*.95&&z>-.25*S&&z<.15*S||Math.hypot(x,z)<20);
+  O.own=droneMesh(C3("--accent").getHex());O.own.scale.setScalar(1.6);sc.add(O.own);O.dir=new THREE.Vector3(1,0,0);if(sf!=="dry")rainPts(sc,O,false);
+ }
+ if(k==="abort"){bg(0x7fb2e5);lights3(sc,false,1.1);flat(sc,400000,400000,0x1f4e6b,0,0,0,.3,{metal:.1});flat(sc,60000,40000,0x6f8f5a,-25000,25,0,.95);
+  O.own=rocketMesh();sc.add(O.own);O.flash=boom(sc);
+  const cl=new THREE.InstancedMesh(new THREE.SphereGeometry(1,16,10),mat(0xffffff,.95,0,{transparent:true,opacity:.9}),40),mm=new THREE.Matrix4(),rb=rngB(12);
+  for(let i=0;i<40;i++){let cx_=(rb()-.5)*60000;if(cx_>-12000&&cx_<12000)cx_+=cx_<0?-14000:14000;mm.compose(new THREE.Vector3(cx_,1800+rb()*600,(rb()-.5)*60000),new THREE.Quaternion(),new THREE.Vector3(1500+rb()*2000,150+rb()*150,1200+rb()*1500));cl.setMatrixAt(i,mm);}sc.add(cl);
+ }
+ if(k==="fts"){bg(0x6fa8dc);lights3(sc,false,1.1);flat(sc,600000,600000,0x1f4e6b,0,0,0,.3,{metal:.1});
+  flat(sc,40000,120000,0x6f8f5a,-15000,40,0,.95);
+  const town=new THREE.Shape();[[25000,-18000],[90000,-26000],[90000,-80000],[20000,-80000]].forEach((p,i)=>i?town.lineTo(p[0],-p[1]):town.moveTo(p[0],-p[1]));const tg=mesh(new THREE.ShapeGeometry(town),mat(0x7a8a5a,.95),false,true);tg.rotation.x=-Math.PI/2;tg.position.y=40;sc.add(tg);
+  const bi=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mat(0xc9c2b6,.8),220),mm=new THREE.Matrix4(),rb=rngB(5);for(let i=0;i<220;i++){const h=20+rb()*80;mm.compose(new THREE.Vector3(30000+rb()*12000,40+h/2,-21000-rb()*7000),new THREE.Quaternion(),new THREE.Vector3(60+rb()*80,h,60+rb()*80));bi.setMatrixAt(i,mm);}sc.add(bi);
+  const cor=new THREE.Shape();cor.moveTo(5000,700);cor.lineTo(80000,13000);cor.lineTo(80000,-13000);cor.lineTo(5000,-700);const cg=mesh(new THREE.ShapeGeometry(cor),new THREE.MeshBasicMaterial({color:0xe2a06e,transparent:true,opacity:.22,depthWrite:false}),false);cg.rotation.x=-Math.PI/2;cg.position.y=80;sc.add(cg);
+  const lim=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(5000,90,-700),new THREE.Vector3(80000,90,-13000)]),new THREE.LineBasicMaterial({color:0xffd28a}));sc.add(lim);
+  O.own=rocketMesh();O.own.scale.setScalar(1.5);sc.add(O.own);O.flash=boom(sc);
+  O.trail=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.7}));sc.add(O.trail);
+  const dn=300,dp=new Float32Array(dn*3);O.debris=new THREE.Points(new THREE.BufferGeometry(),new THREE.PointsMaterial({color:0xffd28a,size:60,sizeAttenuation:true}));O.debris.geometry.setAttribute("position",new THREE.BufferAttribute(dp,3));O.debris.visible=false;O.dv=[];const rr=rngB(9);for(let i=0;i<dn;i++)O.dv.push([(rr()-.5)*300,(rr()-.3)*200,(rr()-.5)*300]);sc.add(O.debris);
+ }
+ if(k==="bridge"){bg(night?0x0a1018:sf==="dry"?0xbcd3e6:0x8d9ba6,600,3000);lights3(sc,night);
+  const M=run.M,sl=240/M;O.sl=sl;flat(sc,8000,8000,night?0x141a14:0x7f9461,0,-.5,0,.95);
+  flat(sc,300,600,0x6b5b4a,120,-3,0,.95);[-60,300].forEach(x=>bxm(sc,120,14,600,x,4.5,0,mat(0x8a7a66,.95),false));
+  O.water=flat(sc,300,600,0x3d6f94,120,1,0,.2,{extra:{transparent:true,opacity:.85}});
+  [0,80,160,240].forEach(x=>{bxm(sc,3,15,10,x,4.5,0,mat(0x9aa3ab,.85));if(run.scour&&x>0&&x<240){const r_=mesh(new THREE.TorusGeometry(5+run.scour*6,1,8,24),mat(0x2b3a48,.9),false);r_.rotation.x=Math.PI/2;r_.position.set(x,-2.6,0);sc.add(r_);}});
+  O.seg=[];for(let i=0;i<M;i++){const m_=new THREE.MeshStandardMaterial({color:lin(0x4caf50),roughness:.7});const s_=mesh(new THREE.BoxGeometry(sl-.3,1.2,12),m_);s_.position.set(i*sl+sl/2,12.4,0);sc.add(s_);O.seg.push(s_);
+   bxm(s_,sl-.3,.9,.2,0,1.05,5.9,mat(0xd9dde0,.7),false);bxm(s_,sl-.3,.9,.2,0,1.05,-5.9,mat(0xd9dde0,.7),false);}
+  O.pool={0:[],1:[],2:[]};for(let i=0;i<7;i++){const c=vehicleMesh("car",[0x2e86c1,0xd4ac0d,0xf2f2f2,0x1e8449][i%4]);const t=truckMesh(0x4a535c);const r_=truckMesh(0xc0392b);[c,t,r_].forEach((o,j)=>{o.visible=false;sc.add(o);O.pool[j].push(o);});}
+  O.bar=[];[-3,243].forEach(x=>{const b_=bxm(sc,1,1.2,12,x,13.6,0,lampMat(0xff2020,true),false);b_.visible=false;O.bar.push(b_);});
+  O.insp=person(0xff7a00);O.insp.position.set(120,1.2,34);sc.add(O.insp);O.boat=bxm(sc,6,.8,2.4,120,1.2,35,mat(0xf2f2f2,.6));
+  if(sf!=="dry")rainPts(sc,O,false);
+ }
+ if(k==="road"){bg(night?0x0a1018:sf==="dry"?0xa9c7e3:0x8d9ba6,500,2500);lights3(sc,night);
+  const n=(run.trace[0]&&run.trace[0].d.length)||40,cw=400/n;O.cw=cw;flat(sc,6000,6000,night?0x141a14:0x8a9a72,0,-.3,0,.95);
+  O.cell=[];O.pot=[];O.wet=[];for(let i=0;i<n;i++){const m_=new THREE.MeshStandardMaterial({color:lin(0x5a6168),roughness:.9});const c=mesh(new THREE.PlaneGeometry(cw+.02,8),m_,false,true);c.rotation.x=-Math.PI/2;c.position.set(i*cw+cw/2,.06,0);sc.add(c);O.cell.push(c);
+   const p=mesh(new THREE.CylinderGeometry(cw*.3,cw*.25,.12,20),mat(0x111111,.95),false,true);p.scale.z=.6;p.position.set(i*cw+cw/2,.03,(i%3-1)*1.4);p.visible=false;sc.add(p);O.pot.push(p);
+   const w=flat(sc,cw,8,0x4682be,i*cw+cw/2,.11,0,.1,{extra:{transparent:true,opacity:.45}});w.visible=false;O.wet.push(w);}
+  for(let x=0;x<400;x+=12)bxm(sc,6,.02,.15,x,.1,0,mat(0xf2f2f2,.6),false);[-4.1,4.1].forEach(z=>bxm(sc,400,.15,.25,200,.07,z,mat(0xd9dde0,.7),false));
+  trees(sc,120,-200,600,-150,150,0,night,99,(x,z)=>Math.abs(z)<12);
+  O.pool={0:[],1:[]};for(let i=0;i<7;i++){const t=truckMesh(0x4a535c),r_=truckMesh(0xc0392b);[t,r_].forEach((o,j)=>{o.visible=false;sc.add(o);O.pool[j].push(o);});}
+  O.moto=vehicleMesh("moto",0x2b6cb0);sc.add(O.moto);if(sf!=="dry")rainPts(sc,O,false);
+ }
+}
+
+function draw3dK2(fr,run){
+ const O=R3.obj,cam=R3.camera,k=run.k2,v=st.view,f=fr||run.trace[0]||{t:0},t=f.t||0,ph=f.phase;
+ const dk=document.getElementById("v3dark");if(dk)dk.style.opacity=0;
+ let near=.5,far=20000,fov=60;const P=(x,y,z)=>cam.position.set(x,y,z),LK=(x,y,z)=>cam.lookAt(x,y,z);
+ if(k==="enc"){const e=O.enc,tc=f.tc||0,off=f.off||0;
+  if(e==="ship"||e==="small"){const C=O.C,ox=-run.v*tc,oz=off*C,yaw=ph==="avoid"?-.35*(1-off):0;O.own.position.set(ox,0,oz);O.own.rotation.y=yaw;const iz=-run.v*.8*tc;O.oth.position.set(0,0,iz);
+   O.flash.visible=ph==="hit";if(O.flash.visible){O.flash.position.set(0,10,oz*.5);O.flash.scale.setScalar(40);}
+   const ey=O.own.userData.eye,oe=O.oth.userData.eye;far=60000;near=1;
+   if(v==="chase"){P(ox-420,120,oz+260);LK(ox+400,0,oz);} else if(v==="driver"){fov=55;P(ox+ey[0],ey[1],oz);LK(ox+ey[0]+1000*Math.cos(yaw),ey[1]-8,oz-1000*Math.sin(yaw));}
+   else {fov=55;P(0,oe[1],iz+oe[0]);LK(ox,10,oz);}
+  } else if(e==="mid"){const ox=-run.v*tc,oy=10000+off*150,ix=(run.vc-run.v)*tc;O.own.position.set(ox,oy,0);O.oth.position.set(ix,10000,0);
+   O.own.rotation.z=ph==="avoid"?.08:0;O.flash.visible=ph==="hit";if(O.flash.visible){O.flash.position.set(ox+20,oy,0);O.flash.scale.setScalar(30);}
+   near=1;far=200000;if(v==="chase"){P(ox-90,oy+18,35);LK(ox+200,oy,0);} else if(v==="driver"){fov=55;P(ox+18.2,oy+1.5,0);LK(ox+2000,oy-30,0);} else {fov=55;P(ix-18.2,10001.5,0);LK(ox,oy,0);}
+  } else if(e==="uheli"){const dx=-run.v*tc,dy=80-off*40,hx=(run.vc-run.v)*tc;O.own.position.set(dx,dy,0);O.oth.position.set(hx,80,0);O.oth.userData.rotor.rotation.y+=.6;O.oth.userData.trotor.rotation.z+=.9;O.own.userData.rot.forEach(r_=>r_.rotation.y+=1);
+   O.flash.visible=ph==="hit";if(O.flash.visible){O.flash.position.set(dx,dy,0);O.flash.scale.setScalar(6);}
+   near=.1;far=15000;if(v==="chase"){P(dx-6,dy+2.2,3);LK(dx+40,dy,0);} else if(v==="driver"){fov=78;P(dx+.3,dy-.1,0);LK(dx+60,dy-6,0);} else {fov=60;P(hx-1.8,81.6,0);LK(dx,dy,0);}
+  } else {const hx=-run.v*tc,hy=30+off*25;O.own.position.set(hx,hy,0);O.own.rotation.z=ph==="avoid"?.12:0;O.own.userData.rotor.rotation.y+=.6;O.own.userData.trotor.rotation.z+=.9;
+   O.flash.visible=ph==="hit";if(O.flash.visible){O.flash.position.set(hx,hy,0);O.flash.scale.setScalar(8);}
+   near=.2;far=15000;if(v==="chase"){P(hx-28,hy+7,12);LK(hx+60,hy,0);} else if(v==="driver"){fov=70;P(hx+2.3,hy+1.9,0);LK(hx+200,hy-6,0);} else {fov=50;P(60,1.7,-130);LK(hx,hy,0);}
+  }
+  if(O.own.userData.nav)O.own.userData.nav.emissiveIntensity=O.night?2:.6;
+ }
+ if(k==="rwy"){const x=f.x!=null?f.x:run.start;O.own.position.set(x-19.4,3.55,0);O.rwsl.emissiveIntensity=f.vis||ph==="brake"||ph==="stop"||ph==="hit"?2.2:.1;O.tugB.emissiveIntensity=Math.floor(t*2)%2?2:.1;
+  O.flash.visible=ph==="hit";if(O.flash.visible){O.flash.position.set(4,4,0);O.flash.scale.setScalar(10);}
+  near=.6;far=20000;if(v==="chase"){P(x-110,16,26);LK(x+150,2,0);} else if(v==="driver"){fov=60;P(x-1.2,5.3,-.4);LK(x+600,2.5,0);} else {fov=55;P(6,2.6,-1.2);LK(x,4,0);}
+ }
+ if(k==="imc"){const s=imcState(run,t);O.own.position.set(s.x,s.y,s.z);O.own.rotation.set(0,0,0);O.own.rotateY(-s.yaw);O.own.rotateX(-s.bank);O.own.userData.rotor.rotation.y+=.6;O.own.userData.trotor.rotation.z+=.9;
+  O.flash.visible=s.y<=2.5;if(O.flash.visible){O.flash.position.set(s.x,4,s.z);O.flash.scale.setScalar(10);}
+  near=.3;far=30000;const dir=new THREE.Vector3(Math.cos(s.yaw),0,Math.sin(s.yaw));
+  if(v==="chase"){P(s.x-dir.x*30,s.y+8,s.z-dir.z*30+6);LK(s.x+dir.x*40,s.y,s.z+dir.z*40);} else if(v==="driver"){fov=70;P(s.x+dir.x*2.3,s.y+1.9,s.z+dir.z*2.3);const up=new THREE.Vector3(-Math.sin(s.yaw)*Math.sin(s.bank),Math.cos(s.bank),Math.cos(s.yaw)*Math.sin(s.bank));cam.up.copy(up);LK(s.x+dir.x*200,s.y-5,s.z+dir.z*200);}
+  else {fov=70;P(run.v*run.recog*.4,1.7,250);LK(run.v*run.recog*.5,300,0);}
+  const c=O.cloud,p=cam.position,inside=p.x>c.x0&&p.x<c.x1&&p.z>c.z0&&p.z<c.z1&&p.y>c.y0&&p.y<c.y1;
+  sc_fog(inside?(O.night?0x3a4250:0xe9edf1):O.skyC,inside?1:2000,inside?70:9000);
+ }
+ if(k==="link"){const x=f.x||0,z=-(f.y||0),y=f.alt!=null?f.alt:30;const prev=O.last||new THREE.Vector3(x,y,z);const d=new THREE.Vector3(x-prev.x,0,z-prev.z);if(d.length()>.01)O.dir=d.normalize();O.last=new THREE.Vector3(x,y,z);
+  O.own.position.set(x,Math.max(.15,y),z);O.own.rotation.set(0,-Math.atan2(O.dir.z,O.dir.x),ph==="hit"?1.2:0);
+  O.own.userData.led.color.set(ph==="lost"||ph==="fly"?0xff2020:0x2ecc40);O.own.userData.led.emissive.set(ph==="lost"||ph==="fly"?0xff2020:0x2ecc40);if(y>0&&ph!=="hit"&&ph!=="stop")O.own.userData.rot.forEach(r_=>r_.rotation.y+=1);
+  near=.1;far=8000;if(v==="chase"){P(x-O.dir.x*12,y+5,z-O.dir.z*12+6);LK(x+O.dir.x*10,y-2,z+O.dir.z*10);} else if(v==="driver"){fov=80;P(x+O.dir.x*.4,y-.1,z+O.dir.z*.4);LK(x+O.dir.x*40,y-14,z+O.dir.z*40);}
+  else {fov=65;P(O.S*.62,1.6,-.06*O.S);LK(x,y,z);}
+  if(v==="driver"&&(ph==="lost"||ph==="fly"||ph==="rth"||ph==="land")&&dk){dk.style.background="#111";dk.style.opacity=ph==="lost"?.95:.6;}
+ }
+ if(k==="abort"){const alt=f.alt||3600,ta=f.ta||5;O.own.position.set(0,alt,0);const U_=O.own.userData,cap=U_.cap;
+  const boomNow=ph==="boom",dead=boomNow&&!run.escaped,stop=ph==="stop";
+  U_.flame.visible=!boomNow&&!stop;U_.flame.scale.y=.9+Math.random()*.2;U_.anom.material.opacity=t>=ta&&!stop?(.5+.4*Math.sin(t*20)):0;
+  let cy=40,cx=0,lf=0;if(run.escaped&&t>=ta+run.trig){const d_=t-ta-run.trig;cy=40+40*d_*d_;cx=-6*d_*d_;lf=d_<3?.9:0;}cap.position.set(cx,cy,0);cap.userData.flame.material.opacity=lf;cap.visible=!dead;
+  O.own.children.forEach(c=>{if(c!==cap)c.visible=c===U_.flame?U_.flame.visible:c===U_.anom?true:!boomNow;});
+  O.flash.visible=!run.benign&&t>=ta+run.W;if(O.flash.visible){O.flash.position.set(0,alt+15,0);O.flash.scale.setScalar(Math.min(140,(t-ta-run.W)*120+5));O.flash.material.opacity=Math.max(.2,.9-(t-ta-run.W)*.15);}
+  near=1;far=500000;const cp=new THREE.Vector3(cx,alt+cy,0);
+  if(v==="chase"){P(70,alt+20,95);LK(0,alt+25,0);} else if(v==="driver"){fov=60;P(cp.x+2.2,cp.y+1.5,0);LK(cp.x+600,cp.y+180,0);} else {fov=1.6;P(6000,2,1500);LK(0,alt+25,0);}
+  const h=Math.min(1,cam.position.y/14000);const c1=lin(0x7fb2e5),c2=lin(0x0b1a33);R3.scene.background=c1.clone().lerp(c2,h);
+ }
+ if(k==="fts"){const T_=run.Tc+4,pr=Math.min(1,t/T_),dev=f.dev||0;const pos=new THREE.Vector3(pr*60000,1000+pr*25000,-dev*15000);
+  if(ph==="term"&&!O.tp)O.tp={p:pos.clone(),t};if(t<(O.tp?O.tp.t:Infinity))O.tp=null;
+  const term=!!O.tp,rp=term?O.tp.p:pos;O.own.position.copy(rp);const nx=new THREE.Vector3(60000/T_,25000/T_,0).normalize();O.own.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),nx);O.own.visible=!term;
+  const pts=[];const steps=40;for(let i=0;i<=steps;i++){const tt=(term?O.tp.t:t)*i/steps;const fi=run.trace.find(q=>q.t>=tt)||f;const p2=Math.min(1,tt/T_);pts.push(new THREE.Vector3(p2*60000,1000+p2*25000,-(fi.dev||0)*15000));}O.trail.geometry.setFromPoints(pts);
+  O.flash.visible=term&&t-O.tp.t<3;if(O.flash.visible){O.flash.position.copy(O.tp.p);O.flash.scale.setScalar(200+(t-O.tp.t)*600);}
+  O.debris.visible=term;if(term){const a=O.debris.geometry.attributes.position,d_=t-O.tp.t;for(let i=0;i<a.count;i++){const q=O.dv[i];a.setXYZ(i,O.tp.p.x+q[0]*d_*4,O.tp.p.y+q[1]*d_*4-40*d_*d_,O.tp.p.z+q[2]*d_*4);}a.needsUpdate=true;}
+  O.own.userData.flame.visible=true;near=v==="driver"?5:v==="chase"?20:200;far=900000;
+  if(v==="chase"){P(rp.x-nx.x*500,rp.y-nx.y*500+120,rp.z+260);LK(rp.x,rp.y,rp.z);} else if(v==="driver"){fov=75;P(rp.x+3,rp.y-4,rp.z);LK(rp.x-25000,0,rp.z);} else {fov=14;P(34000,3,-21000);LK(rp.x,rp.y,rp.z);}
+ }
+ if(k==="bridge"){const util=f.util||[],failed=f.failed||[],sl=O.sl;O.water.position.y=1+(f.water||.15)*7;
+  O.seg.forEach((s_,i)=>{const u=Math.min(1.2,util[i]||0);s_.material.color.copy(lin(failed[i]?0x3b3b3b:u<.6?0x4caf50:u<.85?0xe0b23a:0xd0452b));
+   if(failed[i]){s_.position.y=Math.max(O.water.position.y,4);s_.rotation.z=(i%2?1:-1)*.35;}else{s_.position.y=12.4;s_.rotation.z=0;}});
+  [0,1,2].forEach(j=>O.pool[j].forEach(o=>o.visible=false));const used={0:0,1:0,2:0};
+  (f.veh||[]).forEach((q,j)=>{if(failed[q.pos])return;const o=O.pool[q.type][used[q.type]++];if(!o)return;o.visible=true;o.position.set(q.pos*sl+(q.type?6:3)+(j%3)*3,13,j%2?-2.5:2.5);o.rotation.y=j%2?Math.PI:0;});
+  O.bar.forEach(b_=>b_.visible=ph==="closed");
+  const wy=O.water.position.y;O.boat.position.y=wy+.2;O.insp.position.y=wy+.6;near=.3;far=6000;if(v==="chase"){P(-70,45,110);LK(120,8,0);} else if(v==="driver"){fov=70;const dx=(t*14)%280-40;P(dx,15.4,2.5);LK(dx+80,13,2.5);} else {fov=72;P(120,wy+2.2,33);LK(120,12,0);O.insp.visible=false;}
+  if(v!=="other")O.insp.visible=true;
+ }
+ if(k==="road"){const d=f.d||[],pot=f.pot||[],wet=f.wet||[];
+  O.cell.forEach((c,i)=>{const g=Math.round(110-Math.min(1,d[i]||0)*65);c.material.color.copy(lin((g<<16)|((g+4)<<8)|(g+8)));O.pot[i].visible=!!pot[i];O.wet[i].visible=!!wet[i];});
+  [0,1].forEach(j=>O.pool[j].forEach(o=>o.visible=false));const used={0:0,1:0};
+  (f.tr||[]).forEach((q,j)=>{const ty=q.over?1:0,o=O.pool[ty][used[ty]++];if(!o)return;o.visible=true;o.position.set(q.x*400,0,j%2?-2:2);o.rotation.y=j%2?Math.PI:0;});
+  const mx=(t*16)%420-10;O.moto.position.set(mx,0,2.2);O.moto.visible=v!=="other";
+  near=.2;far=6000;if(v==="chase"){P(-40,38,70);LK(170,0,0);} else if(v==="driver"){fov=70;const dx=(t*13+150)%420-10;P(dx+4.6,3.2,2);LK(dx+80,1,2);} else {fov=72;P(mx-.9,1.45,2.2);LK(mx+40,0,2.2);}
+ }
+ stepRain(O,cam);
+ cam.fov=fov;cam.near=near;cam.far=far;cam.updateProjectionMatrix();R3.renderer.render(R3.scene,cam);cam.up.set(0,1,0);
+ document.getElementById("v3tag").textContent=viewLabel(st.view);
+}
+function sc_fog(c,n,f){const fg=R3.scene.fog;if(!fg)return;fg.color.copy(lin(c));fg.near=n;fg.far=f;R3.scene.background=lin(c);}
 
 /* ---------- animation ---------- */
 let anim=null,lastRun=null;
@@ -1082,7 +1416,8 @@ function hud(fr,run){
  if(run.k2){$("hud").innerHTML=`<div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P.idle))}</span></div>`;return;}
  const dist=fr?Math.max(0,(run.hazard.kind==="lead"?fr.lx-fr.x-VEH[st.veh].len:run.hazard.pos-fr.x)):null;
  const lim=SCN[st.scn].limit,over=lim&&fr&&fr.v*3.6>lim+1;
- $("hud").innerHTML=`<div><span>${esc(tx(T.hSpeed))}</span> <b style="color:${over?"var(--warn)":"inherit"}">${fr?(fr.v*3.6).toFixed(0):"–"} km/h</b>${lim?` <span>/ ${lang==="th"?"จำกัด":"limit"} ${lim}</span>`:""}</div><div><span>${esc(tx(T.hDist))}</span> ${dist!=null?dist.toFixed(0)+" m":"–"}</div><div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P[ph]))}</span></div>`;
+ const ad=run.adapt!=null?`<div><span>${esc(tx(T.hAdapt))}</span> +${run.adapt.toFixed(1)} ${lang==="th"?"วิ":"s"}</div>`:"";
+ $("hud").innerHTML=ad+`<div><span>${esc(tx(T.hSpeed))}</span> <b style="color:${over?"var(--warn)":"inherit"}">${fr?(fr.v*3.6).toFixed(0):"–"} km/h</b>${lim?` <span>/ ${lang==="th"?"จำกัด":"limit"} ${lim}</span>`:""}</div><div><span>${esc(tx(T.hDist))}</span> ${dist!=null?dist.toFixed(0)+" m":"–"}</div><div><span>${esc(tx(T.hPhase))}</span> <span class="phase">${esc(tx(P[ph]))}</span></div>`;
 }
 function result(run){
  const el=$("one"),L=lang==="th";let cls="ok",m;
@@ -1146,12 +1481,15 @@ function syncSetup(){
  const V=VEH[st.veh];
  $("veh").innerHTML=Object.keys(VEH).map(k=>`<button type="button" id="veh-${k}" data-veh="${k}" aria-pressed="${k===st.veh}">${esc(tx(VEH[k]))}</button>`).join("");
  const scs=Object.keys(SCN).filter(k=>SCN[k].kind===V.kind);if(!scs.includes(st.scn))st.scn=scs[0];
- $("scn").innerHTML=scs.map(k=>`<option value="${k}">${esc(tx(SCN[k]))}</option>`).join("");$("scn").value=st.scn;
- $("scn-desc").textContent=tx(SCN[st.scn].d);
+ $("scn").innerHTML=scs.map(k=>`<option value="${k}">${esc(tx(scnT(k)))}</option>`).join("");$("scn").value=st.scn;
+ $("scn-desc").textContent=tx(scnT(st.scn).d);
  const K=V.kind;
- const sfs=K==="rail"?["dry","wet"]:["dry","wet","flood"];if(!sfs.includes(st.surf))st.surf="dry";
+ const sfs=K==="rail"?["dry","wet"]:K==="road"?["dry","wet","flood","snow"]:["dry","wet","flood"];if(!sfs.includes(st.surf))st.surf="dry";
  $("surf").innerHTML=sfs.map(k=>`<option value="${k}">${esc(surfLabel(K,k))}</option>`).join("");$("surf").value=st.surf;
- $("surf").parentElement.hidden=K==="space"; $("light").parentElement.hidden=K==="space"||K==="infra";
+ const ugd=K==="rail"&&st.track==="underground";$("surf").parentElement.hidden=K==="space"||ugd; $("light").parentElement.hidden=K==="space"||K==="infra"||ugd;
+ $("tun-row").hidden=!SCN[st.scn].uph; $("trk-row").hidden=K!=="rail";
+ $("tun").innerHTML=Object.keys(TUN).map(k=>`<option value="${k}">${esc(tx(TUN[k]))}</option>`).join("");$("tun").value=st.tun;
+ $("trk").innerHTML=Object.keys(TRK).map(k=>`<option value="${k}">${esc(tx(TRK[k]))}</option>`).join("");$("trk").value=st.track;
  $("infra-row").hidden=K!=="infra"; $("force-row").hidden=!SCN[st.scn].ped;
  $("force").innerHTML=[["rand",T.fRand],["on",T.fOn],["off",T.fOff]].map(([k,l])=>`<option value="${k}">${esc(tx(l))}</option>`).join("");$("force").value=st.force;
  $("spec-o").textContent=st.spec+"%";$("age-o").textContent=st.age+" "+tx(T.years);$("ovl-o").textContent=st.ovl+"%";
@@ -1185,7 +1523,7 @@ document.addEventListener("click",ev=>{
 });
 document.addEventListener("change",ev=>{
  const t=ev.target;
- if(t.id==="force")st.force=t.value;else if(t.id==="scn")st.scn=t.value;else if(t.id==="surf")st.surf=t.value;else if(t.id==="light")st.light=t.value;else if(t.id==="atpfail")st.atpfail=t.checked;
+ if(t.id==="force")st.force=t.value;else if(t.id==="scn")st.scn=t.value;else if(t.id==="surf")st.surf=t.value;else if(t.id==="light")st.light=t.value;else if(t.id==="tun")st.tun=t.value;else if(t.id==="trk")st.track=t.value;else if(t.id==="atpfail")st.atpfail=t.checked;
  else if(t.name==="ctrl")st.ctrl=t.value;else return;
  update(true);
 });

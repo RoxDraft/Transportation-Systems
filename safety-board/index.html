@@ -469,7 +469,7 @@ const T={
  trainHead:{th:"ฝึกและทดสอบอย่างไร",en:"How it is trained and tested"},
  simH:{th:"เปิดห้องจำลองการขับขี่ปลอดภัย",en:"Open the Safe Driving Simulator"},
  simP:{th:"เลือกรถยนต์ มอเตอร์ไซค์ รถเมล์ หรือรถไฟ เทียบคนขับกับ copilot, autopilot และระบบขับเอง ในสถานการณ์ไม่แน่นอน พร้อมเส้นการเรียนรู้",en:"Pick a car, motorcycle, bus or train and compare human drivers with copilot, autopilot and self-driving systems under uncertainty, with learning curves."},
- jSim:{th:"ห้องจำลอง ↗",en:"Simulator ↗"},
+ jSim:{th:"ห้องจำลอง ↗",en:"Simulator ↗"},jResp:{th:"แผนช่วยเหลือ 3D ↗",en:"Response in 3D ↗"},
  sLic:{th:"ใบอนุญาตขับขี่ยานพาหนะทุกประเภท",en:"Licences for every kind of vehicle"},
  sLicSub:{th:"ทุกโหมดมีกรอบระหว่างประเทศให้แต่ละประเทศออกใบอนุญาตตาม ยกเว้นอวกาศและรถอัตโนมัติ ที่ตัวยานหรือผู้ให้บริการต้องได้รับอนุญาตแทนคนขับ",en:"Each mode has an international framework that countries license against. Space and automated vehicles are the exceptions: the vehicle or operator is licensed instead of a driver."},
  thFrame:{th:"กรอบระหว่างประเทศ",en:"International framework"},thClass:{th:"ประเภทใบอนุญาตหลัก",en:"Main licence types"},thTh:{th:"ในไทย",en:"In Thailand"},
@@ -506,6 +506,7 @@ const T={
 const M={air:{th:"อากาศ",en:"Air"},sea:{th:"ทะเล",en:"Sea"},rail:{th:"ราง",en:"Rail"},rotor:{th:"ฮ. / โดรน",en:"Rotor / drone"},road:{th:"ถนน",en:"Road"},space:{th:"อวกาศ",en:"Space"},infra:{th:"โครงสร้างพื้นฐาน",en:"Infrastructure"}};
 const JUMP=[["recap-sec","jRecap"],["loop-sec","jLoop"],["orgs-sec","jOrgs"],["timeline-sec","jTl"],["road-sec","jRoad"],["space-sec","jSpace"],["levels-sec","jLv"],["decide-sec","jDec"],["license-sec","jLic"],["infra-sec","jInfra"],["monitor-sec","jMon"],["ops-sec","jOps"],["airport-sec","jAir"],["layers-sec","jLay"],["sources-sec","jSrc"]];
 const SIM_URL="./simulator.html";
+const RESP_URL="./response.html";
 
 const CASE={k:{th:"เหตุตั้งต้น",en:"Starting case"},h:{th:"Learjet 60 (N722BD) ตกที่ Greenacres, Palm Beach County ผู้โดยสารและลูกเรือ 9 คนเสียชีวิต",en:"Learjet 60 (N722BD) crashes in Greenacres, Palm Beach County; all 9 aboard killed"},
  rows:[
@@ -694,6 +695,9 @@ const LAYERS=[
   ["x",{th:"รัฐ: กำกับการทดสอบน้อยมาก",en:"State: minimal oversight of testing"}]]}
 ];
 const SRC=[
+ {t:"European Commission — Interoperable EU-wide eCall",u:"https://transport.ec.europa.eu/transport-themes/smart-mobility/road/its-directive-and-action-plan/interoperable-eu-wide-ecall_en",g:"EU"},
+ {t:"EUR-Lex — Regulation (EU) 2015/758 on eCall",u:"https://eur-lex.europa.eu/eli/reg/2015/758/oj/eng",g:"EU"},
+ {t:"Thai PBS — รถโดยสาร รถลากจูง รถบรรทุก 10 ล้อต้องติด GPS",u:"https://www.thaipbs.or.th/news/content/7477",g:"TH"},
  {t:"NBC 6 South Florida — Learjet 60 crash live updates",u:"https://www.nbcmiami.com/news/local/officials-respond-to-fiery-aircraft-incident-in-palm-beach-county/3881532/",g:"2026"},
  {t:"CTV News / AP — All 9 aboard killed in Florida jet crash",u:"https://www.ctvnews.ca/world/article/all-nine-people-died-aboard-a-business-jet-that-crashed-into-a-florida-neighborhood-transportation-secretary-says/",g:"2026"},
  {t:"Republic World — Icing and turbulence under scanner",u:"https://www.republicworld.com/global-news/were-going-to-crash-9-killed-as-learjet-plunges-from-35000-feet-explodes-into-fireball-in-florida-2026-11-02-140231",g:"2026"},
@@ -779,7 +783,10 @@ const XMODE=[
  {h:{th:"อวกาศ + อากาศ + ทะเล: การปล่อยจรวด",en:"Space + air + sea: launches"},w:{th:"ประกาศปิดน่านฟ้า (NOTAM) และประกาศเตือนเรือ (NAVAREA) ล่วงหน้า FAA ใช้ Space Data Integrator ดูตำแหน่งจรวดแบบเรียลไทม์ร่วมกับการจราจรทางอากาศ",en:"Airspace closures (NOTAM) and navigational warnings (NAVAREA) in advance; the FAA's Space Data Integrator feeds live rocket positions into air traffic management"},y:{th:"ชิ้นส่วนตกในเขตที่ปิดไว้ แบบในตัวจำลองจรวด",en:"Debris falls inside the closed areas, as in the rocket simulator"}},
  {h:{th:"โดรน + เครื่องบิน",en:"Drones + aircraft"},w:{th:"ระบบจัดการจราจรโดรน (UTM ในสหรัฐฯ, U-space ใน EU ตาม Regulation 2021/664) แบ่งน่านฟ้าชั้นต่ำและส่งข้อมูลให้หอบังคับการบิน",en:"Drone traffic management (UTM in the US, U-space in the EU under Regulation 2021/664) manages low airspace and shares data with ATC"},y:{th:"โดรนรู้ว่าเฮลิคอปเตอร์กู้ภัยกำลังเข้ามา",en:"Drones learn a rescue helicopter is inbound"}},
  {h:{th:"ทะเล: หอควบคุมการจราจรทางเรือ",en:"Sea: vessel traffic services"},w:{th:"VTS ตาม SOLAS บทที่ 5 เฝ้าดูเรือด้วยเรดาร์และ AIS ในท่าเรือและช่องแคบ คล้ายหอบังคับการบินของเรือ",en:"VTS under SOLAS Chapter V watches ships by radar and AIS in ports and straits, much like ATC for ships"},y:{th:"ไม่ได้สั่งเรือทุกลำแบบ ATC หลายแห่งแค่ให้ข้อมูลและคำแนะนำ",en:"Unlike ATC, many only inform and advise"}},
- {h:{th:"ถนน + ราง + อากาศ: เหตุใหญ่",en:"Road + rail + air: major incidents"},w:{th:"ระบบบัญชาการเหตุการณ์ (ICS) ตั้งศูนย์บัญชาการร่วมชั่วคราว ให้ตำรวจ กู้ภัย การแพทย์ และผู้ให้บริการแต่ละโหมดทำงานใต้โครงสร้างเดียว",en:"The Incident Command System sets up a temporary joint command so police, rescue, medical teams and each operator work under one structure"},y:{th:"เครื่องบินตกบนถนน หรือรถไฟชนรถเมล์ที่จุดตัด",en:"A plane down on a road, or a train hitting a bus at a crossing"}}
+ {h:{th:"ถนน + ราง + อากาศ: เหตุใหญ่",en:"Road + rail + air: major incidents"},w:{th:"ระบบบัญชาการเหตุการณ์ (ICS) ตั้งศูนย์บัญชาการร่วมชั่วคราว ให้ตำรวจ กู้ภัย การแพทย์ และผู้ให้บริการแต่ละโหมดทำงานใต้โครงสร้างเดียว",en:"The Incident Command System sets up a temporary joint command so police, rescue, medical teams and each operator work under one structure"},y:{th:"เครื่องบินตกบนถนน หรือรถไฟชนรถเมล์ที่จุดตัด",en:"A plane down on a road, or a train hitting a bus at a crossing"}},
+ {h:{th:"ทุกโหมด: หนีภัยออกจากพาหนะ",en:"Every mode: getting out"},w:{th:"รถตกน้ำ: ปลดเข็มขัด เปิดหรือทุบกระจกข้างทันทีขณะรถยังลอย ส่งเด็กออกก่อน แล้วปีนออกทางหน้าต่าง การรอน้ำเต็มแล้วเปิดประตูเป็นทางสุดท้าย เครื่องบิน รถไฟ และรถบัสใช้ทางออกฉุกเฉิน ค้อนทุบกระจก และไฟนำทางที่พื้น",en:"Car in water: unbuckle, open or break a side window at once while the car still floats, children out first, then climb out. Waiting for it to fill and opening the door is the last resort. Aircraft, trains and buses rely on emergency exits, glass hammers and floor path lighting"},y:{th:"หน้ากากออกซิเจนบนเครื่องบินมีไว้ตอนห้องโดยสารเสียความดัน ใช้ได้ราว 12–15 นาที ไม่ได้ช่วยเรื่องควัน ส่วนหน้ากากหนีไฟส่วนตัวกรองควันได้ราว 15 นาทีแต่ไม่ได้ให้ออกซิเจน",en:"Aircraft oxygen masks are for cabin decompression and last about 12–15 minutes; they don't help with smoke. Personal smoke hoods filter smoke for about 15 minutes but supply no oxygen"}},
+ {h:{th:"ทุกโหมด: ถุงลมนิรภัย",en:"Every mode: airbags"},w:{th:"เครื่องบินใส่ถุงลมไว้ในเข็มขัดของที่นั่งที่ไม่มีเบาะข้างหน้า เฮลิคอปเตอร์ทหารบางรุ่นมีถุงลมในห้องนักบิน มอเตอร์ไซค์บางรุ่นและเสื้อถุงลมสำหรับผู้ขี่ ส่วนยาน Starliner ใช้ถุงลมรับแรงตอนลงพื้น",en:"Airliners put airbags in the seat belts of seats with no seat back ahead; some military helicopters have cockpit airbags; some motorcycles and rider vests have them; the Starliner capsule lands on airbags"},y:{th:"รถไฟส่วนใหญ่ไม่มี ใช้ตัวรถที่ยุบรับแรงเป็นจุดและตัวกันตู้ไต่ขึ้นทับกันแทน",en:"Most trains have none; they use crumple zones and anti-climbers instead"}},
+ {h:{th:"ทุกโหมด: แจ้งเหตุอัตโนมัติ",en:"Every mode: automatic alerts"},w:{th:"ยุโรปบังคับ eCall ในรถเก๋งและรถตู้เล็กรุ่นใหม่ตั้งแต่ปี 2018 เครื่องบินมี ELT และเรือมี EPIRB ส่งพิกัดผ่านดาวเทียม ในไทย รถโดยสารสาธารณะ รถลากจูง และรถบรรทุก 10 ล้อขึ้นไปต้องติด GPS ส่งข้อมูลเข้าศูนย์ของกรมการขนส่งทางบก",en:"The EU requires eCall in new car and light-van types since 2018; aircraft carry ELTs and ships EPIRBs that send positions by satellite. In Thailand, public buses, tractor units and trucks with 10+ wheels must send GPS data to the Department of Land Transport"},y:{th:"GPS ของไทยใช้ดูความเร็วและชั่วโมงขับ ยังไม่ได้สั่งรถพยาบาลเองเมื่อรถชน",en:"Thailand's GPS system tracks speed and driving hours; it doesn't dispatch an ambulance by itself after a crash"}}
 ];
 const FLOW=[
  {h:{th:"รถไฟถึงสถานีสนามบิน",en:"Train arrives at the airport"},p:{th:"ผู้โดยสารมาเป็นระลอก ตามตารางรถไฟ",en:"Passengers arrive in waves, on the timetable"}},
@@ -963,7 +970,7 @@ function render(){
  document.documentElement.lang=lang;
  document.querySelectorAll("[data-i]").forEach(el=>{el.textContent=tx(T[el.dataset.i])});
  document.title=tx(T.title);
- document.getElementById("jump").innerHTML=JUMP.map(([id,k])=>`<a href="#${id}">${esc(tx(T[k]))}</a>`).join("")+`<a href="${SIM_URL}" style="border-bottom-color:var(--accent)">${esc(tx(T.jSim))}</a>`;
+ document.getElementById("jump").innerHTML=JUMP.map(([id,k])=>`<a href="#${id}">${esc(tx(T[k]))}</a>`).join("")+`<a href="${SIM_URL}" style="border-bottom-color:var(--accent)">${esc(tx(T.jSim))}</a>`+`<a href="${RESP_URL}" style="border-bottom-color:var(--accent)">${esc(tx(T.jResp))}</a>`;
 
  document.getElementById("recap").innerHTML=
   `<article class="rc case"><span class="k" style="color:var(--accent)">${esc(tx(CASE.k))}</span><h3>${esc(tx(CASE.h))}</h3>

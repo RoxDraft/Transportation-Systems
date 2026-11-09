@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="../shared/project-language.js?v=1.4.2" data-bilingual="true"></script>
+<title>Incident Response Simulator</title>
+<meta name="description" content="จำลองแผนช่วยเหลือหลังเกิดเหตุแบบ 3D ทุกโหมดการขนส่ง พร้อมจับเวลาแต่ละช่วง ชั่วโมงทอง การสืบสวน และการปรับมาตรฐาน">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+*{box-sizing:border-box}body{margin:0}
+/* Layout: dispatch console. Incident + response choices on the left, live 3D scene with the phase clock on the right; phase timers, a log-time chart and the investigation/standards panel below */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#16202b; --muted:#5a6878; --line:#d5dce4; --tag-bg:#e8edf2;
+  --accent:#e2640f; --ok:#2e7d32; --warn:#b3261e; --amber:#b07a00;
+  --s-base:#2a6fb5; --s-now:#e2640f;
+  --g-emer:#b3261e; --g-rec:#b07a00; --g-learn:#2a6fb5;
+  --f-display:"Barlow Condensed","IBM Plex Sans Thai",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f151c; --panel:#17202a; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2a3644; --tag-bg:#1f2a36;
+  --accent:#ff8a3d; --ok:#6fcf73; --warn:#ff7b72; --amber:#e0ad3a; --s-base:#4a90d9; --s-now:#d4621a;
+  --g-emer:#ff7b72; --g-rec:#e0ad3a; --g-learn:#6aa8ec; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151c; --panel:#17202a; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2a3644; --tag-bg:#1f2a36;
+  --accent:#ff8a3d; --ok:#6fcf73; --warn:#ff7b72; --amber:#e0ad3a; --s-base:#4a90d9; --s-now:#d4621a;
+  --g-emer:#ff7b72; --g-rec:#e0ad3a; --g-learn:#6aa8ec; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:26px}
+.wrap>*{min-width:0}
+header.top{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--ink);padding-bottom:14px}
+header.top>div{min-width:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-size:clamp(32px,5.5vw,52px);line-height:1.05;margin:6px 0 8px;text-wrap:balance}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+h2{font-family:var(--f-display);font-size:26px;line-height:1.1;margin:0 0 10px;text-wrap:balance}
+.lbl{font:600 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;display:block}
+.lang{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden}
+.lang button{font:600 14px var(--f-mono);padding:7px 16px;background:transparent;color:var(--ink);border:0;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13.5px}
+.links a{color:var(--ink)}
+.console{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.console{grid-template-columns:1fr}}
+.setup{background:var(--panel);border:1px solid var(--line);padding:16px;display:grid;gap:15px}
+select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px}
+.tg{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
+.tg button{font:600 13px var(--f-body);padding:8px 6px;border:0;background:var(--bg);color:var(--ink);cursor:pointer;line-height:1.3}
+.tg button+button{border-left:1.5px solid var(--line)}
+.tg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.range{display:grid;gap:2px}
+.range output{font:600 15px var(--f-mono);font-variant-numeric:tabular-nums}
+.range input{width:100%;accent-color:var(--accent)}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.stage{display:grid;gap:12px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);padding:14px;min-width:0}
+.views{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.views button{font:600 13px var(--f-body);padding:7px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.views button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.v3wrap{position:relative;border-radius:6px;overflow:hidden;background:#0a1018}
+#v3 canvas{display:block;width:100%}
+.clock{position:absolute;left:10px;top:10px;right:10px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.clock span{font:600 12.5px var(--f-mono);color:#fff;background:rgba(10,16,24,.66);padding:4px 10px;border-radius:999px;font-variant-numeric:tabular-nums}
+.clock .big{font-size:16px}
+.clock .gh.ok{background:rgba(46,125,50,.85)} .clock .gh.bad{background:rgba(179,38,30,.85)}
+.no3d{color:#e6ecf2;padding:40px 16px;text-align:center;margin:0}
+.capt{font-size:13px;color:var(--muted);margin:8px 0 0}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{font:600 14px var(--f-body);padding:9px 16px;border-radius:8px;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.kpi{border-left:3px solid var(--line);padding:2px 0 2px 10px;font-size:13px;color:var(--muted)}
+.kpi b{display:block;font:700 23px var(--f-display);color:var(--ink);font-variant-numeric:tabular-nums}
+.kpi small{display:block;font:12px var(--f-mono)}
+.kpi.good{border-left-color:var(--ok)} .kpi.bad{border-left-color:var(--warn)}
+.phases{display:grid;gap:2px;margin:0;padding:0;list-style:none}
+.phases li{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 8px;border-left:4px solid var(--gc);background:var(--bg);font-size:13.5px}
+.phases li .bar{height:6px;background:var(--tag-bg);border-radius:3px;overflow:hidden}
+.phases li .bar i{display:block;height:100%;width:0;background:var(--gc)}
+.phases li .t{font:600 12.5px var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;min-width:9ch}
+.phases li.now{background:var(--tag-bg);font-weight:600}
+.phases li.done .nm::after{content:" ✓";color:var(--ok)}
+.phases .grp{font:600 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 0 4px;border:0;background:none;display:block}
+.chartwrap{overflow-x:auto}
+.chart svg{display:block;width:100%;min-width:560px;height:auto}
+.chart text{font-family:var(--f-mono);fill:var(--muted);font-size:11px}
+.chart .rowlbl{fill:var(--ink);font-family:var(--f-body);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;margin:4px 0 8px}
+.legend span::before{content:"";display:inline-block;width:14px;height:8px;border-radius:2px;margin-right:6px;background:var(--k)}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font:12.5px var(--f-body);padding:6px 9px;border-radius:6px;max-width:260px;z-index:20}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.fix{border-top:3px solid var(--fc);padding:10px 0 0;font-size:14px}
+.fix h3{margin:0 0 4px;font-size:15px}
+.fix p{margin:0;color:var(--muted)}
+.inv{font-size:14px;margin:0 0 12px}
+.inv b{font-family:var(--f-mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:block}
+.case{font-size:13.5px;padding:10px 12px;border-left:4px solid var(--accent);background:var(--tag-bg);margin-top:12px}
+.src{font-size:13px;color:var(--muted);columns:2 320px;margin:0;padding-left:18px}
+.src a{color:var(--ink)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th,.tbl td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+.tbl td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<div class="wrap">
+ <header class="top">
+  <div>
+   <div class="eyebrow" data-i="eyebrow"></div>
+   <h1 data-i="title"></h1>
+   <p class="lede" data-i="lede"></p>
+  </div>
+  <div style="display:grid;gap:10px;justify-items:end">
+   <div class="links"><a id="lk-board" href="./index.html" data-i="lkBoard"></a><a id="lk-sim" href="./simulator.html" data-i="lkSim"></a></div>
+  </div>
+ </header>
+
+ <div class="console">
+  <div class="setup">
+   <div><label class="lbl" for="inc" data-i="lInc"></label><select id="inc"></select><p class="note" id="inc-d" style="margin-top:6px"></p></div>
+   <div><span class="lbl" data-i="lNotify"></span><div class="tg" role="group" id="tg-auto"><button type="button" id="auto-0" data-k="auto" data-v="0"></button><button type="button" id="auto-1" data-k="auto" data-v="1"></button></div></div>
+   <div><span class="lbl" data-i="lTeam"></span><div class="tg" role="group" id="tg-robots"><button type="button" id="robots-0" data-k="robots" data-v="0"></button><button type="button" id="robots-1" data-k="robots" data-v="1"></button></div><p class="note" id="robot-d" style="margin-top:6px"></p></div>
+   <div><span class="lbl" data-i="lPeople"></span><div class="tg" role="group" id="tg-trained"><button type="button" id="trained-0" data-k="trained" data-v="0"></button><button type="button" id="trained-1" data-k="trained" data-v="1"></button></div></div>
+   <div class="range"><label class="lbl" for="dist" data-i="lDist" style="margin:0"></label><output id="dist-o"></output><input type="range" id="dist" min="1" max="120" step="1" value="5"></div>
+   <p class="note" data-i="noteModel"></p>
+  </div>
+
+  <div class="stage">
+   <div class="card">
+    <div class="views" id="views" role="group" aria-label="View"></div>
+    <div class="v3wrap" id="v3wrap"><div id="v3"></div>
+     <div class="clock"><span class="big" id="ck-t">T+ 00:00</span><span id="ck-ph"></span><span class="gh" id="ck-gh"></span></div>
+    </div>
+    <p class="capt" id="capt"></p>
+    <div class="btns">
+     <button class="btn" type="button" id="play" data-i="play"></button>
+     <button class="btn ghost" type="button" id="reroll" data-i="reroll"></button>
+    </div>
+   </div>
+   <div class="kpis" id="kpis"></div>
+  </div>
+ </div>
+
+ <section class="card">
+  <h2 data-i="hPhases"></h2>
+  <p class="note" data-i="phNote" style="margin-bottom:8px"></p>
+  <ul class="phases" id="phases"></ul>
+ </section>
+
+ <section class="card">
+  <h2 data-i="hChart"></h2>
+  <div class="legend"><span style="--k:var(--s-base)" data-i="lgBase"></span><span style="--k:var(--s-now)" data-i="lgNow"></span></div>
+  <div class="chart chartwrap" id="chart"></div>
+  <details style="margin-top:8px"><summary data-i="tblSum"></summary><div class="chartwrap"><table class="tbl" id="tbl"></table></div></details>
+ </section>
+
+ <section class="card">
+  <h2 data-i="hLearn"></h2>
+  <p class="inv" id="inv"></p>
+  <div class="grid4" id="fixes"></div>
+  <div class="case" id="case"></div>
+ </section>
+
+ <section>
+  <h2 data-i="hSrc" style="font-size:20px"></h2>
+  <ol class="src" id="src"></ol>
+ </section>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let lang=(globalThis.ProjectLanguage&&ProjectLanguage.language)==="en"?"en":"th";
+const tx=o=>o?(o[lang]??o.en??""):"";
+const B=(th,en)=>({th,en});
+const BOARD_URL="./index.html", SIM_URL="./simulator.html";
+const MIN=1,HR=60,DAY=1440,MON=43200,YR=525600;
+const T={
+ eyebrow:B("กระดานความปลอดภัยการขนส่ง · แผนช่วยเหลือ","Transport Safety Board · Response"),
+ title:B("หลังเกิดเหตุ: แผนช่วยเหลือ 3D","After the Crash: Response in 3D"),
+ lede:B("เลือกเหตุการณ์ แล้วดูว่าการช่วยเหลือเดินไปทีละช่วงอย่างไร ตั้งแต่นาทีแรกที่แจ้งเหตุ การช่วยตัวเอง ทีมกู้ภัย โดรนและหุ่นยนต์ จนถึงการเปิดใช้งานอีกครั้ง การสืบสวน และการปรับมาตรฐาน ซึ่งกินเวลาเป็นเดือนหรือปี","Pick an incident and watch the response unfold phase by phase: the first minutes of the call, self-rescue, rescue teams, drones and robots, then reopening, the investigation and new standards, which take months or years."),
+ lkBoard:B("← กระดานความปลอดภัย","← Safety board"),lkSim:B("ตัวจำลองการขับขี่ →","Driving simulator →"),
+ lInc:B("เหตุการณ์","Incident"),lNotify:B("การแจ้งเหตุ","How the call is made"),lTeam:B("ผู้ช่วยเหลือ","Responders"),lPeople:B("ผู้ประสบเหตุและคนรอบข้าง","People at the scene"),
+ lDist:B("ระยะถึงหน่วยกู้ภัยที่ใกล้ที่สุด","Distance to nearest rescue unit"),
+ aut0:B("คนโทรแจ้งเอง","A person calls"),aut1:B("ระบบแจ้งเหตุอัตโนมัติ","Automatic alert"),
+ rob0:B("ทีมกู้ภัยอย่างเดียว","Rescue team only"),rob1:B("ทีม + โดรนและหุ่นยนต์","Team + drones & robots"),
+ tr0:B("ไม่เคยฝึก","Untrained"),tr1:B("ฝึกหนีภัย / ปฐมพยาบาลแล้ว","Trained in escape / first aid"),
+ noteModel:B("ตัวเลขเป็นแบบจำลองจากช่วงเวลาที่พบได้จริงและเป้าหมายของมาตรฐาน แต่ละครั้งสุ่มใหม่ ไม่ใช่สถิติของเหตุการณ์จริง","Times are modelled from typical ranges and standard targets, re-drawn each run. They are not statistics of real events."),
+ play:B("▶ เล่นแผนช่วยเหลือ","▶ Play the response"),pause:B("❚❚ หยุด","❚❚ Pause"),reroll:B("สุ่มเหตุการณ์ใหม่","New random run"),
+ vOver:B("ภาพรวม","Overview"),vTeam:B("มุมทีมกู้ภัย","Responder's view"),vVic:B("มุมผู้ประสบเหตุ","Victim's view"),
+ capOver:B("มุมสูงเห็นทั้งพื้นที่ ทีมและหุ่นยนต์เข้ามาตามเวลาของแต่ละช่วง","From above you can see the whole scene; teams and robots arrive on each phase's schedule."),
+ capTeam:B("มุมของหน่วยแรกที่ถึงที่เกิดเหตุ","From the first unit to reach the scene."),
+ capVic:B("มุมของผู้ประสบเหตุ รอดูว่าใครมาถึงก่อน","From the person waiting for help: who gets there first?"),
+ hPhases:B("จับเวลาทีละช่วง","Phase timers"),phNote:B("แถบเติมตามเวลาจำลอง ช่วงฉุกเฉินนับเป็นนาที ช่วงฟื้นฟูนับเป็นชั่วโมงถึงเดือน ช่วงเรียนรู้นับเป็นเดือนถึงปี","Bars fill with simulated time: the emergency counts minutes, recovery hours to months, learning months to years."),
+ gE:B("ฉุกเฉิน · นาทีถึงชั่วโมง","Emergency · minutes to hours"),gR:B("ฟื้นฟู · ชั่วโมงถึงเดือน","Recovery · hours to months"),gL:B("เรียนรู้และแก้ไข · เดือนถึงปี","Learning · months to years"),
+ hChart:B("ทั้งหมดบนเส้นเวลาเดียว (สเกลลอการิทึม)","Everything on one timeline (log scale)"),
+ lgBase:B("แบบพื้นฐาน: คนโทรแจ้ง ทีมอย่างเดียว ไม่เคยฝึก","Baseline: person calls, team only, untrained"),lgNow:B("แบบที่เลือก","Your choices"),
+ tblSum:B("ดูเป็นตาราง","Show as a table"),
+ hLearn:B("การสืบสวนและปรับแก้มาตรฐาน","Investigation and new standards"),
+ fxV:B("ยานพาหนะ","Vehicle"),fxS:B("สถานที่และโครงสร้าง","Site and infrastructure"),fxP:B("การฝึกคน","Training people"),fxY:B("ระบบและข้อมูล","Systems and data"),
+ invBy:B("ใครสืบสวน","Who investigates"),hSrc:B("แหล่งอ้างอิง","Sources"),
+ kFirst:B("ความช่วยเหลือแรกถึงตัว","First help arrives"),kHosp:B("ถึงโรงพยาบาล","Reaches hospital"),kOpen:B("กลับมาใช้งานได้","Back in service"),kFix:B("มาตรฐานใหม่มีผล","New standard in force"),
+ within:B("ทันชั่วโมงทอง","within the golden hour"),med:B("ค่ากลาง","median"),base:B("แบบพื้นฐาน","baseline"),
+ gh:B("ชั่วโมงทอง เหลือ","Golden hour left"),ghOk:B("ถึงโรงพยาบาลใน","At hospital in"),ghBad:B("เกินชั่วโมงทอง","Past the golden hour"),
+ no3d:B("เบราว์เซอร์นี้แสดง 3D ไม่ได้ ตัวจับเวลาและกราฟยังใช้ได้ตามปกติ","This browser can't show 3D; the timers and chart still work."),
+ colPh:B("ช่วง","Phase"),colB:B("แบบพื้นฐาน (ค่ากลาง)","Baseline (median)"),colN:B("แบบที่เลือก (ค่ากลาง)","Your choices (median)"),
+ droneRole:B("งานของโดรนและหุ่นยนต์: ","Drones and robots: ")
+};
+const PH=[
+ {id:"det",g:"E",n:B("ตรวจพบและแจ้งเหตุ","Detect and call")},
+ {id:"self",g:"E",n:null},
+ {id:"disp",g:"E",n:B("สั่งการและออกรถ","Dispatch")},
+ {id:"trav",g:"E",n:B("เดินทางถึงที่เกิดเหตุ","Travel to the scene")},
+ {id:"acc",g:"E",n:B("เข้าถึง ดับไฟ นำผู้บาดเจ็บออก","Access, fire, extrication")},
+ {id:"care",g:"E",n:B("นำส่งโรงพยาบาล","Transport to hospital")},
+ {id:"scene",g:"R",n:B("เก็บหลักฐานและเคลียร์พื้นที่","Evidence and clearance")},
+ {id:"reopen",g:"R",n:null},
+ {id:"prelim",g:"L",n:B("รายงานเบื้องต้น","Preliminary report")},
+ {id:"final",g:"L",n:B("รายงานฉบับสมบูรณ์","Final report")},
+ {id:"fix",g:"L",n:B("ปรับมาตรฐานและฝึกคน/ระบบ","New standards and training")}
+];
+const INC={
+ ped:{n:B("คนเดินถูกรถชนในเมือง","Pedestrian hit by a car in town"),d:B("คนกับยานพาหนะ ถนนในเมือง คนรอบข้างอยู่ใกล้ที่สุด","Person vs vehicle on a town street; bystanders are closest."),
+  dist:5,spd:35,det:[2,5],detA:[.3,1],selfT:[1,3],selfU:[4,10],disp:[1,3],acc:[3,8],robot:.9,care:[10,20],scene:[60,120],reopen:[0,20],prelim:[7*DAY,30*DAY],final:[3*MON,12*MON],fix:[6*MON,24*MON],
+  self:B("คนรอบข้างปฐมพยาบาล","Bystander first aid"),reo:B("เปิดถนน","Reopen the road"),robots:B("โดรนส่งเครื่อง AED และชุดปฐมพยาบาล มักถึงก่อนรถพยาบาล","A drone brings an AED and first-aid kit, often before the ambulance."),
+  inv:B("ตำรวจจราจรและหน่วยงานเจ้าของถนน","Traffic police and the road authority"),
+  fx:[B("ระบบเบรกอัตโนมัติที่ตรวจจับคนเดินเท้า และหน้ารถที่ลดการบาดเจ็บ (UN R127)","Pedestrian-detecting automatic braking and softer car fronts (UN R127)"),B("ทางข้ามยกระดับ ไฟกะพริบ และจำกัด 30 กม./ชม. ในย่านคนเดิน","Raised crossings, flashing beacons and 30 km/h in busy streets"),B("สอนปฐมพยาบาลและ CPR ให้ประชาชน","First aid and CPR for the public"),B("ส่งพิกัดจากโทรศัพท์อัตโนมัติเมื่อโทรแจ้งเหตุ","Phones send their location automatically with the emergency call")],
+  cs:B("เป้าของระบบการแพทย์ฉุกเฉินไทยคือถึงผู้ป่วยวิกฤตภายใน 8 นาที แต่ในเมืองที่รถติดหรือชนบทที่ห่างไกล มักใช้เวลานานกว่านั้น","Thailand's emergency medical target is to reach critical patients within 8 minutes, but traffic in cities and distance in rural areas often stretch it."),src:[2]},
+ multi:{n:B("รถชนท้ายต่อเนื่องบนทางด่วนตอนฝนตก","Rainy-day pile-up on an expressway"),d:B("ยานพาหนะชนกันหลายคัน ทางถูกปิด รถติดยาวจนรถกู้ภัยเข้าถึงยาก","Many vehicles in one crash; the road is blocked and queues slow the rescue vehicles."),
+  dist:15,spd:60,jam:1.5,det:[2,6],detA:[.3,1],selfT:[1,3],selfU:[6,15],disp:[2,4],acc:[15,40],robot:.85,care:[15,30],scene:[120,300],reopen:[30,120],prelim:[7*DAY,30*DAY],final:[3*MON,9*MON],fix:[6*MON,24*MON],
+  self:B("ออกจากรถไปหลังแนวกั้น","Leave the car, get behind the barrier"),reo:B("เปิดช่องทางจราจร","Reopen the lanes"),robots:B("โดรนบินเหนือแถวรถ ส่งภาพให้ศูนย์สั่งการ และเปิดไฟเตือนรถท้ายแถวไม่ให้ชนซ้ำ","Drones over the queue send video to dispatch and flash warnings so the tail of the queue doesn't crash again."),
+  inv:B("ตำรวจทางหลวงและผู้ดูแลทางด่วน","Highway police and the expressway operator"),
+  fx:[B("ไฟเบรกกะพริบเมื่อเบรกแรง ระบบเบรกอัตโนมัติ และ eCall","Flashing brake lights in hard braking, automatic braking, eCall"),B("ป้ายจำกัดความเร็วที่ปรับตามฝน ผิวทางระบายน้ำดี ไฟใต้สะพานไล่ระดับ","Speed signs that change in rain, draining surfaces, graded underpass lighting"),B("เว้นระยะ 3–4 วินาทีตอนฝนตก และออกจากรถไปหลังแนวกั้นเมื่อเกิดเหตุ","Keep 3–4 seconds in rain; after a crash, get behind the barrier"),B("เตือนรถท้ายแถวผ่านป้ายอัจฉริยะและแอปนำทาง","Warn the queue through smart signs and navigation apps")],
+  cs:B("คณะกรรมาธิการยุโรปประเมินว่า eCall ทำให้หน่วยฉุกเฉินมาถึงเร็วขึ้นราว 40% ในเมือง และ 50% นอกเมือง","The European Commission estimates eCall speeds up emergency response by about 40% in towns and 50% in the countryside."),src:[0]},
+ lx:{n:B("รถไฟชนรถยนต์ที่จุดตัดทางรถไฟ","Train hits a car at a level crossing"),d:B("ข้ามประเภท: รถไฟกับรถยนต์ มักเป็นพื้นที่ชนบท ห่างจากหน่วยกู้ภัย","Cross-mode: train vs car, often rural and far from rescue units."),
+  dist:25,spd:60,det:[3,8],detA:[.2,.6],selfT:[5,10],selfU:[15,30],disp:[3,5],acc:[20,60],robot:.85,care:[30,60],scene:[240,480],reopen:[360,1440],prelim:[20*DAY,30*DAY],final:[6*MON,12*MON],fix:[12*MON,48*MON],
+  self:B("อพยพผู้โดยสารลงจากขบวน","Passengers leave the train"),reo:B("ซ่อมรางและเดินรถ","Repair the track, resume service"),robots:B("โดรนสำรวจซากและหาผู้บาดเจ็บรอบขบวน ระบบตรวจสภาพรางก่อนเปิดเดินรถ","Drones survey the wreck and find the injured; automated track checks before service resumes."),
+  inv:B("กรมการขนส่งทางราง การรถไฟ และตำรวจ","Rail regulator, the railway and police"),
+  fx:[B("กล้องและตัวบันทึกข้อมูลบนรถไฟ ไฟหน้าสว่างขึ้น","Cameras and event recorders on trains, brighter headlights"),B("ไม้กั้นครบทุกจุดตัด หรือทำทางลอด/สะพานข้าม","Barriers at every crossing, or a bridge/underpass instead"),B("ถ้ารถค้างบนราง ออกจากรถทันที เดินออกห่างจากรางโดยเฉียงไปทางที่รถไฟวิ่งมา","If stuck on the track, get out and walk away at an angle toward the oncoming train"),B("เซนเซอร์ตรวจจับรถค้างที่จุดตัดแล้วส่งสัญญาณให้รถไฟเบรก","Crossing sensors that detect a stuck car and signal the train to brake")],
+  cs:B("ทางรอดที่ดีที่สุดคือไม่ให้เกิด เพราะรถไฟต้องใช้ระยะหลายร้อยเมตรถึงจะหยุดได้","The best rescue is prevention: a train needs hundreds of metres to stop."),src:[]},
+ tunnel:{n:B("รถไฟใต้ดินขัดข้องและมีควันในอุโมงค์","Metro train stopped with smoke in a tunnel"),d:B("ความผิดปกติของยานพาหนะ ผู้โดยสารต้องเดินอพยพในอุโมงค์ ทีมต้องลงจากสถานี","A vehicle failure: passengers walk out through the tunnel, teams come down from the station."),
+  dist:3,spd:30,det:[2,5],detA:[.2,.5],selfT:[8,15],selfU:[20,40],disp:[2,4],acc:[10,25],robot:.6,care:[10,20],scene:[180,360],reopen:[360,2880],prelim:[20*DAY,30*DAY],final:[9*MON,18*MON],fix:[12*MON,36*MON],
+  self:B("เดินอพยพตามทางเดินในอุโมงค์","Walk out along the tunnel walkway"),reo:B("ระบายควัน ตรวจ และเปิดเดินรถ","Clear smoke, inspect, resume service"),robots:B("หุ่นยนต์นำหน้าเข้าไปในควัน วัดก๊าซพิษและหาคนที่ติดค้าง","Robots go into the smoke first, measure toxic gas and look for anyone left behind."),
+  inv:B("หน่วยงานกำกับระบบราง และผู้ให้บริการรถไฟฟ้า","The rail regulator and the metro operator"),
+  fx:[B("วัสดุในขบวนรถไม่ติดไฟและควันน้อย ตามมาตรฐาน EN 45545","Fire-safe, low-smoke materials in the train (EN 45545)"),B("ทางเดินฉุกเฉิน พัดลมระบายควัน และป้ายทางออกระดับต่ำที่มองเห็นในควัน","Emergency walkways, smoke extraction fans and low exit signs visible in smoke"),B("ซ้อมอพยพร่วมกับดับเพลิง และประกาศสอนผู้โดยสาร","Joint drills with firefighters; announcements that teach passengers"),B("ตรวจจับควันแล้วสั่งพัดลม และพาขบวนไปหยุดที่สถานีถัดไปแทนกลางอุโมงค์","Smoke detection that starts the fans and runs the train on to the next station")],
+  cs:B("หลักคือพาขบวนไปถึงสถานีถ้ายังวิ่งได้ เพราะอพยพที่ชานชาลาง่ายกว่าในอุโมงค์มาก","The rule is to keep going to a station if the train can still move: evacuating at a platform is far easier than in a tunnel."),src:[]},
+ rwy:{n:B("เครื่องบินไถลออกนอกรันเวย์และไฟไหม้","Airliner runs off the runway and catches fire"),d:B("อุบัติเหตุอากาศยาน รถดับเพลิงสนามบินอยู่ใกล้มาก แต่ไฟลามเร็ว","An aircraft accident: airport fire trucks are close, but fire spreads fast."),
+  dist:2,spd:80,det:[.3,1],detA:[.1,.3],selfT:[1.5,3],selfU:[3,6],disp:[.3,.6],acc:[5,15],robot:.8,care:[20,40],scene:[720,2880],reopen:[60,360],prelim:[25*DAY,30*DAY],final:[12*MON,24*MON],fix:[12*MON,36*MON],
+  self:B("อพยพผ่านสไลด์ (มาตรฐาน 90 วินาที)","Evacuate down the slides (90-second standard)"),reo:B("ตรวจรันเวย์และเปิดใช้งาน","Inspect and reopen the runway"),robots:B("โดรนกล้องความร้อนชี้จุดที่ไฟลุก หุ่นยนต์ฉีดโฟมเข้าใกล้ไฟได้มากกว่าคน","Thermal drones find the hot spots; foam robots get closer to the fire than people can."),
+  inv:B("หน่วยสอบสวนอุบัติเหตุอากาศยานตาม ICAO Annex 13","The air accident investigation authority, under ICAO Annex 13"),
+  fx:[B("ทดสอบให้อพยพคนออกหมดใน 90 วินาที และเก้าอี้ที่ทนแรงกระแทก 16g","90-second evacuation tests and 16g crash-rated seats"),B("พื้นที่ปลอดภัยปลายรันเวย์ (RESA) และพื้นวัสดุชะลอเครื่องบิน (EMAS)","Runway end safety areas (RESA) and arrestor beds (EMAS)"),B("ซ้อมดับเพลิงอากาศยาน และย้ำผู้โดยสารให้ทิ้งสัมภาระ","Aircraft firefighting drills; telling passengers to leave their bags"),B("รายงานสภาพรันเวย์เปียกแบบมาตรฐาน (GRF) และระบบเตือนลงจอดยาว","Standard wet-runway reports (GRF) and long-landing alerts")],
+  cs:B("ICAO กำหนดให้สนามบินมีหน่วยดับเพลิงกู้ภัย และประเทศส่วนใหญ่ตั้งเป้าให้รถคันแรกถึงและเริ่มฉีดภายใน 3–4 นาที ส่วนเครื่องบินต้องผ่านการทดสอบว่าอพยพคนออกหมดได้ใน 90 วินาที","ICAO requires airport rescue and firefighting, and most states set 3–4 minutes for the first truck to arrive and start spraying. Aircraft must show everyone can get out in 90 seconds."),src:[3,4]},
+ ship:{n:B("เรือชนกันกลางทะเล","Ships collide at sea"),d:B("ยานพาหนะชนกันเองไกลจากฝั่ง ต้องใช้เฮลิคอปเตอร์และเรือกู้ภัย","A collision far offshore; helicopters and rescue boats are needed."),
+  dist:80,spd:200,det:[5,15],detA:[1,4],selfT:[10,20],selfU:[25,45],disp:[10,20],acc:[20,60],robot:.7,care:[30,60],scene:[3*DAY,14*DAY],reopen:[14*DAY,90*DAY],prelim:[30*DAY,30*DAY],final:[12*MON,24*MON],fix:[12*MON,48*MON],
+  self:B("สละเรือลงแพชูชีพ","Abandon ship to the liferafts"),reo:B("กู้เรือและขจัดคราบน้ำมัน","Salvage and oil clean-up"),robots:B("โดรนทิ้งห่วงชูชีพและหาคนในน้ำด้วยกล้องความร้อน","Drones drop lifebuoys and find people in the water with thermal cameras."),
+  inv:B("กรมเจ้าท่าและรัฐเจ้าของธงเรือ ตาม IMO Casualty Investigation Code","The maritime authority and the flag state, under the IMO Casualty Investigation Code"),
+  fx:[B("ทุ่น EPIRB ที่ลอยขึ้นและส่งพิกัดเอง แพชูชีพที่ปล่อยตัวเองได้","Float-free EPIRBs and liferafts that release themselves"),B("แบ่งช่องทางเดินเรือ (TSS) และศูนย์ควบคุมการจราจรทางน้ำ (VTS)","Traffic separation schemes and vessel traffic services"),B("ซ้อมสละเรือตาม SOLAS เป็นประจำ","Regular abandon-ship drills under SOLAS"),B("ศูนย์ค้นหาและกู้ภัยทางทะเลรับสัญญาณดาวเทียมโดยตรง","Maritime rescue centres receiving satellite alerts directly")],
+  cs:B("กลางทะเล ระยะทางเป็นตัวกำหนด การช่วยตัวเองด้วยแพชูชีพจึงสำคัญที่สุดในชั่วโมงแรก","At sea, distance rules: self-rescue in the liferafts matters most in the first hour."),src:[]},
+ bridge:{n:B("เรือชนตอม่อจนสะพานถล่ม","A ship strikes a pier and the bridge collapses"),d:B("ข้ามประเภท: เรือกับโครงสร้างพื้นฐาน ผลกระทบยาวเป็นเดือนถึงปี","Cross-mode: ship vs infrastructure, with effects that last months to years."),
+  dist:10,spd:50,det:[1,3],detA:[.2,.5],selfT:[1,2],selfU:[3,6],disp:[2,4],acc:[30,120],robot:.6,care:[20,40],scene:[60*DAY,90*DAY],reopen:[2*YR,4*YR],prelim:[30*DAY,30*DAY],final:[12*MON,24*MON],fix:[12*MON,60*MON],
+  self:B("ตำรวจปิดทางก่อนรถขึ้นสะพาน","Police stop traffic before it enters the bridge"),reo:B("สร้างสะพานใหม่","Build a new bridge"),robots:B("หุ่นยนต์ใต้น้ำ (ROV) และโซนาร์หาคนและรถใต้น้ำแทนนักประดาน้ำ","Underwater robots (ROV) and sonar search for people and vehicles instead of divers."),
+  inv:B("หน่วยสอบสวนอิสระ (สหรัฐฯ: NTSB) ร่วมกับเจ้าของสะพาน","An independent board (in the US, the NTSB) with the bridge owner"),
+  fx:[B("ระบบไฟฟ้าสำรองของเรือ เพื่อไม่ให้ไฟดับจนบังคับเรือไม่ได้","Backup power on ships so a blackout doesn't leave them unsteerable"),B("เกราะกันเรือชนรอบตอม่อ และประเมินความเสี่ยงสะพานเดิมทุกแห่ง","Pier protection and a risk review of every existing bridge"),B("ซ้อมแผนปิดสะพานทันทีเมื่อเรือแจ้งขอความช่วยเหลือ","Drills for closing the bridge the moment a ship calls mayday"),B("สัญญาณไฟและไม้กั้นปิดสะพานอัตโนมัติเมื่อเรือเบี่ยงเส้นทาง","Lights and gates that close the bridge automatically when a ship veers off course")],
+  cs:B("สะพาน Key Bridge ที่เมืองบัลติมอร์ถล่มเมื่อ 26 มี.ค. 2024 หลังเรือสินค้าไฟดับแล้วชนตอม่อ ตำรวจหยุดรถขึ้นสะพานได้ทันหลังเรือแจ้งเหตุ แต่คนงานซ่อมถนนบนสะพานเสียชีวิต 6 คน ร่องน้ำเปิดเต็มที่ในเดือนมิถุนายน หลังกู้ซากราว 50,000 ตันนานเกือบ 11 สัปดาห์ ส่วนการสร้างสะพานใหม่ใช้เวลาหลายปี","Baltimore's Key Bridge fell on 26 March 2024 after a cargo ship lost power and hit a pier. Police stopped traffic after the ship's mayday, but six road workers on the bridge died. The channel fully reopened in June after nearly 11 weeks and about 50,000 tons of wreckage removed; the new bridge takes years."),src:[5]},
+ ev:{n:B("รถไฟฟ้า (EV) ชนแล้วแบตเตอรี่ลุกไหม้","EV crash with a battery fire"),d:B("ความผิดปกติหลังชน: ไฟจากแบตลิเทียมดับยากและอาจปะทุซ้ำ","A post-crash failure: lithium battery fires are hard to put out and can reignite."),
+  dist:8,spd:40,det:[2,5],detA:[.2,.5],selfT:[.5,1],selfU:[2,4],disp:[1,3],acc:[30,90],robot:.7,care:[15,25],scene:[180,480],reopen:[0,60],prelim:[20*DAY,30*DAY],final:[3*MON,12*MON],fix:[6*MON,24*MON],
+  self:B("ออกจากรถก่อนไฟลาม","Get out before the fire spreads"),reo:B("ย้ายรถไปพื้นที่กักและเปิดถนน","Move the car to quarantine, reopen the road"),robots:B("หุ่นยนต์ดับเพลิงฉีดน้ำจากระยะไกล ลดความเสี่ยงต่อทีม","A firefighting robot sprays from a distance, keeping the crew safer."),
+  inv:B("ตำรวจ หน่วยดับเพลิง และผู้ผลิตรถ","Police, the fire service and the carmaker"),
+  fx:[B("เตือนเมื่อแบตเตอรี่ร้อนผิดปกติก่อนไฟลาม (UN R100) และมือเปิดประตูแบบกลไก","Warnings before a battery fire spreads (UN R100) and mechanical door releases"),B("พื้นที่กักรถ EV หลังเกิดเหตุ และจุดดับเพลิงที่มีน้ำพอ","Quarantine areas for damaged EVs and enough water where they are handled"),B("ฝึกดับไฟรถ EV และใช้คู่มือกู้ภัยของผู้ผลิต (rescue sheet)","EV firefighting training and the makers' rescue sheets"),B("ส่งข้อมูลชนิดแบตเตอรี่ไปพร้อม eCall ให้ทีมเตรียมอุปกรณ์ถูก","Send the battery type with the eCall so crews bring the right kit")],
+  cs:B("ไฟแบตเตอรี่ลิเทียมต้องใช้น้ำมากและเวลานาน บางครั้งต้องเฝ้าดูต่อเป็นวันเพราะปะทุซ้ำได้","Lithium battery fires need a lot of water and time, and the car may need watching for days because it can reignite."),src:[0]}
+};
+const SRC=[
+ ["European Commission: Interoperable EU-wide eCall","https://transport.ec.europa.eu/transport-themes/smart-mobility/road/its-directive-and-action-plan/interoperable-eu-wide-ecall_en"],
+ ["IFALPA: ICAO Annex 13 at a glance (report timelines)","https://ifalpa.org/media/4404/26aapbl01-icao-annex-13-at-a-glance.pdf"],
+ ["วารสารเวชศาสตร์ฉุกเฉิน: เป้าเวลาตอบสนอง 8 นาที (สพฉ.)","https://he03.tci-thaijo.org/index.php/Jemst-01JHS/article/download/487/526"],
+ ["SKYbrary: Rescue and Fire Fighting Services","https://skybrary.aero/articles/rescue-and-fire-fighting-services"],
+ ["eCFR 14 CFR 25.803: Emergency evacuation","https://www.ecfr.gov/current/title-14/section-25.803"],
+ ["WTOP: Shipping channel fully reopens after Key Bridge collapse","https://wtop.com/baltimore/2024/06/shipping-channel-fully-reopens-two-months-after-key-bridge-collapse"]
+];
+
+/* ---------- model ---------- */
+function rng(seed){let x=seed>>>0||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return (x>>>0)/4294967296;};}
+const U=(r,[a,b])=>a+(b-a)*r();
+function compute(c,r){
+ const I=INC[c.inc],f={};
+ const det=U(r,c.auto?I.detA:I.det);
+ const self=U(r,c.trained?I.selfT:I.selfU);
+ const disp=U(r,I.disp)*(c.auto?.75:1);
+ const jam=I.jam?(c.robots?1.15:I.jam):1;
+ const trav=c.dist/I.spd*60*(.9+.4*r())*jam;
+ const t1=det+disp,arr=t1+trav;
+ const acc=U(r,I.acc)*(c.robots?I.robot:1)*(c.trained?.9:1);
+ const care=U(r,I.care);
+ const scene=U(r,I.scene)*(c.robots?.9:1);
+ const reopen=U(r,I.reopen);
+ f.det=[0,det];f.self=[0,self];f.disp=[det,t1];f.trav=[t1,arr];f.acc=[arr,arr+acc];f.care=[arr+acc,arr+acc+care];
+ f.scene=[arr+acc,arr+acc+scene];f.reopen=[arr+acc+scene,arr+acc+scene+reopen];
+ const pre=U(r,I.prelim),fin=U(r,I.final),fx=U(r,I.fix);
+ f.prelim=[0,pre];f.final=[0,fin];f.fix=[fin,fin+fx];
+ const drone=c.robots?det+1.5+c.dist/60*60:Infinity;
+ return {f,arr,drone,first:Math.min(arr,drone,c.trained&&c.inc==="ped"?self:Infinity),hosp:arr+acc+care,open:f.reopen[1],fixEnd:f.fix[1],accEnd:arr+acc};
+}
+function monte(c,n=400){const r=rng(9173+(c.dist*31)),out=[];for(let i=0;i<n;i++)out.push(compute(c,r));return out;}
+const medOf=a=>{const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length/2)];};
+function fmtT(m){if(!isFinite(m))return "–";const L=lang==="th";
+ if(m<1)return Math.round(m*60)+(L?" วินาที":" s");
+ if(m<60)return Math.round(m)+(L?" นาที":" min");
+ if(m<DAY){const h=Math.floor(m/60),mm=Math.round(m%60);return h+(L?" ชม.":" h")+(mm?" "+mm+(L?" นาที":" min"):"");}
+ if(m<MON)return (m/DAY).toFixed(m<3*DAY?1:0)+(L?" วัน":" d");
+ if(m<YR)return (m/MON).toFixed(m<3*MON?1:0)+(L?" เดือน":" mo");
+ return (m/YR).toFixed(1)+(L?" ปี":" y");}
+function fmtClock(m){if(m<DAY){const s=Math.floor(m*60),h=Math.floor(s/3600),mi=Math.floor(s%3600/60),se=s%60;return "T+ "+(h?String(h).padStart(2,"0")+":":"")+String(mi).padStart(2,"0")+":"+String(se).padStart(2,"0");}return "T+ "+fmtT(m);}
+
+/* ---------- state ---------- */
+const st={inc:"ped",auto:0,robots:0,trained:0,dist:5,seed:5,view:"over"};
+const cfg=()=>({inc:st.inc,auto:!!st.auto,robots:!!st.robots,trained:!!st.trained,dist:st.dist});
+let RUN=null, MC=null, MB=null;
+function phName(p){if(p.id==="self")return INC[st.inc].self;if(p.id==="reopen")return INC[st.inc].reo;return p.n;}
+
+/* shared 3D builders (same as the driving simulator) */
+const MAT={};
+const GLASS=()=>mat(0x1b2733,.08,.6,{transparent:true,opacity:.85});
+const RUBBER=()=>mat(0x1a1a1a,.9,0);
+function lin(c){return new THREE.Color(c).convertSRGBToLinear();}
+function mat(color,r=.7,m=0,o={}){const k=[color,r,m,JSON.stringify(o)].join("|");if(!MAT[k])MAT[k]=new THREE.MeshStandardMaterial({color:lin(color),roughness:r,metalness:m,...o});return MAT[k];}
+function mesh(geo,m,cast=true,recv=false){const o=new THREE.Mesh(geo,m);o.castShadow=cast;o.receiveShadow=recv;return o;}
+function bxm(parent,w,h,d,x,y,z,m,cast=true){const o=mesh(new THREE.BoxGeometry(w,h,d),m,cast,true);o.position.set(x,y,z);parent.add(o);return o;}
+function cylm(parent,rt,rb,h,x,y,z,m,axis="y",seg=20){const o=mesh(new THREE.CylinderGeometry(rt,rb,h,seg),m);if(axis==="z")o.rotation.x=Math.PI/2;if(axis==="x")o.rotation.z=Math.PI/2;o.position.set(x,y,z);parent.add(o);return o;}
+function extrudeProfile(pts,depth,m,bevel=.05){const sh=new THREE.Shape();pts.forEach((p,i)=>i?sh.lineTo(p[0],p[1]):sh.moveTo(p[0],p[1]));sh.closePath();
+ const g=new THREE.ExtrudeGeometry(sh,{depth:depth-2*bevel,bevelEnabled:true,bevelThickness:bevel,bevelSize:bevel,bevelSegments:2,curveSegments:6});g.translate(0,0,-(depth-2*bevel)/2);return mesh(g,m);}
+function wheel(parent,x,z,r,w){cylm(parent,r,r,w,x,r,z,RUBBER(),"z",22);cylm(parent,r*.55,r*.55,w+.02,x,r,z,mat(0xb8c0c8,.35,.8),"z",16);}
+function lampMat(color,on){return new THREE.MeshStandardMaterial({color:lin(color),emissive:lin(color),emissiveIntensity:on?1.6:.15,roughness:.4});}
+function vehicleMesh(kind,color){
+ const g=new THREE.Group(),paint=mat(color,.35,.25);g.userData.brake=[];
+ if(kind==="train"){
+  for(let i=0;i<3;i++){const ox=-i*25;
+   const body=extrudeProfile([[0,.9],[0,3.4],[-.6,4.1],[-23.4,4.1],[-24,3.4],[-24,.9]],3.1,paint,.08);body.position.x=ox;g.add(body);
+   bxm(g,22.6,.9,3.16,ox-12,2.9,0,GLASS());bxm(g,24,.25,3.12,ox-12,1.55,0,mat(0xc0392b,.5,.1));
+   [-3,-21].forEach(bx_=>[-.72,.72].forEach(z=>wheel(g,ox+bx_,z,.45,.2)));}
+  const nose=extrudeProfile([[0,.9],[2.2,1.4],[2.6,2.4],[1.2,3.6],[0,4.1],[0,.9]],3.0,paint,.06);g.add(nose);
+  const hl=lampMat(0xfff4d6,true);bxm(g,.1,.2,.5,2.45,1.9,-.9,hl,false);bxm(g,.1,.2,.5,2.45,1.9,.9,hl,false);
+  bxm(g,.6,.9,2.4,1.6,3.05,0,GLASS());return g;}
+ if(kind==="bus"){
+  const body=extrudeProfile([[0,.45],[0,3.0],[-.3,3.2],[-11.7,3.2],[-12,3.0],[-12,.45]],2.5,paint,.08);g.add(body);
+  bxm(g,10.4,1.0,2.56,-6.4,2.15,0,GLASS());bxm(g,.1,1.6,2.2,.05,2.0,0,GLASS());
+  bxm(g,.08,.25,1.6,.06,2.95,0,lampMat(0xffb000,true),false);
+  [-2.2,-9.2].forEach(x=>[-1.05,1.05].forEach(z=>wheel(g,x,z,.5,.32)));
+  const bl=lampMat(0x8a0000,false);g.userData.brake.push(bl);bxm(g,.06,.35,.3,-12.05,1.0,-1.0,bl,false);bxm(g,.06,.35,.3,-12.05,1.0,1.0,bl,false);return g;}
+ if(kind==="moto"){
+  wheel(g,-.25,0,.32,.12);wheel(g,-1.75,0,.32,.12);
+  bxm(g,1.3,.18,.18,-1.0,.62,0,mat(0x2b3642,.5,.4));const tank=mesh(new THREE.SphereGeometry(.26,16,12),paint);tank.scale.set(1.5,.8,.9);tank.position.set(-.75,.86,0);g.add(tank);
+  bxm(g,.65,.12,.32,-1.35,.88,0,mat(0x111111,.8));
+  const rider=new THREE.Group();rider.name="rider";g.add(rider);
+  cylm(rider,.17,.21,.62,-1.18,1.25,0,mat(0x2b4a6b,.8));const helm=mesh(new THREE.SphereGeometry(.17,16,12),mat(0xf2f2f2,.3,.1));helm.position.set(-1.1,1.68,0);rider.add(helm);
+  bxm(rider,.08,.1,.22,-.98,1.66,0,GLASS(),false);
+  [-.2,.2].forEach(z=>{const leg=cylm(rider,.08,.08,.55,-1.15,.95,z,mat(0x22303d,.8));leg.rotation.z=1.0;});
+  const bl=lampMat(0x8a0000,false);g.userData.brake.push(bl);bxm(g,.05,.1,.16,-2.05,.95,0,bl,false);
+  bxm(g,.06,.12,.16,.02,.95,0,lampMat(0xfff4d6,true),false);return g;}
+ // car
+ const body=extrudeProfile([[0,.32],[0,.82],[-.95,.95],[-1.55,1.0],[-2.15,1.42],[-3.45,1.45],[-4.05,1.02],[-4.6,.95],[-4.6,.32]],1.78,paint,.06);g.add(body);
+ const glassSide=extrudeProfile([[-1.62,1.02],[-2.17,1.39],[-3.43,1.42],[-3.98,1.03]],1.82,GLASS(),.01);g.add(glassSide);
+ [-.95,-3.7].forEach(x=>[-.8,.8].forEach(z=>wheel(g,x,z,.33,.24)));
+ const hl=lampMat(0xfff4d6,true);bxm(g,.06,.1,.32,.02,.72,-.6,hl,false);bxm(g,.06,.1,.32,.02,.72,.6,hl,false);
+ const bl=lampMat(0x8a0000,false);g.userData.brake.push(bl);bxm(g,.06,.12,.3,-4.62,.82,-.62,bl,false);bxm(g,.06,.12,.3,-4.62,.82,.62,bl,false);
+ return g;
+}
+function person(shirt){const g=new THREE.Group(),skin=mat(0xd9a67e,.7),pants=mat(0x2b3642,.85);
+ [-.1,.1].forEach(z=>cylm(g,.075,.065,.82,0,.41,z,pants,"y",10));
+ cylm(g,.17,.2,.62,0,1.13,0,mat(shirt,.8),"y",14);
+ [-.25,.25].forEach(z=>cylm(g,.055,.05,.58,0,1.1,z,mat(shirt,.8),"y",8));
+ const h=mesh(new THREE.SphereGeometry(.12,16,12),skin);h.position.y=1.58;g.add(h);
+ const hair=mesh(new THREE.SphereGeometry(.125,16,8,0,Math.PI*2,0,Math.PI/2),mat(0x1d1d1d,.9));hair.position.y=1.6;g.add(hair);return g;}
+function rngB(seed){let x=seed;return()=>{x=(x*16807)%2147483647;return x/2147483647;};}
+function canvasTex(w,h,draw){const c=document.createElement("canvas");c.width=w;c.height=h;draw(c.getContext("2d"),w,h);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return t;}
+function flat(sc,w,d,color,x,y,z,r=.9,o={}){const sg=Math.min(48,Math.max(1,Math.ceil(Math.max(w,d)/400)));const p=mesh(new THREE.PlaneGeometry(w,d,sg,sg),mat(color,r,o.metal||0,o.extra||{}),false,true);p.rotation.x=-Math.PI/2;p.position.set(x,y,z);sc.add(p);return p;}
+function trees(sc,n,x0,x1,z0,z1,y,night,seed,avoid){const rb=rngB(seed);const g=new THREE.IcosahedronGeometry(1,1),im=new THREE.InstancedMesh(g,mat(night?0x16241a:0x4f7a3f,.9,0,{flatShading:true}),n);const mm=new THREE.Matrix4();
+ for(let i=0;i<n;i++){let x,z;do{x=x0+rb()*(x1-x0);z=z0+rb()*(z1-z0);}while(avoid&&avoid(x,z));const s=3+rb()*4;mm.compose(new THREE.Vector3(x,y+s*.9,z),new THREE.Quaternion(),new THREE.Vector3(s,s*1.2,s));im.setMatrixAt(i,mm);}sc.add(im);return im;}
+function rainPts(sc,O,snow){const n=1400,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=(Math.random()-.5)*80;pos[i*3+1]=Math.random()*24;pos[i*3+2]=(Math.random()-.5)*60;}
+ const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));O.rain=new THREE.Points(g,new THREE.PointsMaterial({color:snow?0xffffff:0xcfd9e3,size:snow?.14:.07,transparent:true,opacity:snow?.9:.7}));O.rainV=snow?.12:.9;sc.add(O.rain);}
+function stepRain(O,cam){if(!O.rain)return;O.rain.position.set(cam.position.x,cam.position.y-10,cam.position.z);const a=O.rain.geometry.attributes.position;for(let i=0;i<a.count;i++){let y=a.getY(i)-O.rainV;if(y<0)y+=24;a.setY(i,y);if(O.rainV<.5)a.setX(i,a.getX(i)+Math.sin(y+i)*.03);}a.needsUpdate=true;}
+function shipMesh(L,B_,D,col){const g=new THREE.Group();
+ const hull=extrudeProfile([[-L/2,0],[L/2-L*.1,0],[L/2,D*.9],[L/2-L*.02,D],[-L/2,D]],B_,mat(col,.6,.1),Math.min(.4,B_*.02));hull.position.y=-D*.45;g.add(hull);
+ bxm(g,L*.95,.5,B_*.92,-L*.01,D*.55+.7,0,mat(0x7a7f85,.8),false);
+ if(L>100){const cols=[0xc0392b,0x2e86c1,0xd4ac0d,0x1e8449,0x7d3c98,0xe67e22,0x95a5a6];const n=Math.floor(L*.6/13.2),per=Math.floor(B_*.85/2.5),tiers=4;
+  const im=new THREE.InstancedMesh(new THREE.BoxGeometry(12,2.6,2.4),mat(0xffffff,.7),n*per*tiers);const mm=new THREE.Matrix4(),c=new THREE.Color();let i=0;
+  for(let a=0;a<n;a++)for(let b=0;b<per;b++)for(let h=0;h<tiers;h++){mm.makeTranslation(L*.4-a*13.2,D*.55+1.6+h*2.6,-B_*.425+1.25+b*2.5);im.setMatrixAt(i,mm);c.set(cols[(a*7+b*3+h*5)%cols.length]).convertSRGBToLinear();im.setColorAt(i,c);i++;}
+  g.add(im);bxm(g,L*.06,D*1.1,B_*.8,-L*.4,D*1.1,0,mat(0xf2f2f2,.6));bxm(g,L*.075,1.4,B_*.98,-L*.4,D*1.67,0,mat(0xf2f2f2,.6));bxm(g,L*.04,D*.5,B_*.18,-L*.46,D*1.4,0,mat(0x333333,.6));
+  bxm(g,L*.062,1.6,B_*.81,-L*.4,D*1.5,0,GLASS(),false);g.userData.eye=[-L*.37,D*1.5];
+ } else {bxm(g,L*.3,D*1.1,B_*.7,-L*.12,D*1.1,0,mat(0xf2f2f2,.6));bxm(g,L*.31,D*.35,B_*.71,-L*.12,D*1.35,0,GLASS(),false);cylm(g,.08,.08,L*.45,L*.15,D*.55+L*.22,0,mat(0x555555,.5,.5),"y",6);g.userData.eye=[-L*.05,D*1.4];}
+ g.userData.nav=lampMat(0xfff4d6,true);bxm(g,.8,.8,.8,L*.3,D*.55+(L>100?16:L*.45),0,g.userData.nav,false);
+ return g;}
+function airliner(col){const g=new THREE.Group(),w=mat(0xf4f6f8,.4,.2),a=mat(col,.4,.2);
+ cylm(g,2,2,30,0,0,0,w,"x",24);const nose=mesh(new THREE.SphereGeometry(2,24,16),w);nose.scale.set(2.2,1,1);nose.position.x=15;g.add(nose);
+ const tail=mesh(new THREE.ConeGeometry(2,9,24),w);tail.rotation.z=Math.PI/2;tail.position.x=-19.5;g.add(tail);
+ bxm(g,1.6,.5,2.6,17.2,.7,0,GLASS(),false);
+ [1,-1].forEach(s=>{const wg=bxm(g,5,.4,17,-3.8,-.8,s*8.5,w);wg.rotation.y=-s*.45;cylm(g,.95,.95,4,1.2,-2.1,s*6.2,mat(0x9aa3ab,.4,.6),"x",18);
+  const st_=bxm(g,3,.25,6,-19,1,s*3,w);st_.rotation.y=-s*.4;});
+ const fin=bxm(g,5,7,.35,-18,4.6,0,a);fin.rotation.z=.35;bxm(g,26,.35,.05,0,0,2.02,a,false);bxm(g,26,.35,.05,0,0,-2.02,a,false);
+ [[12,-2.6],[-1,-2.6]].forEach(([x,y])=>{cylm(g,.12,.12,1.6,x,y,0,mat(0x555555,.5,.5),"y",8);wheel(g,x,0,.55,.4);g.children[g.children.length-2].position.y=y-.6;g.children[g.children.length-1].position.y=y-.6;});
+ g.userData.strobe=lampMat(0xffffff,true);[1,-1].forEach(s=>bxm(g,.3,.3,.3,-7.5,-.8,s*16.5,g.userData.strobe,false));
+ return g;}
+function heliMesh(col){const g=new THREE.Group(),p=mat(col,.35,.25),dk=mat(0x333333,.5,.5);
+ const b=mesh(new THREE.SphereGeometry(1.4,24,16),p);b.scale.set(2.1,1,1);b.position.y=1.6;g.add(b);
+ const gl=mesh(new THREE.SphereGeometry(1.25,20,14),GLASS(),false);gl.scale.set(1.2,.9,1);gl.position.set(1.7,1.75,0);g.add(gl);
+ cylm(g,.35,.18,7,-5.5,2,0,p,"x",12);bxm(g,1.2,1.6,.15,-9,2.8,0,p);
+ [-.9,.9].forEach(z=>{bxm(g,4.2,.1,.1,0,.05,z,dk);[-1,1].forEach(x=>bxm(g,.08,.8,.08,x,.45,z,dk));});
+ cylm(g,.15,.15,.6,0,3.0,0,dk,"y",8);
+ const rot=new THREE.Group();rot.position.set(0,3.3,0);[0,1].forEach(i=>{const bl=bxm(rot,11,.06,.35,0,0,0,mat(0x222222,.6),false);bl.rotation.y=i*Math.PI/2;});g.add(rot);g.userData.rotor=rot;
+ const tr=new THREE.Group();tr.position.set(-9.1,2.9,.2);[0,1].forEach(i=>{const bl=bxm(tr,1.6,.2,.04,0,0,0,mat(0x222222,.6),false);bl.rotation.z=i*Math.PI/2;});g.add(tr);g.userData.trotor=tr;
+ g.userData.bcn=lampMat(0xff2020,true);bxm(g,.2,.2,.2,-2,2.7,0,g.userData.bcn,false);
+ return g;}
+function droneMesh(col){const g=new THREE.Group();bxm(g,.26,.1,.26,0,0,0,mat(col,.4,.3));const rs=[];
+ [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([a,b])=>{const arm=bxm(g,.46,.03,.03,a*.16,0,b*.16,mat(0x222222,.5));arm.rotation.y=a*b>0?-Math.PI/4:Math.PI/4;
+  const r_=mesh(new THREE.CylinderGeometry(.14,.14,.01,18),mat(0x111111,.3,0,{transparent:true,opacity:.45}),false);r_.position.set(a*.32,.05,b*.32);g.add(r_);rs.push(r_);});
+ bxm(g,.08,.06,.08,.15,-.07,0,GLASS(),false);g.userData.led=lampMat(0x2ecc40,true);bxm(g,.05,.05,.05,-.14,.03,0,g.userData.led,false);g.userData.rot=rs;
+ return g;}
+function truckMesh(col){const g=new THREE.Group();bxm(g,2.3,2.6,2.4,4.4,1.8,0,mat(col,.4,.2));bxm(g,.1,1.0,2.1,5.56,2.4,0,GLASS(),false);
+ bxm(g,8,2.8,2.5,-1,2.1,0,mat(0xd9dde0,.6));[4.6,0,-3.5].forEach(x=>[-1.05,1.05].forEach(z=>wheel(g,x,z,.5,.3)));return g;}
+
+/* ---------- 3D scene ---------- */
+let R3=null;
+function has3D(){if(R3===false)return false;if(R3)return true;
+ try{if(!window.THREE){R3=false;return false;}const c=document.createElement("canvas");if(!(c.getContext("webgl")||c.getContext("experimental-webgl"))){R3=false;return false;}}catch(e){R3=false;return false;}
+ const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;
+ $("v3").appendChild(renderer.domElement);R3={renderer,camera:new THREE.PerspectiveCamera(55,16/9,.5,20000),scene:null,O:null};return true;}
+function size3d(){if(!R3)return;const w=$("v3wrap").clientWidth||800,h=Math.round(Math.min(460,Math.max(240,w*.56)));R3.renderer.setSize(w,h,false);R3.renderer.domElement.style.height=h+"px";R3.camera.aspect=w/h;R3.camera.updateProjectionMatrix();}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function lights(sc,k=1){sc.add(new THREE.HemisphereLight(0xdfefff,0x6b6a5a,.8*k));const s=new THREE.DirectionalLight(0xfff1dc,1.4*k);s.position.set(-.4,1,.6);sc.add(s);}
+function beacon(g,x,y,z,c1,c2){const a=lampMat(c1,true),b=lampMat(c2,true);bxm(g,.3,.18,.3,x,y,z-.3,a,false);bxm(g,.3,.18,.3,x,y,z+.3,b,false);(g.userData.bc=g.userData.bc||[]).push(a,b);}
+function ambulance(){const g=new THREE.Group();const w=mat(0xf4f6f8,.5,.1);bxm(g,4.2,2.5,2.2,-1.2,1.65,0,w);bxm(g,1.7,1.7,2.1,1.85,1.25,0,w);bxm(g,.1,.8,1.9,2.72,1.7,0,GLASS(),false);
+ bxm(g,4.25,.35,2.25,-1.2,1.3,0,mat(0xc0392b,.5),false);[1.6,-2.4].forEach(x=>[-1,1].forEach(z=>wheel(g,x,z,.42,.28)));beacon(g,.6,2.95,0,0xff2020,0x2060ff);return g;}
+function fireTruck(col=0xc0392b){const g=new THREE.Group();const p=mat(col,.45,.2);bxm(g,7,2.4,2.5,-1.5,1.7,0,p);bxm(g,2.2,2.2,2.5,3.1,1.6,0,p);bxm(g,.1,.9,2.2,4.22,2.1,0,GLASS(),false);
+ const lad=bxm(g,7,.25,.8,-1.2,3.1,0,mat(0xc0c6cc,.4,.7),false);[3,0,-3.6].forEach(x=>[-1.1,1.1].forEach(z=>wheel(g,x,z,.55,.35)));beacon(g,3.1,2.85,0,0xff2020,0xff2020);return g;}
+function arff(){const g=fireTruck(0xd7e04a);bxm(g,.4,.4,1.6,3.4,3.0,0,mat(0x333333,.5,.5),false);return g;}
+function police(){const g=vehicleMesh("car",0xf2f2f2);bxm(g,1.6,.25,1.79,-2.3,.95,0,mat(0x1d3d8f,.5),false);beacon(g,-2.2,1.55,0,0xff2020,0x2060ff);return g;}
+function towTruck(){const g=truckMesh(0xe0b23a);const b=bxm(g,.3,.3,7,-2,4.2,0,mat(0x333333,.5,.5),false);b.rotation.y=Math.PI/2;b.rotation.z=.35;beacon(g,4.4,3.25,0,0xffa31a,0xffa31a);return g;}
+function robotMesh(){const g=new THREE.Group();bxm(g,1.6,.5,1.1,0,.35,0,mat(0x2b3642,.6,.3));[-.5,.5].forEach(z=>bxm(g,1.7,.35,.25,0,.2,z,RUBBER()));bxm(g,.5,.5,.5,.2,.85,0,mat(0xe0b23a,.5,.2));
+ const arm=bxm(g,1.2,.12,.12,.8,1.1,0,mat(0x9aa3ab,.4,.6));arm.rotation.z=.4;bxm(g,.2,.2,.2,1.35,1.35,0,lampMat(0x6aa8ec,true),false);return g;}
+function crane(){const g=new THREE.Group();bxm(g,6,1.2,3,0,.8,0,mat(0xe0b23a,.5,.2));const bm=cylm(g,.25,.35,26,0,13,0,mat(0xe0b23a,.5,.3),"y",8);bm.rotation.z=-.45;bm.position.set(5,12,0);return g;}
+function firefighter(){const p=person(0x8f2a1e);bxm(p,.25,.5,.35,-.22,1.15,0,mat(0xc0c6cc,.4,.6),false);return p;}
+function investigator(){return person(0xf2c200);}
+function smoke(sc,n,x,y,z,spread,col=0x5b6168){const g=new THREE.Group();const m=new THREE.MeshStandardMaterial({color:lin(col),transparent:true,opacity:.45,depthWrite:false,roughness:1});
+ for(let i=0;i<n;i++){const s=mesh(new THREE.SphereGeometry(1,12,8),m,false);s.position.set(x+(Math.random()-.5)*spread,y+Math.random()*spread*.6,z+(Math.random()-.5)*spread);s.scale.setScalar(1.5+Math.random()*2.5);s.userData.v=.3+Math.random()*.6;g.add(s);}sc.add(g);g.userData.m=m;return g;}
+function fire(sc,x,y,z,s=1){const g=new THREE.Group();const m=new THREE.MeshBasicMaterial({color:0xff7a28,transparent:true,opacity:.9,depthWrite:false});
+ for(let i=0;i<6;i++){const c=mesh(new THREE.ConeGeometry(.6*s,2.2*s,8),m,false);c.position.set(x+(Math.random()-.5)*2*s,y+1*s,z+(Math.random()-.5)*1.6*s);g.add(c);}const pl=new THREE.PointLight(0xff8a3d,2,30,1.5);pl.position.set(x,y+2,z);g.add(pl);sc.add(g);return g;}
+function lying(col){const p=person(col);p.rotation.z=Math.PI/2;p.position.y=.2;return p;}
+/* a unit moves from `from` to `to` between t0 and t1 (minutes), optionally leaves to `away` between t2 and t3 */
+function unit(sc,obj,from,to,t0,t1,away,t2,t3){sc.add(obj);obj.visible=false;return {obj,from:new THREE.Vector3(...from),to:new THREE.Vector3(...to),t0,t1,away:away?new THREE.Vector3(...away):null,t2,t3};}
+function stepUnit(u,t){const o=u.obj;if(t<u.t0||(u.away&&t>u.t3)){o.visible=false;return;}o.visible=true;let p;
+ if(u.away&&t>=u.t2){const k=Math.min(1,(t-u.t2)/Math.max(.01,u.t3-u.t2));p=u.to.clone().lerp(u.away,k);} else {const k=Math.min(1,(t-u.t0)/Math.max(.01,u.t1-u.t0));p=u.from.clone().lerp(u.to,k);}
+ const d=p.clone().sub(o.position);if(d.lengthSq()>1e-4&&!o.userData.fixYaw)o.rotation.y=-Math.atan2(d.z,d.x);o.position.copy(p);}
+function road(sc,L,x0,z,w,col=0x4b535b){const r=flat(sc,L,w,col,x0+L/2,.04,z,.9);for(let x=x0;x<x0+L;x+=12)bxm(sc,5,.02,.15,x,.07,z,mat(0xf2f2f2,.6),false);return r;}
+function build(){
+ const c=cfg(),R=RUN,f=R.f,sc=new THREE.Scene(),O={units:[],walkers:[],fx:[],wreck:[],traffic:[]};R3.scene=sc;R3.O=O;
+ sc.background=lin(0xa9c7e3);sc.fog=new THREE.Fog(lin(0xa9c7e3),300,1800);lights(sc);
+ const arr=R.arr,accEnd=R.accEnd,hosp=R.hosp,sEnd=f.scene[1],drone=R.drone,inc=c.inc,trained=c.trained;
+ O.victim=new THREE.Vector3(0,1.6,0);O.approach=new THREE.Vector3(-200,2,0);
+ const amb=(from,to,away)=>O.units.push(unit(sc,ambulance(),from,to,f.trav[0],arr,away,accEnd,accEnd+Math.min(4,f.care[1]-accEnd)));
+ const veh=(o,from,to,t0,t1,away,t2,t3)=>{const u=unit(sc,o,from,to,t0,t1,away,t2,t3);O.units.push(u);return u;};
+ const droneU=(to)=>{if(isFinite(drone)){const d=droneMesh(0xe2640f);d.scale.setScalar(3);veh(d,[to[0]-250,60,to[2]+80],to,f.det[1]+1.5,drone);}};
+ const robotU=(from,to)=>{if(c.robots)veh(robotMesh(),from,to,arr-1,arr+ (accEnd-arr)*.3);};
+ const invs=(x,z)=>{for(let i=0;i<3;i++){const p=investigator();O.units.push(unit(sc,p,[x-30,0,z+6+i],[x+i*2-2,0,z+4+i],accEnd,accEnd+5,[x+i*2-2,0,z+4+i],sEnd-1,sEnd));}};
+ const walk=(p,from,to,t1)=>{O.walkers.push({p,from:new THREE.Vector3(...from),to:new THREE.Vector3(...to),t1});sc.add(p);};
+ if(inc==="ped"||inc==="ev"){
+  flat(sc,4000,4000,0x8a9a72,0,0,0,.95);road(sc,800,-400,1.75,10.5);
+  [-6.5,10].forEach(z=>bxm(sc,800,.15,3,0,.08,z,mat(0xbfc4c8,.85),false));
+  const rb=rngB(3);for(let x=-200;x<200;x+=24)[-1,1].forEach(s=>{if(rb()<.3)return;const h=6+rb()*12;bxm(sc,16,h,10,x,h/2,s<0?-20:24,mat([0x9aa6b2,0xb9a58e,0x8e9aa6][Math.floor(rb()*3)],.85));});
+  const car=vehicleMesh("car",inc==="ev"?0x2e86c1:0x8a96a3);car.position.set(inc==="ev"?2.3:-4,0,1.75);sc.add(car);O.wreck.push(car);
+  if(inc==="ped"){const v=lying(0xd4ac0d);v.position.set(2.5,.2,1.0);sc.add(v);O.vic=v;O.victim.set(2.5,.4,1.0);
+   const bys=[0x2e86c1,0x1e8449,0x7d3c98];bys.forEach((col,i)=>{const p=person(col);walk(p,[-3+i*4,0,9],[2+i*.9,0,2.2+i*.4],f.self[1]);});
+   droneU([3.5,.3,2.4]);}
+  else {O.fire=fire(sc,2.3,.6,1.75,1.1);O.smoke=smoke(sc,14,2.3,4,1.75,6);O.victim.set(-4,1.4,8.5);
+   [0x2b6cb0,0xd4ac0d].forEach((col,i)=>{const p=person(col);walk(p,[1+i,0,1.75],[-4-i*1.2,0,8.5],f.self[1]);});
+   robotU([-120,0,-1.75],[-8,0,-.2]);veh(fireTruck(),[-260,0,-1.75],[-14,0,-1.75],f.trav[0],arr);}
+  veh(police(),[-260,0,1.75],[-20,0,1.75],f.trav[0],arr+.5);
+  amb([260,0,-1.75],[9,0,-1.75],[260,0,-1.75]);
+  veh(towTruck(),[-260,0,5.25],[-12,0,5.25],accEnd+(sEnd-accEnd)*.3,accEnd+(sEnd-accEnd)*.5,[260,0,5.25],sEnd-2,sEnd);
+  invs(0,0);O.view={over:[-28,34,26]};O.trafficLane=[1.75,-1.75];O.trafficX=[-400,400];
+ }
+ if(inc==="multi"){
+  sc.background=lin(0x8d9ba6);sc.fog=new THREE.Fog(lin(0x8d9ba6),150,900);
+  flat(sc,4000,4000,0x7f9461,0,0,0,.95);flat(sc,1200,21,0x4b535b,0,.04,5.25,.9);flat(sc,1200,14,0x4b535b,0,.04,-8,.9);bxm(sc,1200,.9,.5,0,.45,-.6,mat(0xbfc4c8,.85),false);bxm(sc,1200,.7,.3,0,.6,15.8,mat(0xd9dde0,.7),false);
+  const rb=rngB(8),cols=[0x2e86c1,0xd4ac0d,0xf2f2f2,0xc0392b,0x1e8449,0x8a96a3];
+  for(let i=0;i<7;i++){const cv=i===3?truckMesh(0x4a535c):vehicleMesh("car",cols[i%6]);cv.position.set(i*7-4+rb()*2,0,[1.75,5.25,8.75][i%3]+(rb()-.5));cv.rotation.y=(rb()-.5)*.8;sc.add(cv);O.wreck.push(cv);}
+  for(let i=0;i<26;i++){const cv=vehicleMesh("car",cols[i%6]);cv.position.set(-30-Math.floor(i/3)*9-rb()*3,0,[1.75,5.25,8.75][i%3]);sc.add(cv);O.traffic.push(cv);}
+  O.victim.set(14,1.2,5.25);
+  for(let i=0;i<5;i++){const p=person([0x2b6cb0,0xd4ac0d,0x7d3c98,0x1e8449,0xf2f2f2][i]);walk(p,[i*7-3,0,[1.75,5.25,8.75][i%3]+1.2],[i*5-6,0,18.5+(i%2)],f.self[1]);}
+  if(c.robots){const d=droneMesh(0xe2640f);d.scale.setScalar(3);const u=veh(d,[-400,40,12],[-160,25,12],f.det[1]+1,f.det[1]+3);O.warn=lampMat(0xffa31a,true);bxm(d,.2,.2,.2,0,-.12,0,O.warn,false);}
+  veh(police(),[-500,0,13.6],[-22,0,13.6],f.trav[0],arr);veh(fireTruck(),[-500,0,13.6],[-10,0,13.6],f.trav[0],arr+.6);
+  O.units.push(unit(sc,ambulance(),[-500,0,13.6],[28,0,13.6],f.trav[0],arr+1,[600,0,13.6],accEnd,accEnd+4));
+  veh(towTruck(),[-500,0,13.6],[10,0,12.4],accEnd+(sEnd-accEnd)*.3,accEnd+(sEnd-accEnd)*.5,[600,0,12.4],sEnd-5,sEnd);
+  invs(14,9);rainPts(sc,O,false);O.view={over:[-60,40,60]};O.trafficLane=[1.75,5.25,8.75];O.trafficX=[-500,500];
+ }
+ if(inc==="lx"){
+  flat(sc,4000,4000,0x7f9461,0,0,0,.95);bxm(sc,1200,.3,4.4,0,.15,0,mat(0x8a8178,.95),false);[-.72,.72].forEach(z=>bxm(sc,1200,.16,.08,0,.38,z,mat(0xc9d0d6,.3,.9),false));
+  flat(sc,9,900,0x4b535b,0,.05,0,.9);
+  const tr=vehicleMesh("train",0xb03a2e);tr.position.set(150,.31,0);sc.add(tr);
+  const car=vehicleMesh("car",0x8a96a3);car.position.set(118,0,6);car.rotation.set(.2,1.2,.4);sc.add(car);O.wreck.push(car);
+  trees(sc,120,-600,600,-400,400,0,false,7,(x,z)=>Math.abs(z)<12||Math.abs(x)<10);O.victim.set(118,1.2,7.5);
+  for(let i=0;i<8;i++){const p=person([0x2b6cb0,0xd4ac0d,0x7d3c98,0x1e8449][i%4]);walk(p,[150-i*8,1.2,1.6],[150-i*8,0,9+(i%3)],f.self[1]*(.6+.4*(i/8)));}
+  veh(fireTruck(),[-4,0,420],[-4,0,16],f.trav[0],arr);veh(police(),[4,0,420],[4,0,24],f.trav[0],arr+.4);
+  O.units.push(unit(sc,ambulance(),[-4,0,420],[-4,0,30],f.trav[0],arr+.8,[-4,0,420],accEnd,accEnd+4));
+  droneU([118,8,10]);robotU([20,0,12],[110,0,10]);
+  const cr=crane();O.units.push(unit(sc,cr,[60,0,400],[130,0,16],accEnd+(sEnd-accEnd)*.2,accEnd+(sEnd-accEnd)*.4,[130,0,400],sEnd-10,sEnd));cr.userData.fixYaw=1;
+  invs(118,4);O.view={over:[70,28,52]};O.rail=true;
+ }
+ if(inc==="tunnel"){
+  sc.background=lin(0x06080b);sc.fog=new THREE.Fog(lin(0x06080b),40,240);sc.children.filter(o=>o.isLight).forEach(l=>l.intensity*=.25);
+  bxm(sc,600,.3,4.4,0,.15,0,mat(0x8a8178,.95),false);[-.72,.72].forEach(z=>bxm(sc,600,.16,.08,0,.38,z,mat(0xc9d0d6,.3,.9),false));
+  const wm=mat(0x5a6068,.9);[-3.4,4.4].forEach(z=>bxm(sc,600,7,.4,0,3.3,z,wm,false));bxm(sc,600,.4,8.2,0,6.9,.5,wm,false);bxm(sc,600,.8,1.2,0,.9,3.4,mat(0x7a8088,.85),false);
+  for(let x=-300;x<300;x+=18)bxm(sc,1.2,.12,.12,x,4.6,-3.15,lampMat(0xdfe8ff,true),false);
+  bxm(sc,60,1.2,8,-230,.6,6,mat(0xbfc4c8,.8),false);const pl=new THREE.PointLight(0xffffff,3,80,1.2);pl.position.set(-230,5,4);sc.add(pl);
+  for(let x=-200;x<300;x+=40){const el=lampMat(0x2ecc40,true);bxm(sc,.6,.3,.06,x,1.4,4.15,el,false);}
+  const tr=vehicleMesh("train",0x2b6cb0);tr.position.set(40,.31,0);sc.add(tr);O.smoke=smoke(sc,26,45,3,0,10,0x3b3f45);O.fire=fire(sc,42,.5,0,.6);
+  O.victim.set(0,1.6,3.4);
+  for(let i=0;i<10;i++){const p=person([0x2b6cb0,0xd4ac0d,0x7d3c98,0x1e8449,0xf2f2f2][i%5]);walk(p,[30-i*6,1.3,3.4],[-210-i*2,1.2,5+(i%3)],f.self[1]*(.7+.3*(i/10)));}
+  for(let i=0;i<4;i++)veh(firefighter(),[-230-i*2,1.2,5],[25+i*2,1.3,3.4],arr+i*.3,arr+(accEnd-arr)*.35+i*.3);
+  if(c.robots)veh(robotMesh(),[-230,1.2,3.4],[28,1.3,3.4],arr-1,arr+(accEnd-arr)*.25);
+  O.head=new THREE.SpotLight(0xfff2d0,4,200,.5,.6,1);O.head.position.set(42.5,2,0);O.head.target.position.set(150,0,0);sc.add(O.head);sc.add(O.head.target);
+  for(let i=0;i<3;i++){const p=investigator();O.units.push(unit(sc,p,[-230,1.2,5],[30+i*3,1.3,3.4],accEnd,accEnd+8,[30+i*3,1.3,3.4],sEnd-1,sEnd));}
+  O.view={over:[-48,3.4,3.3],lookOver:[40,2,.5]};O.tunnel=true;
+ }
+ if(inc==="rwy"){
+  flat(sc,6000,6000,0x6f8f5a,0,0,0,.95);flat(sc,3000,45,0x4a535c,0,.08,0,.85);for(let x=-1500;x<1500;x+=50)bxm(sc,30,.02,.9,x,.12,0,mat(0xf2f2f2,.6),false);
+  const ap=airliner(0xe2640f);ap.position.set(220,2.2,48);ap.rotation.set(.06,-.35,.08);sc.add(ap);O.wreck.push(ap);O.fire=fire(sc,218,0,55,2.2);O.smoke=smoke(sc,20,215,12,58,22,0x3b3f45);
+  const sm=new THREE.MeshStandardMaterial({color:0xf2c200,roughness:.6});[[226,40],[210,40]].forEach(([x,z])=>{const s=mesh(new THREE.BoxGeometry(2,.2,7),sm,false);s.position.set(x,1.6,z-3);s.rotation.x=-.45;sc.add(s);});
+  O.victim.set(225,1.6,24);
+  for(let i=0;i<14;i++){const p=person([0x2b6cb0,0xd4ac0d,0x7d3c98,0x1e8449,0xf2f2f2][i%5]);walk(p,[218+(i%2)*10,0,38],[180+i*4,0,-30-(i%3)*3],f.self[1]*(.5+.5*(i/14)));}
+  bxm(sc,40,8,20,-400,4,-160,mat(0xbfc4c8,.85));
+  for(let i=0;i<3;i++){const t=arff();veh(t,[-400,0,-145+i*6],[200+i*14,0,68-i*3],f.trav[0]+i*.15,arr+i*.3);}
+  if(c.robots){const d=droneMesh(0xe2640f);d.scale.setScalar(3);veh(d,[-400,40,-140],[220,30,48],f.det[1]+.5,f.det[1]+2);veh(robotMesh(),[-400,0,-140],[214,0,64],arr-.3,arr+1.5);}
+  O.units.push(unit(sc,ambulance(),[-420,0,-150],[170,0,-36],arr+2,arr+6,[-420,0,-150],accEnd,accEnd+5));
+  O.units.push(unit(sc,ambulance(),[-430,0,-150],[184,0,-38],arr+3,arr+7,[-430,0,-150],accEnd+2,accEnd+7));
+  const cr=crane();cr.userData.fixYaw=1;O.units.push(unit(sc,cr,[-400,0,-140],[250,0,70],accEnd+(sEnd-accEnd)*.3,accEnd+(sEnd-accEnd)*.4,[-400,0,-140],sEnd-60,sEnd));
+  invs(210,20);O.view={over:[150,40,140]};
+ }
+ if(inc==="ship"){
+  sc.background=lin(0x9cb7cf);sc.fog=new THREE.Fog(lin(0x9cb7cf),400,4000);flat(sc,20000,20000,0x1f4e6b,0,0,0,.25);
+  const a=shipMesh(160,26,14,0x8a2a2a);a.position.set(0,-1.5,0);a.rotation.set(.18,0,0);sc.add(a);O.wreck.push(a);
+  const b=shipMesh(220,32,18,0x2e5f8a);b.position.set(150,0,-120);b.rotation.y=-1.1;sc.add(b);
+  O.smoke=smoke(sc,16,40,16,8,20,0x3b3f45);O.victim.set(30,1.2,70);
+  const raftM=mat(0xff7a00,.6);for(let i=0;i<3;i++){const r_=new THREE.Group();cylm(r_,2.2,2.2,.6,0,.3,0,raftM,"y",16);const ca=mesh(new THREE.SphereGeometry(2,16,8,0,Math.PI*2,0,Math.PI/2),raftM);ca.position.y=.6;r_.add(ca);
+   O.walkers.push({p:r_,from:new THREE.Vector3(10+i*14,0,14),to:new THREE.Vector3(20+i*16,0,62+i*8),t1:f.self[1]*(.7+.15*i)});sc.add(r_);}
+  const h=heliMesh(0xc0392b);h.userData.fixYaw=1;O.heli=h;veh(h,[-1500,140,400],[34,28,70],f.trav[0],arr);
+  O.hoist=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,1,6),mat(0x222222,.5));sc.add(O.hoist);O.hoist.visible=false;
+  O.units.push(unit(sc,shipMesh(14,4.5,2.5,0xff7a00),[-1600,0,300],[0,0,90],f.trav[0]+10,arr+15,[-1600,0,300],accEnd,accEnd+30));
+  if(c.robots){const d=droneMesh(0xe2640f);d.scale.setScalar(4);veh(d,[-800,60,300],[40,15,72],f.det[1]+3,drone);}
+  O.oil=flat(sc,1,1,0x111111,30,.15,40,.2,{extra:{transparent:true,opacity:.7}});
+  const tug=shipMesh(30,9,5,0xd4ac0d);O.units.push(unit(sc,tug,[-1600,0,-300],[-40,0,-60],accEnd+(sEnd-accEnd)*.2,accEnd+(sEnd-accEnd)*.4,[-1600,0,-300],sEnd,f.reopen[1]));
+  O.view={over:[-130,70,190]};O.sea=true;
+ }
+ if(inc==="bridge"){
+  flat(sc,6000,6000,0x7f9461,0,-.5,0,.95);const w=flat(sc,800,3000,0x3d6f94,0,1,0,.25);
+  [-480,480].forEach(x=>bxm(sc,160,10,3000,x,4,0,mat(0x8a7a66,.95),false));
+  const cm=mat(0x9aa3ab,.85),dk=mat(0xbfc4c8,.8);O.piers=[];[-240,-80,80,240].forEach(x=>bxm(sc,8,26,12,x,12,0,cm));
+  O.spans=[];[[-400,-240],[-240,-80],[-80,80],[80,240],[240,400]].forEach(([a,b],i)=>{const s=bxm(sc,b-a,2,14,(a+b)/2,26,0,dk);O.spans.push(s);
+   if(i===1||i===2||i===3){s.position.y=3.5;s.rotation.z=(i-2)*.22+(i===2?.08:0);s.material=mat(0x8a939c,.85);O.wreck.push(s);}});
+  const sh=shipMesh(280,42,22,0x2e5f8a);sh.position.set(-85,0,18);sh.rotation.y=.25;sc.add(sh);O.wreck.push(sh);
+  for(let i=0;i<4;i++){const cv=vehicleMesh("car",[0x2e86c1,0xd4ac0d,0xf2f2f2,0xc0392b][i]);cv.position.set(-480-i*9,9,-2.5);sc.add(cv);}
+  O.victim.set(30,2,-14);
+  for(let i=0;i<3;i++){const b_=shipMesh(12,4,2,i?0xc0392b:0x2e86c1);O.units.push(unit(sc,b_,[-200+i*40,0,1400],[i*30-20,0,-26-i*6],f.trav[0],arr+i*2,[-200+i*40,0,1400],sEnd*.02+accEnd,sEnd*.02+accEnd+30));}
+  const h=heliMesh(0xc0392b);h.userData.fixYaw=1;O.heli=h;veh(h,[-1500,160,-600],[40,40,-30],f.trav[0],arr+2);
+  if(c.robots){veh(robotMesh(),[0,1.2,-60],[20,.6,-16],arr,arr+(accEnd-arr)*.3);}
+  for(let i=0;i<2;i++){const cr=crane();cr.userData.fixYaw=1;O.units.push(unit(sc,cr,[-300+i*600,1,1200],[-40+i*90,1,30-i*50],accEnd+60,accEnd+600,[-300+i*600,1,1200],sEnd-DAY,sEnd));}
+  invs(-470,10);O.view={over:[-260,70,240]};O.bridge=true;
+ }
+ O.vicCam=O.victim.clone();
+ R3.O=O;
+}
+function update(t){
+ const O=R3.O,R=RUN,f=R.f,cam=R3.camera,c=cfg();
+ O.units.forEach(u=>stepUnit(u,t));
+ O.walkers.forEach(w=>{const k=Math.min(1,t/Math.max(.05,w.t1));w.p.position.copy(w.from.clone().lerp(w.to,k));const d=w.to.clone().sub(w.from);w.p.rotation.y=-Math.atan2(d.z,d.x)+Math.PI/2*0;});
+ const blink=Math.floor(performance.now()/250)%2;O.units.forEach(u=>(u.obj.userData.bc||[]).forEach((m,i)=>m.emissiveIntensity=(i%2===blink)?2.4:.1));
+ if(O.warn)O.warn.emissiveIntensity=blink?2.5:.1;
+ const fireK=t<f.acc[0]?1:t<f.acc[1]?1-(t-f.acc[0])/(f.acc[1]-f.acc[0]):0;
+ if(O.fire){O.fire.visible=fireK>0.02;O.fire.scale.setScalar(.3+.7*fireK);O.fire.children.forEach(ch=>{if(ch.isMesh)ch.scale.y=.8+Math.random()*.5;});}
+ if(O.smoke){O.smoke.visible=t<f.scene[0]+(f.scene[1]-f.scene[0])*.2;O.smoke.userData.m.opacity=.15+.35*Math.max(fireK,.2);O.smoke.children.forEach(s=>{s.position.y+=s.userData.v*.03;if(s.position.y>14)s.position.y=2;});}
+ O.wreck.forEach(w=>w.visible=t<f.scene[1]);
+ if(O.bridge){const nb=t>=f.reopen[1];O.spans.forEach((s,i)=>{if(i<1||i>3){s.visible=true;return;}const o=s.userData.orig||(s.userData.orig={y:s.position.y,rz:s.rotation.z,m:s.material});
+  if(nb){s.visible=true;s.position.y=26;s.rotation.z=0;s.material=mat(0xe8ecef,.7);}else{s.position.y=o.y;s.rotation.z=o.rz;s.material=o.m;s.visible=t<f.scene[1];}});}
+ if(O.oil){const k=Math.min(1,Math.max(0,(t-f.det[1])/(f.scene[0]+DAY)));O.oil.scale.set(10+k*300,10+k*220,1);O.oil.visible=t<f.reopen[1];}
+ if(O.heli){O.heli.userData.rotor.rotation.y+=.5;O.heli.userData.trotor.rotation.z+=.8;}
+ if(O.hoist){const on=t>=R.arr&&t<R.accEnd&&O.heli.visible;O.hoist.visible=on;if(on){const hp=O.heli.position;O.hoist.position.set(hp.x,hp.y/2,hp.z);O.hoist.scale.y=hp.y;}}
+ if(O.vic)O.vic.visible=t<R.accEnd;
+ if(O.traffic&&O.traffic.length){const moving=t>=f.reopen[0];O.traffic.forEach((cv,i)=>{if(moving){cv.position.x=-400+((performance.now()/1000*14+i*37)%800);}});}
+ if(O.rain)stepRain(O,cam);
+ // cameras
+ let first=null;O.units.forEach(u=>{if(u.obj.visible&&(!first)&&t>=u.t1&&!(u.away&&t>=u.t2))first=u;});
+ if(!first)first=O.units.find(u=>u.obj.visible)||null;
+ const vv=st.view,V=O.view||{};
+ if(vv==="over"){const p=V.over||[-40,30,50];const ang=performance.now()/1000*.03;const look=V.lookOver?new THREE.Vector3(...V.lookOver):O.victim.clone();
+  if(O.tunnel){cam.position.set(...p);}else{const dx=p[0]-look.x,dz=p[2]-look.z,r=Math.hypot(dx,dz),a0=Math.atan2(dz,dx)+Math.sin(ang)*.25;cam.position.set(look.x+r*Math.cos(a0),p[1],look.z+r*Math.sin(a0));}
+  cam.lookAt(look);cam.fov=55;}
+ else if(vv==="team"){if(first){const p=first.obj.position;cam.position.set(p.x-(O.tunnel?2:6),p.y+(O.sea||O.heli===first.obj?4:3.2),p.z+(O.tunnel?0:4));}else cam.position.copy(O.victim.clone().add(new THREE.Vector3(-60,8,20)));cam.lookAt(O.victim);cam.fov=60;}
+ else {const v=O.vicCam;cam.position.set(v.x,v.y+.2,v.z);const tgt=first?first.obj.position.clone():(O.units[0]?O.units[0].obj.position.clone():new THREE.Vector3(-100,2,0));if(!first&&O.units[0]&&!O.units[0].obj.visible)tgt.copy(O.units[0].to);tgt.y+=1;cam.lookAt(tgt);cam.fov=62;}
+ cam.updateProjectionMatrix();R3.renderer.render(R3.scene,cam);
+}
+
+/* ---------- clock and phase timers ---------- */
+const DUR_REAL=30;
+function simAt(u){const R=RUN,Ta=Math.max(R.hosp,R.accEnd)+15,Te=Math.max(R.fixEnd,R.f.reopen[1])*1.02;
+ if(u<=.6)return Ta*Math.pow(u/.6,1.7);const v=(u-.6)/.4;return Ta*Math.pow(Te/Ta,v);}
+function drawPhases(t){
+ const R=RUN;let html="",g0="";
+ PH.forEach(p=>{if(p.g!==g0){g0=p.g;html+=`<li class="grp">${esc(tx(T["g"+p.g]))}</li>`;}
+  const [s,e]=R.f[p.id],d=e-s,k=t<=s?0:t>=e?1:(t-s)/Math.max(1e-9,d),cls=k>=1?"done":k>0?"now":"";
+  const col=p.g==="E"?"var(--g-emer)":p.g==="R"?"var(--g-rec)":"var(--g-learn)";
+  const el=k>0&&k<1?fmtT(t-s)+" / ":"";
+  html+=`<li class="${cls}" style="--gc:${col}"><span class="nm">${esc(tx(phName(p)))}</span><span class="bar"><i style="width:${(k*100).toFixed(1)}%"></i></span><span class="t">${el}${fmtT(d)}</span></li>`;});
+ $("phases").innerHTML=html;}
+function drawClock(t){
+ const R=RUN;$("ck-t").textContent=fmtClock(t);
+ const cur=PH.filter(p=>t>=R.f[p.id][0]&&t<R.f[p.id][1]&&p.g===(t<R.hosp?"E":t<R.f.reopen[1]?"R":"L"));
+ const p=cur.length?cur[cur.length-1]:null;$("ck-ph").textContent=p?tx(phName(p)):(t>=R.fixEnd?tx(PH[10].n)+" ✓":"…");
+ const gh=$("ck-gh");if(t<R.hosp){const left=60-t;gh.className="gh "+(left>=0?"":"bad");gh.textContent=left>=0?`${tx(T.gh)} ${String(Math.floor(left)).padStart(2,"0")}:${String(Math.floor((left%1)*60)).padStart(2,"0")}`:tx(T.ghBad);}
+ else {gh.className="gh "+(R.hosp<=60?"ok":"bad");gh.textContent=`${tx(T.ghOk)} ${fmtT(R.hosp)}`;}}
+let anim=null,playing=false,u0=0,tStart=null,lastT=0;
+function frame(ts){if(tStart===null)tStart=ts-u0*DUR_REAL*1000;let u=(ts-tStart)/1000/DUR_REAL;if(u>=1){u=1;playing=false;}u0=u;const t=simAt(u);lastT=t;
+ drawClock(t);drawPhases(t);if(R3&&R3.O)update(t);$("play").textContent=tx(playing?T.pause:T.play);if(playing)anim=requestAnimationFrame(frame);else{u0=u>=1?0:u;}}
+function idle(){if(!playing&&R3&&R3.O){update(lastT);}requestAnimationFrame(idle);}
+function play(){if(playing){playing=false;cancelAnimationFrame(anim);tStart=null;$("play").textContent=tx(T.play);return;}playing=true;tStart=null;anim=requestAnimationFrame(frame);}
+
+/* ---------- chart ---------- */
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function medPhase(mc,id){return [medOf(mc.map(x=>x.f[id][0])),medOf(mc.map(x=>x.f[id][1]))];}
+function chart(){
+ const W=900,lw=200,rp=20,top=30,rh=26,H=top+PH.length*rh+34,x0=Math.log10(.1),x1=Math.log10(5*YR),X=m=>lw+(Math.log10(Math.max(.1,m))-x0)/(x1-x0)*(W-lw-rp);
+ let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(tx(T.hChart))}">`;
+ const ticks=[[1,B("1 นาที","1 min")],[10,B("10 นาที","10 min")],[60,B("1 ชม.","1 h")],[DAY,B("1 วัน","1 day")],[7*DAY,B("1 สัปดาห์","1 wk")],[MON,B("1 เดือน","1 mo")],[YR,B("1 ปี","1 yr")]];
+ ticks.forEach(([m,l])=>{const x=X(m);s+=`<line x1="${x}" x2="${x}" y1="${top-6}" y2="${H-28}" stroke="var(--line)" stroke-width="1"/><text x="${x}" y="${H-12}" text-anchor="middle">${esc(tx(l))}</text>`;});
+ const gx=X(60);s+=`<text x="${gx+4}" y="${top-12}" style="fill:var(--warn)">${esc(lang==="th"?"ชั่วโมงทอง":"golden hour")}</text>`;
+ PH.forEach((p,i)=>{const y=top+i*rh;s+=`<text class="rowlbl" x="${lw-8}" y="${y+16}" text-anchor="end">${esc(tx(phName(p)))}</text>`;
+  [[MB,"var(--s-base)",3,"b"],[MC,"var(--s-now)",13,"n"]].forEach(([mc,col,dy,k])=>{const [a,b]=medPhase(mc,p.id);const xa=X(Math.max(.1,a)),xb=Math.max(xa+3,X(b));
+   s+=`<rect class="hb" data-tip="${esc(tx(phName(p)))} · ${esc(tx(k==="b"?T.base:T.lgNow))}: ${esc(fmtT(a))} → ${esc(fmtT(b))}" x="${xa}" y="${y+dy}" width="${xb-xa}" height="9" rx="2" fill="${col}"/>`;});});
+ s+=`<line x1="${gx}" x2="${gx}" y1="${top-6}" y2="${H-28}" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="4 3"/></svg>`;
+ $("chart").innerHTML=s;
+ $("tbl").innerHTML=`<tr><th>${esc(tx(T.colPh))}</th><th>${esc(tx(T.colB))}</th><th>${esc(tx(T.colN))}</th></tr>`+PH.map(p=>{const a=medPhase(MB,p.id),b=medPhase(MC,p.id);return `<tr><td>${esc(tx(phName(p)))}</td><td class="n">${fmtT(a[0])} → ${fmtT(a[1])}</td><td class="n">${fmtT(b[0])} → ${fmtT(b[1])}</td></tr>`;}).join("");}
+document.addEventListener("pointermove",e=>{const el=e.target.closest&&e.target.closest(".hb"),tp=$("tip");if(!el){tp.hidden=true;return;}tp.hidden=false;tp.textContent=el.dataset.tip;tp.style.left=Math.min(innerWidth-270,e.clientX+12)+"px";tp.style.top=(e.clientY+14)+"px";});
+
+/* ---------- summary ---------- */
+function kpis(){const I=INC[st.inc];
+ const m=(mc,k)=>medOf(mc.map(x=>x[k]));const pin=mc=>mc.filter(x=>x.hosp<=60).length/mc.length;
+ const rows=[[T.kFirst,m(MC,"first"),m(MB,"first")],[T.kHosp,m(MC,"hosp"),m(MB,"hosp")],[T.kOpen,m(MC,"open"),m(MB,"open")],[T.kFix,m(MC,"fixEnd"),m(MB,"fixEnd")]];
+ $("kpis").innerHTML=rows.map(([l,a,b],i)=>{const cls=i===1?(a<=60?"good":"bad"):"";const extra=i===1?` · ${Math.round(pin(MC)*100)}% ${tx(T.within)}`:"";
+  return `<div class="kpi ${cls}">${esc(tx(l))}<b>${esc(fmtT(a))}</b><small>${esc(tx(T.med))}${extra} · ${esc(tx(T.base))} ${esc(fmtT(b))}</small></div>`;}).join("");}
+function learn(){const I=INC[st.inc];
+ $("inv").innerHTML=`<b>${esc(tx(T.invBy))}</b>${esc(tx(I.inv))}`;
+ const heads=[T.fxV,T.fxS,T.fxP,T.fxY],cols=["var(--accent)","var(--g-rec)","var(--ok)","var(--g-learn)"];
+ $("fixes").innerHTML=I.fx.map((x,i)=>`<div class="fix" style="--fc:${cols[i]}"><h3>${esc(tx(heads[i]))}</h3><p>${esc(tx(x))}</p></div>`).join("");
+ $("case").textContent=tx(I.cs);}
+
+/* ---------- UI ---------- */
+function syncViews(){const ok=has3D();$("views").innerHTML=[["over",T.vOver],["team",T.vTeam],["vic",T.vVic]].map(([k,l])=>`<button type="button" id="view-${k}" data-view="${k}" aria-pressed="${st.view===k}" ${ok?"":"disabled"}>${esc(tx(l))}</button>`).join("");
+ $("capt").textContent=ok?tx(st.view==="over"?T.capOver:st.view==="team"?T.capTeam:T.capVic):"";
+ if(!ok&&!$("no3d")){$("v3").innerHTML=`<p class="no3d" id="no3d">${esc(tx(T.no3d))}</p>`;}}
+function setup(){
+ $("inc").innerHTML=Object.keys(INC).map(k=>`<option value="${k}">${esc(tx(INC[k].n))}</option>`).join("");$("inc").value=st.inc;$("inc-d").textContent=tx(INC[st.inc].d);
+ [["auto",T.aut0,T.aut1],["robots",T.rob0,T.rob1],["trained",T.tr0,T.tr1]].forEach(([k,a,b])=>{$(k+"-0").textContent=tx(a);$(k+"-1").textContent=tx(b);$(k+"-0").setAttribute("aria-pressed",!st[k]);$(k+"-1").setAttribute("aria-pressed",!!st[k]);});
+ $("robot-d").textContent=tx(T.droneRole)+tx(INC[st.inc].robots);
+ $("dist").value=st.dist;$("dist-o").textContent=st.dist+(lang==="th"?" กม.":" km");}
+function recompute(){RUN=compute(cfg(),rng(st.seed*7919+1));MC=monte(cfg());MB=monte({...cfg(),auto:false,robots:false,trained:false});
+ kpis();chart();learn();if(has3D()){size3d();build();}u0=0;lastT=0;playing=false;cancelAnimationFrame(anim);$("play").textContent=tx(T.play);drawClock(0);drawPhases(0);}
+function render(){document.documentElement.lang=lang;document.querySelectorAll("[data-i]").forEach(el=>el.textContent=tx(T[el.dataset.i]));
+ document.title=tx(T.title);
+ $("lk-board").href=BOARD_URL;$("lk-sim").href=SIM_URL;
+ $("src").innerHTML=SRC.map(([t,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("");
+ setup();syncViews();recompute();}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.k){st[b.dataset.k]=+b.dataset.v;setup();recompute();}
+ else if(b.dataset.view){st.view=b.dataset.view;syncViews();}
+ else if(b.id==="play")play();
+ else if(b.id==="reroll"){st.seed=(st.seed*48271)%2147483647||5;recompute();play();}});
+document.addEventListener("change",e=>{if(e.target.id==="inc"){st.inc=e.target.value;st.dist=INC[st.inc].dist;setup();recompute();}});
+document.addEventListener("input",e=>{if(e.target.id==="dist"){st.dist=+e.target.value;$("dist-o").textContent=st.dist+(lang==="th"?" กม.":" km");clearTimeout(window._dt);window._dt=setTimeout(recompute,150);}});
+window.addEventListener("resize",()=>{size3d();});
+render();requestAnimationFrame(idle);
+</script>
+</body>
+</html>
