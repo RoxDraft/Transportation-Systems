@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="../shared/project-language.js?v=1.4.2" data-bilingual="true"></script>
+<title>Transport Safety Board</title>
+<meta name="description" content="บอร์ดสรุปมาตรฐานความปลอดภัยยานพาหนะ หน่วยสอบสวนอุบัติเหตุ และจุดเปลี่ยนของเครื่องบิน เรือ รถไฟ และเฮลิคอปเตอร์">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+*{box-sizing:border-box}body{margin:0}
+/* Layout: investigator's case board — header strip, recap tiles, loop, org matrix, filterable timeline, sources */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#16202b; --muted:#5a6878; --line:#d5dce4;
+  --accent:#e2640f; --accent-ink:#ffffff;
+  --air:#2a6fb5; --sea:#0f8a83; --rail:#b07a00; --rotor:#7b4fbf; --all:#3d4a58;
+  --tag-bg:#e8edf2; --warn:#b3261e;
+  --f-display:"Barlow Condensed","IBM Plex Sans Thai",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f151c; --panel:#17202a; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2a3644;
+  --accent:#ff8a3d; --accent-ink:#1a0f05;
+  --air:#6aa8ec; --sea:#3cc2b8; --rail:#e0ad3a; --rotor:#a988e6; --all:#b8c4d0;
+  --tag-bg:#1f2a36; --warn:#ff7b72; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151c; --panel:#17202a; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2a3644;
+  --accent:#ff8a3d; --accent-ink:#1a0f05;
+  --air:#6aa8ec; --sea:#3cc2b8; --rail:#e0ad3a; --rotor:#a988e6; --all:#b8c4d0;
+  --tag-bg:#1f2a36; --warn:#ff7b72; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:40px}
+.wrap>*{min-width:0}
+header.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--ink);padding-bottom:16px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-size:clamp(34px,6vw,58px);line-height:1;margin:6px 0 8px;letter-spacing:.01em;text-wrap:balance}
+.lede{color:var(--muted);max-width:62ch;margin:0}
+h2{font-family:var(--f-display);font-size:30px;line-height:1.1;margin:0 0 6px;text-wrap:balance}
+.sec-sub{color:var(--muted);margin:0 0 18px;max-width:70ch}
+.lang{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden}
+.lang button{font:600 14px var(--f-mono);padding:7px 16px;background:transparent;color:var(--ink);border:0;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* recap */
+.recap{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.rc{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--c,var(--all));padding:14px 16px;display:grid;gap:6px;align-content:start;min-width:0}
+.rc .k{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--c,var(--all))}
+.rc h3{margin:0;font-size:16px;line-height:1.35}
+.rc p{margin:0;color:var(--muted);font-size:14px}
+.rc.case{grid-column:1/-1;border-top-color:var(--accent);display:grid;grid-template-columns:1fr;gap:10px}
+.case-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 20px}
+.case-grid div{min-width:0}
+.case-grid b{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.status{display:inline-block;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--warn);border:1px solid var(--warn);padding:1px 8px;border-radius:999px;justify-self:start}
+
+/* loop */
+.loop{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;counter-reset:s}
+.loop li{background:var(--panel);border:1px solid var(--line);padding:14px;position:relative;counter-increment:s;min-width:0}
+.loop li::before{content:counter(s);font:700 26px var(--f-display);color:var(--accent);display:block;line-height:1}
+.loop li:not(:last-child)::after{content:"→";position:absolute;right:-12px;top:14px;font-weight:700;color:var(--muted);background:var(--bg);padding:0 1px;z-index:1}
+.loop h3{margin:4px 0 4px;font-size:15px}
+.loop p{margin:0;font-size:13.5px;color:var(--muted)}
+.loop-back{margin-top:10px;font-family:var(--f-mono);font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+.principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+.principles div{border-left:3px solid var(--ink);padding:2px 0 2px 12px;min-width:0}
+.principles b{display:block}
+.principles span{color:var(--muted);font-size:14px}
+
+/* filters */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.chip{font:600 13px var(--f-body);padding:6px 14px;border-radius:999px;border:1.5px solid var(--c,var(--all));background:transparent;color:var(--c,var(--all));cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--c,var(--all));color:var(--bg)}
+
+/* org matrix */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th,td{padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+thead th{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--tag-bg)}
+tbody th{font-family:var(--f-display);font-size:19px;white-space:nowrap;border-left:4px solid var(--c)}
+.code{font-family:var(--f-mono);font-size:12.5px;background:var(--tag-bg);padding:1px 6px;border-radius:4px;white-space:nowrap}
+td ul{margin:0;padding-left:16px}
+
+/* timeline */
+.tl{position:relative;display:grid;gap:12px;padding-left:22px}
+.tl::before{content:"";position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:var(--line)}
+.ev{position:relative;background:var(--panel);border:1px solid var(--line);padding:12px 14px;display:grid;grid-template-columns:92px 1fr;gap:4px 14px;min-width:0}
+.ev::before{content:"";position:absolute;left:-21px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 0 3px var(--bg)}
+.ev .yr{font:700 24px var(--f-display);line-height:1;color:var(--c);font-variant-numeric:tabular-nums}
+.ev .mode{font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.ev h3{margin:0;font-size:15.5px;line-height:1.35}
+.ev .body{min-width:0;display:grid;gap:6px}
+.ev .chg{font-size:14px;color:var(--ink)}
+.ev .chg::before{content:"⟶ ";color:var(--accent);font-weight:700}
+.ev .what{font-size:14px;color:var(--muted);margin:0}
+.ev.open{border-color:var(--accent);border-style:dashed}
+.era{font:700 13px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 0 0 -22px;padding-left:22px}
+
+/* layers */
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.lyr{background:var(--panel);border:1px solid var(--line);padding:16px;min-width:0}
+.lyr h3{margin:0 0 10px;font-size:16px}
+.lyr ol{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.lyr li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:14px;align-items:start}
+.lyr .mk{font:700 13px var(--f-mono);text-align:center;border-radius:4px;line-height:20px}
+.mk.ok{background:var(--tag-bg);color:var(--muted)}
+.mk.x{background:var(--warn);color:var(--panel)}
+.mk.q{border:1.5px dashed var(--warn);color:var(--warn);line-height:17px}
+.note{font-size:13px;color:var(--muted);margin-top:10px}
+
+/* sources */
+.src{columns:2 320px;column-gap:28px;padding-left:18px;margin:0;font-size:14px}
+.src li{break-inside:avoid;margin-bottom:6px}
+.src a{color:var(--air);text-decoration-thickness:1px;text-underline-offset:2px;word-break:break-word}
+.src .tag{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+
+@media (max-width:860px){
+  .loop{grid-template-columns:1fr}
+  .loop li:not(:last-child)::after{content:"↓";right:auto;left:14px;top:auto;bottom:-14px}
+}
+@media (max-width:520px){
+  .ev{grid-template-columns:1fr}
+  h2{font-size:26px}
+}
+@media (prefers-reduced-motion:no-preference){.ev,.rc{transition:opacity .2s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" data-i="eyebrow"></div>
+      <h1 data-i="title"></h1>
+      <p class="lede" data-i="lede"></p>
+    </div>
+  </header>
+
+  <section>
+    <h2 data-i="s1"></h2>
+    <p class="sec-sub" data-i="s1sub"></p>
+    <div class="recap" id="recap"></div>
+  </section>
+
+  <section>
+    <h2 data-i="s2"></h2>
+    <p class="sec-sub" data-i="s2sub"></p>
+    <ol class="loop" id="loop"></ol>
+    <div class="loop-back" data-i="loopback"></div>
+    <div class="principles" id="principles"></div>
+  </section>
+
+  <section>
+    <h2 data-i="s3"></h2>
+    <p class="sec-sub" data-i="s3sub"></p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th data-i="thMode"></th><th data-i="thGlobal"></th><th data-i="thInv"></th><th data-i="thReg"></th><th data-i="thStd"></th></tr></thead>
+      <tbody id="orgs"></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2 data-i="s4"></h2>
+    <p class="sec-sub" data-i="s4sub"></p>
+    <div class="chips" id="chips" role="group" aria-label="Filter"></div>
+    <div class="tl" id="tl"></div>
+  </section>
+
+  <section>
+    <h2 data-i="s5"></h2>
+    <p class="sec-sub" data-i="s5sub"></p>
+    <div class="layers" id="layers"></div>
+    <p class="note" data-i="layernote"></p>
+  </section>
+
+  <section>
+    <h2 data-i="s6"></h2>
+    <p class="sec-sub" data-i="s6sub"></p>
+    <ol class="src" id="src"></ol>
+  </section>
+
+  <footer data-i="foot"></footer>
+</div>
+
+<script>
+const T={
+ eyebrow:{th:"บอร์ดสรุป · อัปเดต 9 พ.ย. 2026",en:"Case board · updated 9 Nov 2026"},
+ title:{th:"บอร์ดความปลอดภัยยานพาหนะ",en:"Transport Safety Board"},
+ lede:{th:"สรุปจากบทสนทนาเรื่อง Learjet 60 ตกที่ฟลอริดา ต่อยอดไปถึงเรือ เฮลิคอปเตอร์ รถไฟ และระบบที่ทั่วโลกใช้สืบหาสาเหตุ แล้วนำผลไปแก้มาตรฐานการผลิตและการปฏิบัติงาน",en:"A recap of our conversation that started with the Learjet 60 crash in Florida and widened to ships, helicopters and trains, plus the system the world uses to find causes and feed them back into design and operating standards."},
+ s1:{th:"สิ่งที่คุยกันมา",en:"What we covered"},
+ s1sub:{th:"เหตุตั้งต้นและประเด็นที่แตกออกมา เรียงตามลำดับที่ถาม",en:"The starting case and the threads that came out of it, in the order you asked."},
+ s2:{th:"วงจรจากอุบัติเหตุสู่มาตรฐานใหม่",en:"From accident to new standard"},
+ s2sub:{th:"ทุกโหมดการขนส่งใช้วงจรเดียวกัน หน่วยสอบสวนไม่มีอำนาจออกกฎ จึงต้องส่งข้อเสนอแนะให้หน่วยกำกับดูแลนำไปบังคับใช้",en:"Every mode runs the same loop. Investigators can't make rules, so they hand recommendations to regulators, who turn them into requirements."},
+ loopback:{th:"↻ กลับไปข้อ 1: รายงานจากผู้ปฏิบัติงานและข้อมูลการบินประจำวันถูกนำมาวิเคราะห์เพื่อหาความเสี่ยงก่อนเกิดเหตุครั้งถัดไป",en:"↻ Back to step 1: incident reports and routine flight data are analysed to catch the next risk before it becomes an accident."},
+ s3:{th:"องค์กรที่เกี่ยวข้อง แยกตามโหมด",en:"Who does what, by mode"},
+ s3sub:{th:"องค์กรระดับโลกวางกรอบ แต่ละประเทศมีหน่วยสอบสวนอิสระที่แยกจากหน่วยออกกฎ เลื่อนตารางไปทางขวาบนมือถือ",en:"Global bodies set the framework. Each country keeps its investigators separate from its regulator. Scroll the table sideways on a phone."},
+ thMode:{th:"โหมด",en:"Mode"},thGlobal:{th:"องค์กรโลก",en:"Global body"},thInv:{th:"หน่วยสอบสวน (ตัวอย่าง)",en:"Investigators (examples)"},thReg:{th:"หน่วยกำกับ / ออกกฎ",en:"Regulators"},thStd:{th:"มาตรฐานหลัก",en:"Key standards"},
+ s4:{th:"จุดเปลี่ยนแต่ละยุค",en:"Turning points"},
+ s4sub:{th:"เหตุการณ์ที่ทำให้กฎหรือการออกแบบเปลี่ยน ลูกศรสีส้มคือสิ่งที่เปลี่ยนตามมา กรอบเส้นประคือเหตุที่ยังสอบสวนอยู่",en:"Events that changed a rule or a design. The orange arrow shows what changed. Dashed cards are still under investigation."},
+ s5:{th:"ชั้นป้องกันที่รั่วพร้อมกัน",en:"When the layers line up"},
+ s5sub:{th:"แบบจำลอง Swiss cheese ของ James Reason อุบัติเหตุใหญ่มักเกิดเมื่อหลายชั้นมีช่องโหว่ตรงกัน เทียบสองเหตุล่าสุดที่คุยกัน",en:"James Reason's Swiss-cheese model: big accidents happen when holes in several layers line up. Two recent cases we discussed, side by side."},
+ layernote:{th:"✕ = ชั้นที่รายงานเบื้องต้นระบุว่าไม่ทำงาน · ? = ยังไม่ทราบ รอผลสอบสวน · ข้อมูลอิงข่าวช่วงแรก ไม่ใช่ข้อสรุปทางการ",en:"✕ = layer that early reports say failed · ? = unknown, awaiting investigation · Based on early reporting, not official findings."},
+ s6:{th:"อ้างอิง",en:"Sources"},
+ s6sub:{th:"ข่าวเหตุการณ์ปี 2026 มาจากการค้นเว็บระหว่างบทสนทนา ส่วนประวัติและมาตรฐานลิงก์ไปยังแหล่งต้นทางของหน่วยงาน",en:"2026 events come from web searches during the conversation. History and standards link to the agencies' own pages."},
+ foot:{th:"เหตุ Learjet 60 (พ.ย. 2026) และรถไฟชนที่ Toledo (ต.ค. 2026) ยังอยู่ระหว่างสอบสวน สาเหตุในบอร์ดนี้เป็นข้อมูลเบื้องต้น ไม่ใช่ข้อสรุปของ NTSB หรือ AITAT",en:"The Learjet 60 (Nov 2026) and Toledo collision (Oct 2026) are still under investigation. Causes shown here are preliminary, not NTSB or AITAT findings."},
+ all:{th:"ทั้งหมด",en:"All"}
+};
+const M={air:{th:"อากาศ",en:"Air"},sea:{th:"ทะเล",en:"Sea"},rail:{th:"ราง",en:"Rail"},rotor:{th:"ฮ. / โดรน",en:"Rotor / drone"}};
+
+const CASE={k:{th:"เหตุตั้งต้น",en:"Starting case"},h:{th:"Learjet 60 (N722BD) ตกที่ Greenacres, Palm Beach County ผู้โดยสารและลูกเรือ 9 คนเสียชีวิต",en:"Learjet 60 (N722BD) crashes in Greenacres, Palm Beach County; all 9 aboard killed"},
+ rows:[
+  [{th:"วันที่",en:"Date"},{th:"1 พ.ย. 2026 ราว 12:50 น. เวลาท้องถิ่น",en:"1 Nov 2026, about 12:50 local"}],
+  [{th:"เส้นทาง",en:"Route"},{th:"Austin (AUS) → North Eleuthera, บาฮามาส",en:"Austin (AUS) → North Eleuthera, Bahamas"}],
+  [{th:"ก่อนเกิดเหตุ",en:"Before the crash"},{th:"ที่ ~35,000 ฟุต นักบินรายงานความปั่นป่วน น้ำแข็งเกาะ และฝน แล้วขอไต่ขึ้น 2,000 ฟุต",en:"At ~35,000 ft the crew reported turbulence, icing and rain and asked to climb 2,000 ft"}],
+  [{th:"ผู้ผลิต",en:"Builder"},{th:"Learjet / Bombardier (แคนาดา) ไม่ใช่ Boeing หรือ Airbus",en:"Learjet / Bombardier (Canada), not Boeing or Airbus"}]
+ ]};
+const RECAP=[
+ {m:"air",k:{th:"ข้อจำกัดเรดาร์",en:"Radar limits"},h:{th:"ทำไมพายุใหม่หลุดสายตา",en:"Why new storms slip through"},p:{th:"เรดาร์เห็นแค่หยดน้ำ ยอดเมฆที่เป็นผลึกน้ำแข็งดูเบา ฝนหน้าบังพายุข้างหลัง และภาพเรดาร์ภาคพื้นล่าช้า 5–15 นาที",en:"Radar sees water drops; ice-crystal tops look weak, near rain hides cells behind it, and uplinked images lag 5–15 min."}},
+ {m:"air",k:{th:"ATC และแผนฉุกเฉิน",en:"ATC & checklists"},h:{th:"นักบินเป็นผู้ตัดสินเรื่องอากาศ",en:"Weather is the pilot's call"},p:{th:"ATC แยกเครื่องบินไม่ให้ชน ส่วน QRH ครอบคลุมเครื่องยนต์ดับ ไฟไหม้ ความเร็วเชื่อถือไม่ได้ และการกู้ท่าผิดปกติ แต่ช่วยไม่ได้ถ้าโครงสร้างพัง",en:"ATC separates traffic. The QRH covers engine failure, fire, unreliable airspeed and upset recovery, but not structural breakup."}},
+ {m:"air",k:{th:"ร่อนและร่มชูชีพ",en:"Gliding & parachutes"},h:{th:"ร่อนได้ถ้ายังควบคุมได้",en:"Gliding needs control"},p:{th:"เจ็ทร่อนได้ 15–20 เท่าของความสูง ร่มชูชีพทั้งลำ (Cirrus CAPS) ใช้ได้กับเครื่องหนักไม่กี่ตันเท่านั้น",en:"Jets glide 15–20× their height. Whole-aircraft chutes (Cirrus CAPS) only work for aircraft of a few tonnes."}},
+ {m:"air",k:{th:"กล่องดำและเสียง ATC",en:"Recorders & radio"},h:{th:"ทน 3,400 G และไฟ 1,100°C",en:"Built for 3,400 g and 1,100°C"},p:{th:"เสียงในข่าวมาจากวิทยุ ATC ที่เป็นคลื่นสาธารณะ (LiveATC.net) ส่วนเสียงห้องนักบิน (CVR) กฎหมายห้ามเผยแพร่",en:"News audio is public ATC radio (LiveATC.net). Cockpit audio (CVR) is barred from release by law."}},
+ {m:"air",k:{th:"AI พยากรณ์อากาศ",en:"AI weather models"},h:{th:"ช่วยวางแผน ยังแทนเรดาร์ไม่ได้",en:"Helps planning, can't replace radar"},p:{th:"Nvidia StormScope ทำนายพายุ 0–6 ชม. ระดับกิโลเมตร WeatherNext 3 อัปเดตรายชั่วโมงแต่หยาบกว่า ส่วนผล Navier–Stokes ของ OpenAI เป็นคณิตศาสตร์บริสุทธิ์",en:"Nvidia StormScope nowcasts storms 0–6 h at km scale; WeatherNext 3 updates hourly but coarser. OpenAI's Navier–Stokes result is pure math."}},
+ {m:"sea",k:{th:"เรือและน้ำแข็ง",en:"Ships & ice"},h:{th:"เรือตัดน้ำแข็งปีนทับ ไม่ได้ผ่า",en:"Icebreakers ride up and crush"},p:{th:"Titanic หักเพราะน้ำเข้า 5–6 ห้อง หัวจม ท้ายยก แรงงัดเกินโครงเรือ บวกเหล็กเปราะในน้ำเย็น",en:"Titanic flooded 5–6 compartments; the raised stern overstressed the hull, and the steel was brittle in cold water."}},
+ {m:"rotor",k:{th:"เฮลิคอปเตอร์และโดรน",en:"Helicopters & drones"},h:{th:"ฮ. ร่อนได้ด้วย autorotation",en:"Helicopters autorotate"},p:{th:"สาเหตุหลักคือบินเข้าเมฆจนหลงท่า ชนสายไฟ และชิ้นส่วนที่ไม่มีตัวสำรอง โดรนร่อนไม่ได้ ต้องพึ่ง IMU แก้ท่าตลอดเวลา",en:"Main causes: flying into cloud and losing orientation, wire strikes, single-point parts. Drones can't glide and rely on the IMU."}},
+ {m:"rail",k:{th:"รถไฟ",en:"Rail"},h:{th:"Toledo: ระบบล่ม แล้วคนสั่งผิด",en:"Toledo: system down, wrong human call"},p:{th:"LZB ขัดข้อง ADIF สั่งการเอง และให้รถ Renfe วิ่งผ่านไฟแดงไป ~25 กม. ก่อนชนขบวน Iryo ที่จอดอยู่",en:"LZB failed, ADIF went manual and let a Renfe train pass a red signal; it ran ~25 km into a stopped Iryo train."}},
+ {m:"rail",k:{th:"รถไฟฟ้าในไทย",en:"Thai lines"},h:{th:"ล้อประคอง ลม เบรก น้ำท่วม",en:"Guide wheels, wind, brakes, floods"},p:{th:"สีเหลือง: เบ้าลูกปืนล้อประคองเสีย สีเขียว: ระบบกันล้อลื่นทำให้เบรกกระตุก สีน้ำเงิน: ยกปากทางกันน้ำ สีส้มตะวันออกเปิดปลายปี 2570",en:"Yellow: guide-wheel bearing housing failed. Green: wheel-slide protection jerks the brakes. Blue: raised entrances. Orange East due late 2027."}},
+ {m:"air",k:{th:"ผู้บุกเบิก",en:"Pioneers"},h:{th:"ไม่มีใครคิดคนเดียว",en:"No single inventor"},p:{th:"Cayley → Lilienthal → พี่น้องไรท์ (1903) · Cierva → Sikorsky (1939) · Stephenson (1829) · ชินคันเซ็น (1964) · McLean ตู้คอนเทนเนอร์ (1956)",en:"Cayley → Lilienthal → Wrights (1903) · Cierva → Sikorsky (1939) · Stephenson (1829) · Shinkansen (1964) · McLean containers (1956)"}}
+];
+const LOOP=[
+ {h:{th:"เกิดเหตุ",en:"Accident or incident"},p:{th:"เก็บหลักฐาน กล่องดำ ซาก เสียงวิทยุ ข้อมูลเรดาร์",en:"Secure evidence: recorders, wreckage, radio, radar data."}},
+ {h:{th:"สอบสวนอิสระ",en:"Independent investigation"},p:{th:"NTSB, BEA, JTSB, AITAT เชิญผู้ผลิตและผู้ปฏิบัติการร่วมในฐานะ party",en:"NTSB, BEA, JTSB, AITAT bring in builders and operators as parties."}},
+ {h:{th:"สาเหตุ + ข้อเสนอแนะ",en:"Cause + recommendations"},p:{th:"ระบุ probable cause และปัจจัยเสริม ไม่หาคนผิด",en:"Probable cause and contributing factors, no blame."}},
+ {h:{th:"หน่วยกำกับออกกฎ",en:"Regulator acts"},p:{th:"FAA/EASA ออก AD กฎใหม่ หรือสั่งหยุดบิน IMO แก้ SOLAS",en:"FAA/EASA issue ADs, rules or groundings; IMO amends SOLAS."}},
+ {h:{th:"ผู้ผลิตและผู้ปฏิบัติการปรับ",en:"Industry adapts"},p:{th:"Service Bulletin แก้แบบ ฝึกใน simulator ปรับขั้นตอน",en:"Service bulletins, redesign, simulator training, new procedures."}}
+];
+const PRIN=[
+ {h:{th:"อิสระ",en:"Independent"},p:{th:"แยกจากหน่วยออกกฎ เพื่อไม่ต้องปกป้องกฎของตัวเอง",en:"Separate from the regulator, so it never defends its own rules."}},
+ {h:{th:"ไม่หาคนผิด",en:"No blame"},p:{th:"การเอาผิดเป็นหน้าที่ของตำรวจและศาล แยกต่างหาก",en:"Prosecution is for police and courts, on a separate track."}},
+ {h:{th:"Just culture",en:"Just culture"},p:{th:"คนกล้าเล่าความจริง เพราะข้อมูลไม่ถูกใช้ลงโทษโดยตรง",en:"People speak openly because their reports aren't used to punish them."}}
+];
+const ORGS=[
+ {m:"air",g:{th:"ICAO (หน่วยงาน UN, 1944)",en:"ICAO (UN agency, 1944)"},i:["NTSB 🇺🇸","BEA 🇫🇷","AAIB 🇬🇧","JTSB 🇯🇵",{th:"AAIC กระทรวงคมนาคม 🇹🇭",en:"AAIC, Ministry of Transport 🇹🇭"}],r:["FAA","EASA","CAAT 🇹🇭"],s:["Annex 13","Part 25 App. C / O","AD · SB"]},
+ {m:"sea",g:{th:"IMO (หน่วยงาน UN, 1948/1958)",en:"IMO (UN agency, 1948/1958)"},i:["MAIB 🇬🇧","NTSB 🇺🇸","JTSB 🇯🇵"],r:[{th:"รัฐเจ้าของธง + สมาคมจัดชั้นเรือ",en:"Flag states + classification societies"}],s:["SOLAS","MARPOL","ISM Code","Casualty Investigation Code","IACS Polar Class"]},
+ {m:"rail",g:{th:"ไม่มีองค์กรโลกกลาง · UIC เป็นสมาคมอุตสาหกรรม",en:"No global regulator · UIC is an industry body"},i:["RAIB 🇬🇧","AITAT 🇪🇸","JTSB 🇯🇵","NTSB 🇺🇸",{th:"คณะกรรมการเฉพาะกิจ 🇹🇭",en:"Ad-hoc committees 🇹🇭"}],r:["ERA (EU)","FRA 🇺🇸",{th:"กรมการขนส่งทางราง 🇹🇭",en:"Dept. of Rail Transport 🇹🇭"}],s:["EU Directive 2016/798","ETCS / ERTMS","PTC (US)","ATS / ATC (JP)"]},
+ {m:"rotor",g:{th:"ICAO (เหมือนเครื่องบิน)",en:"ICAO (same as aircraft)"},i:["NTSB 🇺🇸","AAIB 🇬🇧","BEA 🇫🇷"],r:["FAA","EASA",{th:"กฎโดรน: FAA Part 107 / EASA",en:"Drones: FAA Part 107 / EASA"}],s:["Part 27 / 29","HTAWS","Remote ID (drones)"]}
+];
+const EV=[
+ {era:{th:"ยุคบุกเบิก · ก่อน 1950",en:"Pioneer era · before 1950"}},
+ {y:1912,m:"sea",h:{th:"Titanic จม",en:"Titanic sinks"},w:{th:"ชนภูเขาน้ำแข็ง เรือชูชีพไม่พอ วิทยุไม่เปิด 24 ชม.",en:"Iceberg strike, too few lifeboats, radio not staffed 24 h."},c:{th:"SOLAS 1914 และ International Ice Patrol: เรือชูชีพพอทุกคน เฝ้าวิทยุตลอด",en:"SOLAS 1914 and the International Ice Patrol: lifeboats for all, continuous radio watch"}},
+ {y:1944,m:"air",h:{th:"อนุสัญญาชิคาโก",en:"Chicago Convention"},w:{th:"ตั้ง ICAO วางกติกาการบินพลเรือนระหว่างประเทศ",en:"Creates ICAO and the rules of international civil aviation."},c:{th:"Annex 13 (1951): ทุกประเทศต้องสอบสวนอุบัติเหตุและแบ่งปันผล",en:"Annex 13 (1951): every state investigates and shares findings"}},
+ {era:{th:"ยุคเจ็ทและสถาบัน · 1950–1980",en:"Jet age and institutions · 1950–1980"}},
+ {y:1954,m:"air",h:{th:"de Havilland Comet แตกกลางอากาศ",en:"de Havilland Comet breakups"},w:{th:"เจ็ทโดยสารลำแรกของโลก ลำตัวล้าจากแรงดันห้องโดยสารซ้ำๆ",en:"The first jetliner; the fuselage fatigued under repeated pressurisation."},c:{th:"การทดสอบความล้าโลหะเต็มลำ และหน้าต่างทรงมน",en:"Full-scale fatigue testing and rounded windows"}},
+ {y:1956,m:"air",h:{th:"เครื่องบินชนกันเหนือ Grand Canyon",en:"Grand Canyon mid-air collision"},w:{th:"สองลำบินในน่านฟ้าที่ไม่มีการควบคุม",en:"Two airliners in uncontrolled airspace."},c:{th:"Federal Aviation Act 1958 ตั้ง FAA และขยายการควบคุมจราจรทางอากาศ",en:"Federal Aviation Act 1958 creates the FAA and expands air traffic control"}},
+ {y:1964,m:"rail",h:{th:"ชินคันเซ็นเปิด",en:"Shinkansen opens"},w:{th:"รถไฟความเร็วสูงสายแรกของโลก",en:"The world's first high-speed line."},c:{th:"ระบบ ATC ในห้องคนขับ เบรกอัตโนมัติแทนการมองสัญญาณข้างทาง",en:"In-cab automatic train control replaces trackside signals"}},
+ {y:1967,m:"all",h:{th:"ตั้ง NTSB",en:"NTSB founded"},w:{th:"สอบสวนทุกโหมด แยกเป็นอิสระจากกระทรวงคมนาคมในปี 1975",en:"Covers every mode; fully independent of DOT from 1975."},c:{th:"ต้นแบบหน่วยสอบสวนหลายโหมดที่หลายประเทศนำไปใช้",en:"The multi-modal model many countries later copied"}},
+ {y:1977,m:"air",h:{th:"Tenerife: 747 สองลำชนกันบนรันเวย์",en:"Tenerife: two 747s collide on the runway"},w:{th:"583 คนเสียชีวิต ภาษาวิทยุคลุมเครือ ลำดับชั้นในห้องนักบินกดทับ",en:"583 killed; ambiguous radio phrases, steep cockpit hierarchy."},c:{th:"วลีวิทยุมาตรฐาน และ CRM: ลูกเรือทุกคนต้องกล้าทักท้วง",en:"Standard phraseology and CRM: every crew member speaks up"}},
+ {era:{th:"ยุคระบบและวัฒนธรรมความปลอดภัย · 1980–2005",en:"Systems and safety culture · 1980–2005"}},
+ {y:1985,m:"air",h:{th:"Delta 191 เจอ microburst",en:"Delta 191 meets a microburst"},w:{th:"ลมเฉือนแรงดิ่งตอนร่อนลงที่ดัลลัส",en:"Downburst wind shear on approach to Dallas."},c:{th:"เรดาร์ทำนายลมเฉือนบนเครื่อง และการฝึก windshear ใน simulator ภาคบังคับ",en:"Predictive wind-shear radar and mandatory simulator training"}},
+ {y:1987,m:"sea",h:{th:"Herald of Free Enterprise ล่ม",en:"Herald of Free Enterprise capsizes"},w:{th:"ออกจากท่าโดยประตูหัวเรือยังเปิด",en:"Left port with its bow doors open."},c:{th:"ISM Code: บริษัทเรือต้องมีระบบจัดการความปลอดภัย",en:"ISM Code: ship operators must run a safety management system"}},
+ {y:1989,m:"sea",h:{th:"Exxon Valdez น้ำมันรั่ว",en:"Exxon Valdez oil spill"},w:{th:"เรือบรรทุกน้ำมันเกยหิน",en:"A tanker runs aground in Alaska."},c:{th:"Oil Pollution Act 1990 และ MARPOL: บังคับเรือบรรทุกน้ำมันสองชั้น",en:"Oil Pollution Act 1990 and MARPOL: double-hull tankers"}},
+ {y:1994,m:"air",h:{th:"American Eagle 4184 (ATR 72)",en:"American Eagle 4184 (ATR 72)"},w:{th:"หยดน้ำขนาดใหญ่เกาะเลยแนวกันน้ำแข็ง",en:"Large droplets froze behind the de-icing boots."},c:{th:"งานวิจัย SLD นำไปสู่ Part 25 Appendix O (2015) สำหรับเครื่องแบบใหม่",en:"SLD research leading to Part 25 Appendix O (2015) for new designs"}},
+ {y:1998,m:"rail",h:{th:"ICE ตกรางที่ Eschede",en:"ICE derails at Eschede"},w:{th:"ล้อแบบมีวงยางล้าแล้วแตก 101 คนเสียชีวิต",en:"A fatigued rubber-cushioned wheel tyre broke; 101 killed."},c:{th:"เปลี่ยนเป็นล้อเหล็กชิ้นเดียว (monobloc) และตรวจล้อด้วยอัลตราซาวด์ถี่ขึ้น",en:"Switch to monobloc wheels and tighter ultrasonic checks"}},
+ {y:2004,m:"rail",h:{th:"EU บังคับหน่วยสอบสวนรถไฟอิสระ",en:"EU requires independent rail investigators"},w:{th:"Railway Safety Directive 2004/49 ปรับปรุงเป็น 2016/798",en:"Railway Safety Directive 2004/49, updated as 2016/798."},c:{th:"ทุกประเทศสมาชิกต้องมีหน่วยเช่น RAIB, AITAT",en:"Every member state sets up a body such as RAIB or AITAT"}},
+ {y:2005,m:"rail",h:{th:"Amagasaki ตกราง",en:"Amagasaki derailment"},w:{th:"เข้าโค้งเร็วเกินเพื่อชดเชยเวลา 107 คนเสียชีวิต",en:"Overspeed on a curve to recover lost time; 107 killed."},c:{th:"ATS-P บังคับลดความเร็วตรงโค้ง และทบทวนวัฒนธรรมลงโทษพนักงาน",en:"ATS-P speed enforcement on curves; review of punitive culture"}},
+ {era:{th:"ยุคอัตโนมัติและข้อมูล · 2005–ปัจจุบัน",en:"Automation and data · 2005–now"}},
+ {y:2008,m:"rail",h:{th:"Chatsworth รถไฟชนกัน (สหรัฐฯ)",en:"Chatsworth collision (US)"},w:{th:"คนขับฝ่าไฟแดงขณะส่งข้อความ",en:"Engineer ran a red signal while texting."},c:{th:"Rail Safety Improvement Act: บังคับติด Positive Train Control",en:"Rail Safety Improvement Act mandates Positive Train Control"}},
+ {y:2009,m:"air",h:{th:"Air France 447",en:"Air France 447"},w:{th:"ผลึกน้ำแข็งอุด pitot autopilot ตัด นักบินตอบสนองผิดจน stall",en:"Ice crystals blocked the pitots; autopilot dropped out and the crew stalled the A330."},c:{th:"เปลี่ยนท่อ pitot และบังคับฝึก UPRT ใน simulator ที่แม่นขึ้น",en:"Pitot replacements and mandatory UPRT in upgraded simulators"}},
+ {y:2013,m:"rail",h:{th:"Santiago de Compostela ตกราง",en:"Santiago de Compostela derailment"},w:{th:"เข้าโค้งด้วย 179 กม./ชม. ในช่วงที่ไม่มี ETCS 80 คนเสียชีวิต",en:"Entered a curve at 179 km/h on a section without ETCS; 80 killed."},c:{th:"ติดระบบคุมความเร็วเพิ่มตรงจุดเปลี่ยนระบบสัญญาณ",en:"Speed supervision added where signalling systems hand over"}},
+ {y:2019,m:"air",h:{th:"Boeing 737 MAX หยุดบินทั่วโลก",en:"Boeing 737 MAX grounded worldwide"},w:{th:"ระบบ MCAS พึ่งเซนเซอร์ตัวเดียว ตกสองลำ",en:"MCAS relied on a single sensor; two crashes."},c:{th:"แก้ซอฟต์แวร์ และกฎหมาย 2020 ปฏิรูปการรับรองแบบของ FAA",en:"Software fix and a 2020 law reforming FAA certification"}},
+ {y:2020,m:"rotor",h:{th:"S-76 ของ Kobe Bryant",en:"Kobe Bryant's S-76"},w:{th:"บินเข้าเมฆจนหลงท่า",en:"Flew into cloud and lost orientation."},c:{th:"NTSB ย้ำข้อเสนอให้ติด TAWS และ FDR ในเฮลิคอปเตอร์โดยสาร",en:"NTSB renews calls for TAWS and flight recorders in passenger helicopters"}},
+ {y:2024,m:"rail",h:{th:"สายสีเหลือง ล้อประคองหลุด",en:"Yellow Line guide wheel falls"},w:{th:"เบ้าลูกปืนเสียหาย ล้อตกใส่แท็กซี่ ไม่มีผู้บาดเจ็บ",en:"Bearing housing failed; the wheel hit a taxi, no injuries."},c:{th:"กระทรวงคมนาคมสั่งตรวจเชิงลึก รวมถึงผลของอุณหภูมิ",en:"Ministry orders a deeper probe, including heat effects"}},
+ {y:2026,m:"rail",open:1,h:{th:"Adamuz ตกรางแล้วชน (ม.ค.)",en:"Adamuz derailment (Jan)"},w:{th:"น่าจะมาจากรอยเชื่อมรางขาด 46 คนเสียชีวิต",en:"A broken rail weld suspected; 46 killed."},c:{th:"รอผลสอบสวน",en:"Awaiting findings"}},
+ {y:2026,m:"rail",open:1,h:{th:"Toledo รถไฟความเร็วสูงชนท้าย (ต.ค.)",en:"Toledo high-speed collision (Oct)"},w:{th:"LZB ล่ม สั่งการด้วยคน ปล่อยรถผ่านไฟแดง อย่างน้อย 69 คนเสียชีวิต",en:"LZB failure, manual control, a train sent past red; at least 69 killed."},c:{th:"AITAT สอบสวน ศาลเปิดคดีแยก",en:"AITAT investigating; court opens a separate case"}},
+ {y:2026,m:"air",open:1,h:{th:"Learjet 60 ตกที่ Greenacres (พ.ย.)",en:"Learjet 60 crash, Greenacres (Nov)"},w:{th:"รายงานน้ำแข็งและความปั่นป่วนที่ ~35,000 ฟุต ก่อนดิ่งลงมา",en:"Icing and turbulence reported at ~35,000 ft before the dive."},c:{th:"NTSB สอบสวน รายงานเบื้องต้นคาดภายใน ~1 เดือน",en:"NTSB investigating; preliminary report expected in ~1 month"}}
+];
+const LAYERS=[
+ {h:{th:"Learjet 60 · พ.ย. 2026",en:"Learjet 60 · Nov 2026"},l:[
+  ["q",{th:"พยากรณ์ก่อนบิน: เห็นพายุในพื้นที่หรือไม่",en:"Pre-flight forecast: was the storm area flagged?"}],
+  ["q",{th:"เรดาร์บนเครื่อง: เห็นหรืออ่านพลาด",en:"Onboard radar: seen or misread?"}],
+  ["x",{th:"หลบพายุ: เครื่องเข้าไปอยู่ในน้ำแข็งและความปั่นป่วน",en:"Avoidance: aircraft ended up in icing and turbulence"}],
+  ["q",{th:"ระบบกันน้ำแข็ง: ทำงานทันหรือเกินขอบเขต",en:"Anti-ice: on in time, or beyond limits?"}],
+  ["x",{th:"กู้ท่า: ร่วงจาก 35,000 ฟุตใน ~77 วินาที",en:"Recovery: fell from 35,000 ft in ~77 s"}]]},
+ {h:{th:"รถไฟ Toledo · ต.ค. 2026",en:"Toledo trains · Oct 2026"},l:[
+  ["x",{th:"ระบบอัตโนมัติ LZB: ขัดข้อง",en:"LZB automatic control: failed"}],
+  ["ok",{th:"สัญญาณข้างทาง: เป็นไฟแดง",en:"Trackside signal: showed red"}],
+  ["x",{th:"ศูนย์ควบคุม ADIF: อนุญาตให้วิ่งต่อ",en:"ADIF control centre: authorised the move"}],
+  ["x",{th:"การเฝ้าดูบนจอ: ไม่มีคำสั่งหยุด",en:"Screen monitoring: no stop order given"}],
+  ["q",{th:"คนขับ: มองเห็นทันหรือไม่ที่ความเร็วสูง",en:"Driver: any chance to see it at speed?"}]]}
+];
+const SRC=[
+ {t:"NBC 6 South Florida — Learjet 60 crash live updates",u:"https://www.nbcmiami.com/news/local/officials-respond-to-fiery-aircraft-incident-in-palm-beach-county/3881532/",g:"2026"},
+ {t:"CTV News / AP — All 9 aboard killed in Florida jet crash",u:"https://www.ctvnews.ca/world/article/all-nine-people-died-aboard-a-business-jet-that-crashed-into-a-florida-neighborhood-transportation-secretary-says/",g:"2026"},
+ {t:"Republic World — Icing and turbulence under scanner",u:"https://www.republicworld.com/global-news/were-going-to-crash-9-killed-as-learjet-plunges-from-35000-feet-explodes-into-fireball-in-florida-2026-11-02-140231",g:"2026"},
+ {t:"Wikipedia — 2026 Toledo train collision",u:"https://en.wikipedia.org/wiki/2026_Toledo_train_collision",g:"2026"},
+ {t:"ABC7 NY — What caused the train crash in Spain",u:"https://abc7ny.com/story/what-caused-deadly-train-crash-spain-know-far/19994245/",g:"2026"},
+ {t:"Wikipedia — 2026 Adamuz rail disaster",u:"https://en.wikipedia.org/wiki/2026_Adamuz_rail_disaster",g:"2026"},
+ {t:"OpenAI — On the Navier–Stokes Millennium Prize Problem",u:"https://openai.com/index/navier-stokes-solution/",g:"2026"},
+ {t:"NVIDIA — Colorado State University StormScope case study",u:"https://www.nvidia.com/en-us/case-studies/colorado-state-university/",g:"2026"},
+ {t:"Let's Data Science — Google rolls out WeatherNext 3",u:"https://letsdatascience.com/news/google-rolls-out-weathernext-3-ai-weather-model-acdadca7",g:"2026"},
+ {t:"InfoQuest — สายสีเหลืองล้อหลุด",u:"https://www.infoquest.co.th/?p=363531",g:"2024"},
+ {t:"แนวหน้า — รถไฟฟ้าสายสีส้ม",u:"https://www.naewna.com/n/?p=70509",g:"2026"},
+ {t:"ICAO — Annex 13, Aircraft Accident and Incident Investigation",u:"https://www.icao.int/safety/airnavigation/AIG/Pages/default.aspx",g:"standard"},
+ {t:"NTSB — About the NTSB",u:"https://www.ntsb.gov/about/Pages/default.aspx",g:"agency"},
+ {t:"IMO — SOLAS convention",u:"https://www.imo.org/en/About/Conventions/Pages/International-Convention-for-the-Safety-of-Life-at-Sea-(SOLAS),-1974.aspx",g:"standard"},
+ {t:"US Coast Guard — International Ice Patrol",u:"https://www.navcen.uscg.gov/international-ice-patrol-overview",g:"agency"},
+ {t:"EUR-Lex — Directive (EU) 2016/798 on railway safety",u:"https://eur-lex.europa.eu/eli/dir/2016/798/oj",g:"standard"},
+ {t:"BEA — Final report, Air France 447",u:"https://bea.aero/en/investigation-reports/notified-events/detail/accident-to-the-airbus-a330-203-registered-f-gzcp-and-operated-by-air-france-on-01-06-2009/",g:"report"},
+ {t:"FAA — Airworthiness Directives",u:"https://www.faa.gov/regulations_policies/airworthiness_directives",g:"agency"},
+ {t:"JTSB — Japan Transport Safety Board",u:"https://www.mlit.go.jp/jtsb/english.html",g:"agency"}
+];
+
+let lang=(globalThis.ProjectLanguage&&ProjectLanguage.language)==="en"?"en":"th", filt="all";
+const tx=o=>typeof o==="string"?o:(o[lang]??o.en);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const col=m=>`var(--${m})`;
+const modeName=m=>m==="all"?(lang==="th"?"ทุกโหมด":"All modes"):tx(M[m]);
+
+function render(){
+ document.documentElement.lang=lang;
+ document.querySelectorAll("[data-i]").forEach(el=>{el.textContent=tx(T[el.dataset.i])});
+ document.title=tx(T.title);
+
+ document.getElementById("recap").innerHTML=
+  `<article class="rc case"><span class="k" style="color:var(--accent)">${esc(tx(CASE.k))}</span><h3>${esc(tx(CASE.h))}</h3>
+   <div class="case-grid">${CASE.rows.map(r=>`<div><b>${esc(tx(r[0]))}</b>${esc(tx(r[1]))}</div>`).join("")}</div>
+   <span class="status">${lang==="th"?"อยู่ระหว่างสอบสวน · NTSB":"Under investigation · NTSB"}</span></article>`+
+  RECAP.map(r=>`<article class="rc" style="--c:${col(r.m)}"><span class="k">${esc(tx(r.k))}</span><h3>${esc(tx(r.h))}</h3><p>${esc(tx(r.p))}</p></article>`).join("");
+
+ document.getElementById("loop").innerHTML=LOOP.map(s=>`<li><h3>${esc(tx(s.h))}</h3><p>${esc(tx(s.p))}</p></li>`).join("");
+ document.getElementById("principles").innerHTML=PRIN.map(p=>`<div><b>${esc(tx(p.h))}</b><span>${esc(tx(p.p))}</span></div>`).join("");
+
+ const list=a=>`<ul>${a.map(x=>`<li>${esc(tx(x))}</li>`).join("")}</ul>`;
+ document.getElementById("orgs").innerHTML=ORGS.map(o=>`<tr><th style="--c:${col(o.m)}">${esc(tx(M[o.m]))}</th><td>${esc(tx(o.g))}</td><td>${list(o.i)}</td><td>${list(o.r)}</td><td>${o.s.map(s=>`<span class="code">${esc(s)}</span>`).join(" ")}</td></tr>`).join("");
+
+ const modes=["all","air","sea","rail","rotor"];
+ document.getElementById("chips").innerHTML=modes.map(m=>`<button type="button" class="chip" id="chip-${m}" data-m="${m}" style="--c:${col(m)}" aria-pressed="${filt===m}">${esc(m==="all"?tx(T.all):tx(M[m]))}</button>`).join("");
+
+ let out="", pendingEra=null;
+ EV.forEach(e=>{
+  if(e.era){pendingEra=e.era;return;}
+  if(filt!=="all" && e.m!==filt && e.m!=="all") return;
+  if(pendingEra){out+=`<div class="era">${esc(tx(pendingEra))}</div>`;pendingEra=null;}
+  out+=`<article class="ev${e.open?" open":""}" style="--c:${col(e.m)}"><div><div class="yr">${e.y}</div><div class="mode">${esc(modeName(e.m))}</div></div>
+   <div class="body"><h3>${esc(tx(e.h))}</h3><p class="what">${esc(tx(e.w))}</p><div class="chg">${esc(tx(e.c))}</div></div></article>`;
+ });
+ document.getElementById("tl").innerHTML=out;
+
+ const mk={ok:"✓",x:"✕",q:"?"};
+ document.getElementById("layers").innerHTML=LAYERS.map(L=>`<div class="lyr"><h3>${esc(tx(L.h))}</h3><ol>${L.l.map(([s,t])=>`<li><span class="mk ${s}">${mk[s]}</span><span>${esc(tx(t))}</span></li>`).join("")}</ol></div>`).join("");
+
+ document.getElementById("src").innerHTML=SRC.map(s=>`<li><a href="${esc(s.u)}" target="_blank" rel="noopener">${esc(s.t)}</a> <span class="tag">· ${esc(s.g)}</span></li>`).join("");
+}
+document.addEventListener("click",ev=>{
+ const b=ev.target.closest("button"); if(!b) return;
+ if(b.dataset.m){filt=b.dataset.m; render(); document.getElementById("chip-"+filt)?.focus();}
+});
+render();
+</script>
+</body>
+</html>

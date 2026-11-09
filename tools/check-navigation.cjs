@@ -17,4 +17,5 @@ for(const folder of ['Autonomous%20E-Bus%20Model','urban-systems-lab']){
  p=navigate(base+'index.html?lang=invalid',{saved:'invalid'});assert.equal(p.document.documentElement.lang,'th');assert.equal(p.state.redirect,undefined);
  p=navigate(base+'day-3d.html?lang=en',{bilingual:true,blocked:true});assert.equal(p.state.redirect,undefined);assert.equal(p.document.documentElement.lang,'en');
 }
+{const base='https://roxdraft.github.io/Transportation-Systems/safety-board/';let p=navigate(base+'index.html?lang=en',{bilingual:true,saved:'en'});assert.equal(p.state.redirect,undefined);assert.equal(p.document.documentElement.lang,'en');p.events.DOMContentLoaded();assert(p.nav[0].children[0].href.endsWith('/Transportation-Systems/index.html?lang=en'));p=navigate(base+'index.html',{bilingual:true,saved:'th'});assert.equal(p.state.redirect,undefined);assert.equal(p.document.documentElement.lang,'th');}
 console.log('PASS: both project routes inherit language, preserve it in home links, prefer saved language over stale history parameters, handle blocked storage and invalid values, and localize the bilingual 3D view without redirect loops.');
