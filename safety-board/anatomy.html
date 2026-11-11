@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="../shared/project-language.js?v=1.4.2" data-bilingual="true"></script>
+<title>Vehicle Anatomy</title>
+<meta name="description" content="ผ่าโครงสร้างยานพาหนะ 9 แบบ เป็นโมเดล 3D และแบบเขียน 2D พร้อมมาตรฐาน ขีดจำกัดการออกแบบ สถิติ พลังงาน คอมพิวเตอร์ และคนที่ทำให้ปลอดภัย">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+*{box-sizing:border-box}body{margin:0}
+/* Layout: drawing office. Vehicle tabs on top; the model or drawing sheet on the left, the parts list and the selected part's data sheet on the right; standards, limits and sources below */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#16202b; --muted:#5a6878; --line:#d5dce4; --tag-bg:#e8edf2;
+  --accent:#e2640f; --ok:#2e7d32; --warn:#b3261e;
+  --sheet:#0f3057; --sheet-fill:#18426f; --sheet-ink:#e9f2fb; --sheet-hot:#ffb347; --stage:#dfe6ec;
+  --f-display:"Barlow Condensed","IBM Plex Sans Thai",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f151c; --panel:#17202a; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2a3644; --tag-bg:#1f2a36;
+  --accent:#ff8a3d; --ok:#6fcf73; --warn:#ff7b72; --sheet:#0b2440; --sheet-fill:#143659; --sheet-ink:#e9f2fb; --sheet-hot:#ffb347; --stage:#1b2631; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151c; --panel:#17202a; --ink:#e6ecf2; --muted:#9aa8b6; --line:#2a3644; --tag-bg:#1f2a36;
+  --accent:#ff8a3d; --ok:#6fcf73; --warn:#ff7b72; --sheet:#0b2440; --sheet-fill:#143659; --sheet-ink:#e9f2fb; --sheet-hot:#ffb347; --stage:#1b2631; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1220px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:22px}
+.wrap>*{min-width:0}
+header.top{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--ink);padding-bottom:14px}
+header.top>div{min-width:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-size:clamp(32px,5.5vw,52px);line-height:1.05;margin:6px 0 8px;text-wrap:balance}
+.lede{color:var(--muted);max-width:70ch;margin:0}
+h2{font-family:var(--f-display);font-size:26px;line-height:1.1;margin:0 0 10px;text-wrap:balance}
+h3{font-size:16px;margin:0 0 4px}
+.lbl{font:600 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;display:block}
+.lang{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden}
+.lang button{font:600 14px var(--f-mono);padding:7px 16px;background:transparent;color:var(--ink);border:0;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.boardbtn{display:inline-flex;align-items:center;gap:6px;font:600 14px var(--f-body);padding:9px 14px;border:2px solid var(--ink);border-radius:10px;color:var(--ink);background:var(--panel);text-decoration:none}
+.boardbtn:hover{background:var(--ink);color:var(--bg)}
+.vehs{display:flex;flex-wrap:wrap;gap:6px}
+.vehs button{font:600 14px var(--f-body);padding:9px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.vehs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.desk{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:16px;align-items:start}
+@media (max-width:960px){.desk{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);padding:14px;min-width:0}
+.bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:10px}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:999px;overflow:hidden}
+.seg button{font:600 13px var(--f-body);padding:7px 14px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chip{font:600 13px var(--f-body);padding:7px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.view{position:relative;border-radius:6px;overflow:hidden;background:var(--stage)}
+.view.sheet{background:var(--sheet)}
+#gl canvas{display:block;width:100%;touch-action:none;cursor:grab}
+#ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;font-family:var(--f-mono)}
+#ov text{fill:var(--sheet-ink);font-size:11px}
+#ov .fr{fill:none;stroke:var(--sheet-ink);stroke-opacity:.35;stroke-width:1}
+#ov .dim{stroke:var(--sheet-ink);stroke-width:1;fill:none}
+#ov .ld{stroke:var(--sheet-ink);stroke-opacity:.6;stroke-width:1;fill:none}
+#ov .bal{fill:var(--sheet);stroke:var(--sheet-ink);stroke-width:1.2;pointer-events:auto;cursor:pointer}
+#ov .bal.on{fill:var(--sheet-hot);stroke:var(--sheet-hot)}
+#ov .bt{font-size:10.5px;text-anchor:middle;pointer-events:none}
+#ov .bt.on{fill:#16202b;font-weight:600}
+#ov .tb{fill:var(--sheet);stroke:var(--sheet-ink);stroke-width:1}
+.orb{position:absolute;right:10px;bottom:10px;display:grid;gap:6px}
+.orb button{width:40px;height:40px;border-radius:10px;border:0;background:rgba(10,16,24,.72);color:#fff;font:700 20px var(--f-mono);cursor:pointer;line-height:1}
+.hint{position:absolute;left:10px;bottom:10px;right:60px;font:12px var(--f-body);color:#fff;pointer-events:none}
+.hint span{background:rgba(10,16,24,.6);padding:3px 9px;border-radius:999px}
+.tag{position:absolute;left:10px;top:10px;font:600 12px var(--f-mono);color:#fff;background:rgba(10,16,24,.62);padding:4px 10px;border-radius:999px;pointer-events:none}
+.no3d{padding:40px 16px;text-align:center;margin:0;color:var(--ink)}
+.range{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;margin-top:12px}
+.range input{width:100%;accent-color:var(--accent)}
+.range button{font:600 13px var(--f-body);padding:7px 12px;border-radius:8px;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);cursor:pointer}
+.capt{font-size:13px;color:var(--muted);margin:8px 0 0}
+.parts{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.parts button{width:100%;display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;align-items:center;text-align:left;font:500 14px var(--f-body);padding:7px 8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;border-radius:8px}
+.parts button i{font:600 12px var(--f-mono);font-style:normal;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center}
+.parts button[aria-pressed="true"]{border-color:var(--accent);background:var(--tag-bg);font-weight:600}
+.parts button[aria-pressed="true"] i{background:var(--accent);border-color:var(--accent);color:#fff}
+.sheetcard{border-top:4px solid var(--accent);margin-top:12px;padding-top:10px;display:grid;gap:10px}
+.sheetcard dl{margin:0;display:grid;gap:10px}
+.sheetcard dt{font:600 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sheetcard dd{margin:2px 0 0;font-size:14px}
+.sheetcard dd.lim{border-left:3px solid var(--warn);padding-left:10px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.two p{margin:0;font-size:14px}
+.spec{display:flex;flex-wrap:wrap;gap:6px 18px;font:13px var(--f-mono);color:var(--muted);margin:0 0 10px}
+.spec b{color:var(--ink);font-weight:600}
+.lims{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.lims button{width:100%;text-align:left;display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:4px 14px;padding:9px 10px;border:0;border-left:3px solid var(--warn);background:var(--bg);color:var(--ink);font:14px var(--f-body);cursor:pointer}
+.lims button b{font-weight:600}
+@media (max-width:640px){.lims button{grid-template-columns:1fr}}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.who{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.who li{font-size:13.5px;padding:5px 11px;border-radius:999px;background:var(--tag-bg);border:1px solid var(--line)}
+.lens{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.ln{border-top:3px solid var(--lc);padding-top:8px}
+.ln small{font:600 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block}
+.ln p{margin:4px 0 0;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.stat{border:1px solid var(--line);padding:12px;display:grid;gap:4px;align-content:start;background:var(--bg)}
+.stat .k{font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stat.w .k{color:var(--accent)}
+.stat b{font:700 30px/1.05 var(--f-display);font-variant-numeric:tabular-nums}
+.stat p{margin:0;font-size:14px}
+.stat a{font-size:12px;color:var(--muted)}
+.sys{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.sys p{margin:0 0 8px;font-size:14.5px}
+.sys button{font:600 13px var(--f-body);padding:6px 12px;border-radius:999px;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);cursor:pointer}
+.crew{margin-top:16px;padding:12px 14px;background:var(--tag-bg);border-left:4px solid var(--accent)}
+.crew p{margin:0;font-size:14.5px}
+.src{font-size:13px;color:var(--muted);columns:2 320px;margin:0;padding-left:18px}
+.src a{color:var(--ink)}
+</style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<div class="wrap">
+ <header class="top">
+  <div>
+   <div class="eyebrow" data-i="eyebrow"></div>
+   <h1 data-i="title"></h1>
+   <p class="lede" data-i="lede"></p>
+  </div>
+  <div style="display:grid;gap:10px;justify-items:end">
+   <a class="boardbtn" id="lk-board" href="./index.html" data-i="lkBoard"></a>
+  </div>
+ </header>
+
+ <div class="vehs" id="vehs" role="group" aria-label="Vehicle"></div>
+
+ <div class="desk">
+  <div class="card">
+   <div class="bar">
+    <div class="seg" role="group" aria-label="Mode"><button type="button" id="mode-3d" data-mode="3d" data-i="m3d"></button><button type="button" id="mode-2d" data-mode="2d" data-i="m2d"></button></div>
+    <button type="button" class="chip" id="run" data-i="run"></button>
+    <button type="button" class="chip" id="xray" data-i="xray"></button>
+   </div>
+   <div class="view" id="view"><div id="gl"></div><svg id="ov" aria-hidden="true"></svg>
+    <span class="tag" id="tag"></span>
+    <div class="orb" id="orb"><button type="button" data-orb="in" aria-label="Zoom in">+</button><button type="button" data-orb="out" aria-label="Zoom out">−</button><button type="button" data-orb="reset" aria-label="Reset view">⟲</button></div>
+    <div class="hint" id="hint"><span data-i="hint"></span></div>
+   </div>
+   <div class="range"><button type="button" id="asm" data-i="asm"></button><input type="range" id="ex" min="0" max="100" value="0" aria-label="Explode"><button type="button" id="exp" data-i="exp"></button></div>
+   <p class="capt" id="capt"></p>
+  </div>
+  <div class="card">
+   <span class="lbl" data-i="lParts"></span>
+   <ul class="parts" id="parts"></ul>
+   <div class="sheetcard" id="sheet"></div>
+  </div>
+ </div>
+
+ <section class="card">
+  <h2 id="h-std"></h2>
+  <p class="spec" id="spec"></p>
+  <div class="two"><div><span class="lbl" data-i="lMake"></span><p id="make"></p></div><div><span class="lbl" data-i="lKeep"></span><p id="keep"></p></div></div>
+ </section>
+
+ <section class="card">
+  <h2 id="h-sys"></h2>
+  <div class="sys" id="sys"></div>
+ </section>
+
+ <section class="card">
+  <h2 id="h-stat"></h2>
+  <p class="note" data-i="statNote" style="margin-bottom:12px"></p>
+  <div class="stats" id="stats"></div>
+ </section>
+
+ <section class="card">
+  <h2 id="h-ppl"></h2>
+  <p class="note" data-i="pplNote" style="margin-bottom:12px"></p>
+  <span class="lbl" data-i="lWho"></span><ul class="who" id="who"></ul>
+  <div class="lens" id="lens"></div>
+  <div class="crew"><span class="lbl" data-i="lCrew"></span><p id="crew"></p></div>
+ </section>
+
+ <section class="card">
+  <h2 data-i="hLim"></h2>
+  <p class="note" data-i="limNote" style="margin-bottom:10px"></p>
+  <ul class="lims" id="lims"></ul>
+ </section>
+
+ <section>
+  <h2 data-i="hSrc" style="font-size:20px"></h2>
+  <p class="note" data-i="srcNote" style="margin-bottom:8px"></p>
+  <ol class="src" id="src"></ol>
+ </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let lang=(globalThis.ProjectLanguage&&ProjectLanguage.language)==="en"?"en":"th";
+const tx=o=>o?(o[lang]??o.en??""):"";
+const B=(th,en)=>({th,en});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const BOARD_URL="./index.html";
+const T={
+ eyebrow:B("กระดานความปลอดภัยการขนส่ง · โครงสร้างยานพาหนะ","Transport Safety Board · Vehicle anatomy"),
+ title:B("ผ่าโครงสร้างยานพาหนะ","Vehicle Anatomy"),
+ lede:B("แยกยานพาหนะ 9 แบบที่ใช้กันอยู่ทุกวันนี้ออกเป็นชิ้น ดูได้ทั้งโมเดล 3D และแบบเขียน 2D สามมุมมอง แต่ละชิ้นบอกหน้าที่ วัสดุ มาตรฐานที่ใช้ผลิตและดูแล และขีดจำกัดที่มาจากการออกแบบ","Nine vehicles in use today, taken apart piece by piece as a 3D model and as a three-view 2D drawing. Each part lists what it does, what it is made of, the standards for building and maintaining it, and the limits built into its design."),
+ lkBoard:B("← กลับไปบอร์ดความปลอดภัย","← Back to the Safety Board"),
+ m3d:B("โมเดล 3D","3D model"),m2d:B("แบบเขียน 2D","2D drawing"),run:B("▶ ดูการทำงาน","▶ Show it working"),runOn:B("❚❚ หยุดการทำงาน","❚❚ Stop"),xray:B("มองทะลุเปลือก","See through the shell"),
+ hint:B("ลากเพื่อหมุน · ล้อเมาส์/บีบนิ้วเพื่อซูม · แตะชิ้นส่วนเพื่อเลือก","Drag to rotate · wheel or pinch to zoom · tap a part to select"),
+ asm:B("ประกอบ","Assemble"),exp:B("แยกชิ้น","Explode"),
+ cap3:B("โมเดลใช้สัดส่วนจริงโดยประมาณ รูปทรงถูกทำให้เรียบง่ายเพื่อให้เห็นว่าชิ้นไหนอยู่ตรงไหนและทำงานร่วมกันอย่างไร","The model is roughly to scale, with shapes simplified to show where each part sits and how the parts work together."),
+ cap2:B("แบบสามมุมมอง (ด้านข้าง ด้านหน้า ด้านบน) และภาพไอโซเมตริก สร้างจากโมเดลเดียวกัน เลขในวงกลมตรงกับรายการชิ้นส่วน แบบนี้ใช้เพื่อการเรียนรู้ ไม่ใช่แบบสำหรับผลิต","Three views (side, front, top) and an isometric, generated from the same model. Balloon numbers match the parts list. For learning only, not a manufacturing drawing."),
+ lParts:B("รายการชิ้นส่วน","Parts list"),all:B("ดูทั้งคัน","Whole vehicle"),
+ dFn:B("หน้าที่และวัสดุ","Function and material"),dStd:B("มาตรฐานและการดูแล","Standards and maintenance"),dLim:B("ขีดจำกัดจากการออกแบบ","Design limit"),
+ pick:B("เลือกชิ้นส่วนจากรายการ จากโมเดล หรือจากเลขบนแบบ เพื่อดูรายละเอียด","Pick a part from the list, the model or a balloon on the drawing to see its data sheet."),
+ hStd:B("มาตรฐานการผลิตและการดูแล","Standards for building and maintaining"),lMake:B("การออกแบบและผลิต","Design and manufacture"),lKeep:B("การดูแลระหว่างใช้งาน","In-service maintenance"),
+ hSys:B("พลังงานและคอมพิวเตอร์บนยาน","Energy and on-board computing"),lFuel:B("เชื้อเพลิงและพลังงาน","Fuel and energy"),lCpu:B("แผงวงจรและคอมพิวเตอร์","Circuit boards and computers"),showPart:B("ดูชิ้นนี้ในโมเดล","Show this part in the model"),
+ hStat:B("สถิติ: ที่น่าทึ่ง และที่น่าเบื่อแต่สำคัญ","Statistics: the striking and the dull-but-important"),statNote:B("ตัวเลขเมื่อคน สิ่งของ และสภาพแวดล้อมอยู่ร่วมกับยานพาหนะแบบนี้ ทุกตัวเลขมีลิงก์ไปที่แหล่งข้อมูล","Numbers from where people, things and the environment meet this vehicle. Every figure links to its source."),kW:B("น่าทึ่ง","Striking"),kD:B("น่าเบื่อแต่สำคัญ","Dull but important"),srcLbl:B("แหล่งข้อมูล","Source"),
+ hPpl:B("ใครทำให้มันเป็นไปได้และปลอดภัย","Who makes it possible, and safe"),pplNote:B("ยานพาหนะไม่ได้ปลอดภัยเพราะตัวมันเองอย่างเดียว มีคนและองค์กรหลายกลุ่มช่วยกัน มองผ่านสี่มุม: ฟิสิกส์ วัสดุ เศรษฐศาสตร์ และจิตวิทยา","A vehicle is not safe on its own; many groups of people make it so. Four lenses: physics, materials, economics and psychology."),
+ lWho:B("คนและองค์กรที่เกี่ยวข้อง","People and organisations involved"),lCrew:B("คนที่ฝึกมารับมือสถานการณ์","The people trained for when things go wrong"),
+ lnPhys:B("ฟิสิกส์ · ทำไมมันทำงานได้","Physics · why it works"),lnMat:B("วัสดุ · ทำจากอะไร เพราะอะไร","Materials · what it is made of, and why"),lnEcon:B("เศรษฐศาสตร์ · ทำไมจึงคุ้ม และแรงกดดันอยู่ตรงไหน","Economics · why it pays, and where the pressure is"),lnPsy:B("จิตวิทยา · คนรู้สึกอย่างไร","Psychology · how people feel about it"),
+ hLim:B("จุดที่เป็นขีดจำกัดจากการออกแบบ","Where the design sets the limits"),limNote:B("แตะแต่ละข้อเพื่อดูชิ้นส่วนนั้นในโมเดล","Tap a row to see that part in the model."),
+ hSrc:B("แหล่งอ้างอิง","Sources"),srcNote:B("เลขมาตรฐานอ้างตามเอกสารของหน่วยงานที่ออก ตัวเลขในหน้านี้เป็นค่าหลักของข้อกำหนด รายละเอียดและข้อยกเว้นต้องดูจากฉบับจริง","Standard numbers follow the issuing bodies' documents. Figures here are headline values; the full texts hold the details and exceptions."),
+ sL:B("ยาว","Length"),sW:B("กว้าง","Width"),sH:B("สูง","Height"),sM:B("มวลโดยประมาณ","Typical mass"),
+ vSide:B("ด้านข้าง","SIDE"),vFront:B("ด้านหน้า","FRONT"),vTop:B("ด้านบน","TOP"),vIso:B("ไอโซเมตริก","ISOMETRIC"),
+ tbNote:B("แบบเพื่อการเรียนรู้ · ไม่ใช้ผลิต","For learning · not for manufacture"),tbScale:B("มาตราส่วนบนจอ ≈","Scale on screen ≈"),unit:B("หน่วย: เมตร","Units: metres"),
+ no3d:B("เบราว์เซอร์นี้แสดงโมเดลไม่ได้ รายการชิ้นส่วนและข้อมูลยังใช้ได้ตามปกติ","This browser can't show the model; the parts list and data sheets still work.")
+};
+
+/* ---------- builders ---------- */
+const lin=c=>new THREE.Color(c).convertSRGBToLinear();
+let CUR=null;
+function M(c,r=.6,me=.1,o={}){const m=new THREE.MeshStandardMaterial({color:lin(c),roughness:r,metalness:me,...o});m.userData.o=o.opacity!=null?o.opacity:1;CUR.mats.push(m);return m;}
+const GL=()=>M(0x8fb6d6,.1,.2,{transparent:true,opacity:.4});
+function add(g,o,x,y,z){o.position.set(x,y,z);g.add(o);return o;}
+function bx(g,w,h,d,x,y,z,m){return add(g,new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m),x,y,z);}
+function cy(g,rt,rb,len,x,y,z,m,axis="y",seg=20){const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,len,seg),m);if(axis==="z")o.rotation.x=Math.PI/2;if(axis==="x")o.rotation.z=Math.PI/2;return add(g,o,x,y,z);}
+function sp(g,r,x,y,z,m,sx=1,sy=1,sz=1){const o=new THREE.Mesh(new THREE.SphereGeometry(r,20,14),m);o.scale.set(sx,sy,sz);return add(g,o,x,y,z);}
+function shp(pts){const s=new THREE.Shape();pts.forEach((p,i)=>i?s.lineTo(p[0],p[1]):s.moveTo(p[0],p[1]));s.closePath();return s;}
+function ext(g,pts,depth,m,x=0,y=0,z=0){const geo=new THREE.ExtrudeGeometry(shp(pts),{depth,bevelEnabled:false});geo.translate(0,0,-depth/2);return add(g,new THREE.Mesh(geo,m),x,y,z);}
+function pl(g,pts,th,m,y){const o=new THREE.Mesh(new THREE.ExtrudeGeometry(shp(pts),{depth:th,bevelEnabled:false}),m);o.rotation.x=Math.PI/2;o.position.y=y;g.add(o);return o;}
+function tb(g,a,b,r,m,seg=8){const A=new THREE.Vector3(...a),Bv=new THREE.Vector3(...b),d=Bv.clone().sub(A),o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),seg),m);o.position.copy(A).add(Bv).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());g.add(o);return o;}
+function wh(g,x,y,z,r,w,mt,mr,n=3){const G=new THREE.Group();G.position.set(x,y,z);cy(G,r,r,w,0,0,0,mt,"z",28);cy(G,r*.62,r*.62,w*1.04,0,0,0,mr,"z",20);for(let i=0;i<n;i++){const s=bx(G,r*1.16,r*.13,w*1.08,0,0,0,mr);s.rotation.z=i*Math.PI/n;}g.add(G);return G;}
+function sub(g,x=0,y=0,z=0,ex){const G=new THREE.Group();G.position.set(x,y,z);if(ex){G.userData.ex=ex;G.userData.home=[x,y,z];}g.add(G);return G;}
+/* a vehicle is a list of parts; each part is a group with its own materials, an explode direction and a data sheet */
+function vehicle(key,def){const V={key,...def,root:new THREE.Group(),parts:[],ref:{}};V.P=(id,ex,shell,build)=>{const g=new THREE.Group();CUR={mats:[]};build(g,V.ref);const tx_=def.txt[id];
+  const p={id,g,ex,shell:!!shell,mats:CUR.mats,n:B(tx_[0],tx_[1]),fn:B(tx_[2],tx_[3]),std:B(tx_[4],tx_[5]),lim:tx_[6]?B(tx_[6],tx_[7]):null,idx:V.parts.length};
+  p.line=new THREE.LineBasicMaterial({color:0xe9f2fb,transparent:true,toneMapped:false});p.fill=new THREE.MeshBasicMaterial({color:lin(0x18426f),toneMapped:false,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
+  g.traverse(o=>{if(o.isMesh){o.userData.part=p;o.userData.m0=o.material;if(!o.userData.noEdge){const e=new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry,28),p.line);e.visible=false;e.userData.edge=1;o.add(e);}}});
+  V.root.add(g);V.parts.push(p);return p;};
+ def.build(V);V.box=new THREE.Box3().setFromObject(V.root);V.size=V.box.getSize(new THREE.Vector3());V.ctr=V.box.getCenter(new THREE.Vector3());V.E=Math.max(V.size.x,V.size.y,V.size.z)*.42;return V;}
+const DEFS={};
+const C_={or:0xe2640f,st:0x8a939c,dk:0x2b3036,rb:0x1a1c1f,ye:0xe0b23a,rd:0xc0392b,bl:0x2e86c1,wh:0xeef1f4,gy:0xbfc4c8,gn:0x2e7d32};
+const fxM=(c,o=.85)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o,depthWrite:false});
+function fx(o){o.userData.fx=1;o.userData.noEdge=1;return o;}
+
+/* ---------------- car ---------------- */
+DEFS.car={n:B("รถยนต์","Car"),mass:B("ราว 1.4 ตัน","about 1.4 t"),ref:B("อ้างอิง: รถเก๋งขนาดเล็ก","Reference: compact car"),
+ make:B("รับรองแบบตามข้อกำหนด UN (WP.29) หรือ FMVSS ของสหรัฐฯ ก่อนขายได้ โรงงานใช้ระบบคุณภาพ IATF 16949 และระบบอิเล็กทรอนิกส์ด้านความปลอดภัยพัฒนาตาม ISO 26262","Type-approved to UN (WP.29) regulations or US FMVSS before sale. Plants run IATF 16949 quality systems, and safety electronics are developed to ISO 26262."),
+ keep:B("ตรวจสภาพตามกำหนด ในไทยรถยนต์อายุครบ 7 ปีขึ้นไปต้องตรวจสภาพทุกปีก่อนต่อภาษี ผู้ผลิตเรียกคืนรถ (recall) เมื่อพบข้อบกพร่องด้านความปลอดภัย","Periodic inspection: in Thailand cars aged 7 years or more are inspected every year before tax renewal. Makers recall vehicles when a safety defect is found."),
+ txt:{
+  body:["โครงตัวถังและห้องโดยสาร","Body shell and safety cage","ตัวถังชิ้นเดียว (unibody) จากเหล็กกล้าหลายเกรด ห้องโดยสารใช้เหล็กแรงดึงสูงมากเพื่อไม่ให้ยุบเข้าหาคน","A one-piece (unibody) shell in several steel grades; the cabin uses ultra-high-strength steel so it does not collapse onto the occupants.","ทดสอบชนตาม UN R94 (ชนหน้า) R95 (ชนข้าง) R135 (ชนเสา) · ดูแล: ตรวจสนิมและคุณภาพการซ่อมโครงสร้างหลังชน","Crash-tested to UN R94 (frontal), R95 (side), R135 (pole) · Upkeep: check for rust and the quality of structural repairs after a crash.","ออกแบบจากการทดสอบชนที่ราว 50–64 กม./ชม. เร็วกว่านั้นพลังงานเพิ่มตามความเร็วยกกำลังสอง ห้องโดยสารอาจรับไม่ไหว","Designed around crash tests at roughly 50–64 km/h. Above that, energy rises with the square of speed and the cabin may not hold."],
+  crumple:["โซนยุบตัวและคานกันชน","Crumple zone and bumper beam","คานกันชนและกล่องยุบตัว (crash box) ยุบเป็นจังหวะเพื่อดูดซับพลังงานและยืดเวลาการชน","The bumper beam and crash boxes fold in a controlled way to absorb energy and stretch out the impact.","UN R94 / R137 · คนเดินเท้า UN R127 · ดูแล: หลังชนต้องเปลี่ยนชิ้นใหม่ ห้ามดัดกลับมาใช้","UN R94 / R137 · pedestrians UN R127 · Upkeep: replace after a crash; never straighten and reuse.","ยุบได้แค่ระยะราวครึ่งเมตรถึงหนึ่งเมตร และใช้ได้ครั้งเดียว","Only about half a metre to a metre of crush is available, and it works once."],
+  power:["เครื่องยนต์และเกียร์","Engine and transmission","เครื่องยนต์วางขวางด้านหน้า ขับล้อหน้าผ่านเกียร์และเพลาขับ","A transverse front engine drives the front wheels through the gearbox and driveshafts.","ไอเสีย UN R83 · ระบบควบคุมอิเล็กทรอนิกส์ตาม ISO 26262 · ดูแล: น้ำมันเครื่อง ไส้กรอง สายพาน ตามระยะทาง","Emissions UN R83 · electronic controls to ISO 26262 · Upkeep: oil, filters and belts by mileage.","ถ้าน้ำเข้าท่อไอดี (ลุยน้ำลึก) ลูกสูบอัดน้ำไม่ได้ เครื่องพังทันที (hydrolock)","Water in the intake (deep flooding) cannot be compressed, and the engine is wrecked at once (hydrolock)."],
+  susp:["ช่วงล่างและพวงมาลัย","Suspension and steering","สตรัทหน้า คานหลัง และแร็คพวงมาลัย ทำให้ล้อแตะพื้นตลอดและรถไปตามที่บังคับ","Front struts, a rear beam and the steering rack keep the tyres on the road and the car on course.","UN R79 (ระบบบังคับเลี้ยว) · ดูแล: ลูกหมาก โช้คอัพ และศูนย์ล้อ","UN R79 (steering) · Upkeep: ball joints, dampers and wheel alignment.","แรงเกาะด้านข้างของยางจำกัดความเร็วเข้าโค้ง เกินแล้วรถไถล หรือพลิกถ้าเป็นรถสูง","Tyre side grip caps cornering speed; beyond it the car slides, or rolls if it is tall."],
+  brake:["เบรกและ ABS/ESC","Brakes with ABS/ESC","ดิสก์เบรกสี่ล้อ มีชุด ABS/ESC ปรับแรงเบรกแต่ละล้อไม่ให้ล็อกหรือหมุน","Four disc brakes; the ABS/ESC unit meters each wheel so it neither locks nor spins the car.","UN R13-H (เบรก) R140 (ESC) · ดูแล: ผ้าเบรก จานเบรก และเปลี่ยนน้ำมันเบรกราวทุก 2 ปี","UN R13-H (braking), R140 (ESC) · Upkeep: pads, discs and brake fluid about every 2 years.","ลดความเร็วได้ราว 1 g บนถนนแห้ง ระยะเบรกเพิ่มตามความเร็วยกกำลังสอง เบรกร้อนจัดจะจาง (fade)","About 1 g of deceleration on a dry road; stopping distance grows with speed squared, and hot brakes fade."],
+  wheel:["ล้อและยาง","Wheels and tyres","ยางเรเดียลบนกระทะล้ออัลลอย เป็นจุดเดียวที่รถสัมผัสถนน","Radial tyres on alloy rims: the car's only contact with the road.","UN R30 (ยาง) R117 (เกาะถนนเปียก) R141 (เตือนลมยาง) · ดูแล: ลมยาง และดอกยางลึกอย่างน้อย 1.6 มม.","UN R30 (tyres), R117 (wet grip), R141 (pressure monitoring) · Upkeep: pressures, and at least 1.6 mm of tread.","ทุกแรงผ่านหน้ายางขนาดฝ่ามือ 4 จุด ยางมีพิกัดความเร็วและน้ำหนัก บนน้ำขังยางลอยเหนือน้ำ (เหินน้ำ)","Every force passes through four palm-sized patches. Tyres have speed and load ratings, and on standing water they aquaplane."],
+  tank:["แบตเตอรี่และถังเชื้อเพลิง","Battery and fuel tank","ชุดแบตเตอรี่ใต้พื้นรถ (ไฮบริด/ไฟฟ้า) และถังเชื้อเพลิงหน้าเพลาหลัง อยู่ในส่วนที่ยุบน้อยที่สุด","An under-floor battery pack (hybrid/EV) and a fuel tank ahead of the rear axle, in the part of the car that crushes least.","UN R34 (ป้องกันไฟจากถังเชื้อเพลิง) UN R100 (ความปลอดภัยแบตเตอรี่) · ดูแล: ตรวจรั่ว ตรวจสภาพแบตเตอรี่","UN R34 (fuel tank fire risk), UN R100 (battery safety) · Upkeep: leak checks and battery health.","แบตลิเทียมที่เสียหายอาจร้อนลุกลามเอง (thermal runaway) ดับยากและปะทุซ้ำได้","A damaged lithium pack can go into thermal runaway: hard to put out and able to reignite."],
+  restraint:["ถุงลมและเข็มขัดนิรภัย","Airbags and seat belts","เข็มขัดมีตัวดึงกลับและตัวผ่อนแรง ถุงลมพองในเสี้ยววินาทีเพื่อรับศีรษะและลำตัว","Belts with pretensioners and load limiters; airbags inflate in a fraction of a second to catch head and chest.","UN R16 (เข็มขัด) R14 (จุดยึด) R129 (ที่นั่งเด็ก) · ดูแล: ไฟเตือน SRS ต้องดับ เปลี่ยนใหม่หลังทำงาน","UN R16 (belts), R14 (anchorages), R129 (child seats) · Upkeep: SRS lamp off; replace after deployment.","ถุงลมออกแบบให้ทำงานคู่กับเข็มขัด ถ้าไม่คาดเข็มขัด ถุงลมอาจทำอันตรายแทน","Airbags are designed to work with the belt; unbelted, the airbag itself can injure."],
+  adas:["เซนเซอร์และหน่วยควบคุม","Sensors and control units","กล้องหลังกระจกหน้า เรดาร์ในกันชน และกล่องควบคุม ใช้กับเบรกอัตโนมัติและช่วยรักษาเลน","A windscreen camera, bumper radar and control units for automatic braking and lane keeping.","UN R152 (เบรกอัตโนมัติ) R157 (รักษาเลนอัตโนมัติ) R155/R156 (ไซเบอร์และอัปเดตซอฟต์แวร์) · ดูแล: สอบเทียบกล้องและเรดาร์หลังเปลี่ยนกระจกหรือชน","UN R152 (AEB), R157 (automated lane keeping), R155/R156 (cyber security and software updates) · Upkeep: recalibrate after a windscreen change or a crash.","ทำงานได้เฉพาะในขอบเขตที่ออกแบบไว้ ฝนหนัก แสงจ้า หรือเส้นถนนเลือน ทำให้ตรวจจับพลาด","Works only inside its design domain; heavy rain, glare or faded lane lines cause missed detections."]},
+ build(V){
+  V.P("body",[0,1.05,0],1,g=>{ext(g,[[-2.15,.36],[-2.2,.78],[-1.62,.96],[-.92,1.43],[.5,1.43],[1.16,.96],[2.05,.82],[2.2,.52],[2.15,.36]],1.6,M(C_.or,.35,.3));ext(g,[[-1.5,.99],[-.9,1.38],[.47,1.38],[1.04,.99]],1.62,M(0x1b2733,.1,.5,{transparent:true,opacity:.75}));});
+  V.P("crumple",[.9,0,0],0,g=>{const m=M(C_.st,.5,.6);bx(g,.1,.16,1.5,2.1,.52,0,m);[-.5,.5].forEach(z=>{bx(g,.42,.13,.13,1.84,.52,z,M(C_.ye,.5,.3));bx(g,.9,.12,.1,1.2,.52,z,m);});bx(g,.1,.14,1.4,-2.12,.55,0,m);});
+  V.P("power",[.5,.95,0],0,g=>{bx(g,.55,.5,.62,1.45,.66,-.12,M(0x5d646b,.5,.6));bx(g,.5,.12,.6,1.45,.97,-.12,M(C_.dk,.6,.3));bx(g,.36,.36,.36,1.45,.56,.42,M(C_.st,.5,.6));bx(g,.06,.42,1.2,1.96,.66,0,M(0x3a4048,.6,.4));[-.72,.72].forEach(z=>tb(g,[1.33,.32,z*.25],[1.33,.32,z],.035,M(C_.dk,.5,.6)));});
+  V.P("susp",[0,.25,1.5],0,g=>{const m=M(C_.dk,.5,.5),y=M(C_.ye,.5,.3);[-.66,.66].forEach(z=>{tb(g,[1.33,.34,z],[1.3,.95,z*.95],.04,m);cy(g,.075,.075,.3,1.31,.72,z*.97,y,"y",12);tb(g,[-1.32,.32,z],[-1.3,.8,z*.95],.035,m);});tb(g,[1.18,.36,-.62],[1.18,.36,.62],.03,M(C_.st,.4,.7));tb(g,[1.18,.36,0],[.75,.95,.36],.02,M(C_.st,.4,.7));tb(g,[-1.32,.32,-.7],[-1.32,.32,.7],.05,m);});
+  V.P("brake",[0,.25,-1.5],0,g=>{const d=M(C_.gy,.35,.8),c=M(C_.rd,.5,.3);[[1.33,1],[1.33,-1],[-1.32,1],[-1.32,-1]].forEach(([x,s])=>{cy(g,.15,.15,.03,x,.32,s*.7,d,"z",24);bx(g,.1,.12,.07,x+.1,.4,s*.7,c);});bx(g,.2,.16,.16,1.05,.8,-.5,M(C_.dk,.5,.5));});
+  V.P("wheel",[0,0,0],0,(g,R)=>{const t=M(C_.rb,.9,0),r=M(C_.gy,.35,.7);R.w=[[1.33,1],[1.33,-1],[-1.32,1],[-1.32,-1]].map(([x,s])=>{const G=sub(g,x,.32,s*.84,[0,0,s*.75]);const w=wh(G,0,0,0,.32,.2,t,r);w.userData.front=x>0;return w;});});
+  V.P("tank",[-.95,.2,0],0,g=>{bx(g,1.5,.12,1.2,.05,.4,0,M(0x2d5d8a,.5,.4));bx(g,.6,.24,1.0,-.95,.5,0,M(C_.dk,.6,.2));});
+  V.P("restraint",[0,.55,0],0,g=>{const s=M(0x4a535c,.8,0),b=M(C_.rd,.7,0),a=M(C_.wh,.8,0);[[.25,.38],[.25,-.38],[-.65,.38],[-.65,-.38]].forEach(([x,z])=>{bx(g,.46,.1,.44,x,.62,z,s);const k=bx(g,.1,.56,.44,x-.24,.92,z,s);k.rotation.z=-.15;const bl=bx(g,.03,.7,.05,x-.1,.92,z+(z>0?.2:-.2),b);bl.rotation.z=.5;});sp(g,.17,.72,1.0,.38,a,.6,1,1);sp(g,.2,.78,.98,-.38,a,.6,1,1.1);});
+  V.P("adas",[.35,1.6,0],0,g=>{const m=M(C_.dk,.4,.3),l=M(C_.bl,.3,.3);bx(g,.08,.06,.14,.82,1.36,0,m);bx(g,.05,.1,.16,2.17,.58,0,l);bx(g,.22,.06,.18,.62,.82,-.5,m);[[2.12,.7],[2.12,-.7],[-2.14,.7],[-2.14,-.7]].forEach(([x,z])=>cy(g,.025,.025,.04,x,.52,z,l,"x",10));});
+ },
+ anim(R,t,on){R.w.forEach(w=>{w.rotation.z=-t*6;w.parent.rotation.y=on&&w.userData.front?Math.sin(t*1.2)*.3:0;});}};
+
+/* ---------------- motorcycle ---------------- */
+DEFS.moto={n:B("มอเตอร์ไซค์","Motorcycle"),mass:B("ราว 200 กก.","about 200 kg"),ref:B("อ้างอิง: รถสปอร์ตเนกเก็ตขนาดกลาง","Reference: mid-size naked bike"),
+ make:B("รับรองแบบตามข้อกำหนด UN และกฎยุโรป 168/2013 ซึ่งบังคับ ABS ในรถเกิน 125 ซีซี หมวกนิรภัยรับรองตาม UN R22","Type-approved to UN regulations and EU 168/2013, which requires ABS above 125 cc. Helmets are approved to UN R22."),
+ keep:B("ในไทยรถจักรยานยนต์อายุครบ 5 ปีขึ้นไปต้องตรวจสภาพทุกปี โซ่ ยาง และเบรก คือสามจุดที่ต้องดูบ่อยที่สุด","In Thailand motorcycles aged 5 years or more are inspected every year. Chain, tyres and brakes need the most frequent checks."),
+ txt:{
+  frame:["โครงรถ","Frame","ท่อเหล็กหรืออะลูมิเนียมเชื่อม ยึดเครื่องยนต์ คอ และสวิงอาร์มให้อยู่ในแนวเดียวกัน","Welded steel or aluminium tubes holding the engine, steering head and swingarm in line.","EU 168/2013 · ดูแล: ตรวจรอยร้าวที่รอยเชื่อมและจุดยึดเครื่องยนต์","EU 168/2013 · Upkeep: check welds and engine mounts for cracks.","ไม่มีโครงสร้างป้องกันผู้ขี่ ร่างกายรับแรงชนโดยตรง","No structure protects the rider; the body takes the impact directly."],
+  engine:["เครื่องยนต์และท่อไอเสีย","Engine and exhaust","เครื่องยนต์สูบเรียงพร้อมเกียร์ในตัว เป็นส่วนหนึ่งของโครงสร้างรถ","An inline engine with a built-in gearbox, often part of the structure.","ไอเสียตามมาตรฐาน Euro 5 · ดูแล: น้ำมันเครื่อง ระยะวาล์ว หัวเทียน","Euro 5 emissions · Upkeep: oil, valve clearances, spark plugs.","อัตราเร่งสูงเมื่อเทียบกับน้ำหนัก ล้อหน้ายกหรือล้อหลังหมุนฟรีได้ง่าย","High power for the weight: the front wheel lifts or the rear spins easily."],
+  fork:["โช้คหน้าและแฮนด์","Front fork and handlebar","โช้คเทเลสโคปิกสองข้าง รับแรงเบรกเกือบทั้งหมดและบังคับทิศทาง","Twin telescopic legs that carry almost all the braking load and steer the bike.","ดูแล: น้ำมันโช้ค ซีลกันรั่ว และลูกปืนคอ","Upkeep: fork oil, seals and steering-head bearings.","ที่ความเร็วสูง ถ้ายาง ลูกปืนคอ หรือการบรรทุกผิดปกติ รถจะส่าย (wobble/weave)","At speed, bad tyres, worn head bearings or poor loading can set off a wobble or weave."],
+  swing:["สวิงอาร์มและโช้คหลัง","Swingarm and rear shock","แขนแกว่งยึดล้อหลัง มีโช้คเดี่ยวรับแรง","A pivoting arm carries the rear wheel on a single shock.","ดูแล: ลูกปืนจุดหมุนและการรั่วของโช้ค","Upkeep: pivot bearings and shock leaks.",null,null],
+  wheels:["ล้อและยาง","Wheels and tyres","ยางหน้าตัดโค้งเพื่อให้เอียงรถเข้าโค้งได้","Round-profile tyres that let the bike lean into corners.","UN R75 (ยางรถจักรยานยนต์) · ดูแล: ลมยางและดอกยาง","UN R75 (motorcycle tyres) · Upkeep: pressures and tread.","หน้าสัมผัสยางเล็กมาก เอียงได้เท่าที่แรงเสียดทานให้ ทราย น้ำมัน หรือเส้นทาสีเปียกทำให้ล้มทันที","Tiny contact patches: lean is limited by friction, and sand, oil or wet paint can drop the bike at once."],
+  brakes:["เบรกและ ABS","Brakes and ABS","ดิสก์เบรกหน้าหลัง มีชุด ABS ป้องกันล้อล็อก","Front and rear discs with an ABS unit that stops the wheels locking.","UN R78 (เบรก) · ดูแล: ผ้าเบรก น้ำมันเบรก","UN R78 (braking) · Upkeep: pads and brake fluid.","ตอนเบรกน้ำหนักถ่ายไปล้อหน้าเกือบหมด ถ้าไม่มี ABS บีบแรงเกินล้อหน้าล็อกแล้วล้ม","Under braking almost all the weight moves to the front; without ABS a hard squeeze locks it and the bike falls."],
+  tank:["ถังน้ำมันและเบาะ","Fuel tank and seat","ถังเหล็กอยู่เหนือเครื่องยนต์ ผู้ขี่ใช้เข่าหนีบเพื่อทรงตัว","A steel tank above the engine that the rider grips with the knees.","ดูแล: ตรวจรั่วและสนิมในถัง","Upkeep: check for leaks and rust inside.",null,null],
+  drive:["โซ่และสเตอร์","Chain and sprockets","โซ่ส่งกำลังจากเกียร์ไปล้อหลัง","A chain takes power from the gearbox to the rear wheel.","ดูแล: หล่อลื่นและตั้งความตึงทุก 500–1,000 กม.","Upkeep: lubricate and adjust every 500–1,000 km.","โซ่ขาดหรือหลุดอาจทำให้ล้อหลังล็อกทันที","A broken or thrown chain can lock the rear wheel instantly."],
+  lights:["ไฟและระบบไฟฟ้า","Lights and electrics","ไฟหน้า ไฟท้าย และแบตเตอรี่","Headlight, tail light and battery.","UN R53 (การติดตั้งไฟ) · ดูแล: ไฟทุกดวงต้องติด","UN R53 (lighting installation) · Upkeep: every lamp working.","รถเล็กและแคบ คนขับรถยนต์มักกะระยะและความเร็วของมอเตอร์ไซค์ผิด","Small and narrow: car drivers often misjudge a motorcycle's distance and speed."]},
+ build(V){
+  V.P("frame",[0,.85,0],0,g=>{const m=M(C_.or,.4,.4);[-.09,.09].forEach(z=>{tb(g,[.56,.98,z*.5],[-.25,.46,z],.028,m);tb(g,[.56,.98,z*.5],[-.45,.8,z],.024,m);tb(g,[-.45,.8,z],[-.92,.86,z*.8],.02,m);tb(g,[-.25,.46,z],[-.5,.8,z],.02,m);});tb(g,[.56,.98,0],[.22,.36,0],.026,m);cy(g,.04,.04,.2,.57,.98,0,m,"y",10).rotation.z=-.42;});
+  V.P("engine",[0,0,1.0],0,g=>{const m=M(0x5d646b,.5,.6);bx(g,.42,.3,.3,0,.42,0,m);const h=bx(g,.2,.32,.26,.1,.68,0,M(C_.st,.5,.6));h.rotation.z=-.3;const e=M(C_.gy,.3,.8);tb(g,[.2,.6,.12],[.25,.3,.16],.025,e);tb(g,[.25,.3,.16],[-.45,.32,.2],.025,e);tb(g,[-.45,.32,.2],[-.9,.45,.22],.05,e,12);});
+  V.P("fork",[.75,.2,0],0,g=>{const m=M(C_.st,.3,.8),d=M(C_.dk,.5,.4);[-.1,.1].forEach(z=>{tb(g,[.5,1.08,z],[.74,.3,z],.022,m);tb(g,[.6,.72,z],[.74,.3,z],.03,d);});tb(g,[.47,1.1,-.34],[.47,1.1,.34],.014,d);bx(g,.06,.03,.26,.52,1.04,0,d);});
+  V.P("swing",[-.6,0,0],0,g=>{const m=M(C_.st,.4,.6);[-.12,.12].forEach(z=>tb(g,[-.25,.46,z],[-.72,.3,z],.028,m));tb(g,[-.33,.76,0],[-.5,.4,0],.03,M(C_.ye,.5,.3),10);});
+  V.P("wheels",[0,0,0],0,(g,R)=>{const t=M(C_.rb,.9,0),r=M(C_.gy,.35,.7);R.w=[wh(sub(g,.74,.3,0,[1.5,0,0]),0,0,0,.3,.11,t,r),wh(sub(g,-.72,.3,0,[-1.4,0,0]),0,0,0,.3,.15,t,r)];});
+  V.P("brakes",[0,0,-1.0],0,g=>{const d=M(C_.gy,.35,.8),c=M(C_.rd,.5,.3);cy(g,.15,.15,.012,.74,.3,-.09,d,"z",24);bx(g,.07,.1,.04,.86,.38,-.09,c);cy(g,.11,.11,.012,-.72,.3,-.1,d,"z",24);bx(g,.06,.08,.04,-.62,.36,-.1,c);bx(g,.1,.08,.08,-.2,.72,0,M(C_.dk,.5,.4));});
+  V.P("tank",[0,1.5,0],0,g=>{sp(g,.2,.12,.94,0,M(C_.or,.3,.4),1.5,.75,.85);bx(g,.5,.07,.24,-.5,.88,0,M(C_.dk,.9,0));});
+  V.P("drive",[0,0,-1.6],0,g=>{const m=M(C_.dk,.5,.6);tb(g,[-.2,.46,-.14],[-.72,.36,-.14],.01,m,6);tb(g,[-.2,.4,-.14],[-.72,.24,-.14],.01,m,6);cy(g,.1,.1,.012,-.72,.3,-.14,M(C_.st,.4,.7),"z",20);cy(g,.035,.035,.014,-.2,.43,-.14,M(C_.st,.4,.7),"z",12);});
+  V.P("lights",[.35,1.0,.7],0,g=>{sp(g,.09,.72,.96,0,M(0xfff4d6,.2,.1,{emissive:lin(0xfff4d6),emissiveIntensity:.6}),.6,1,1);bx(g,.05,.05,.14,-.95,.86,0,M(C_.rd,.4,.1,{emissive:lin(0xff2020),emissiveIntensity:.5}));bx(g,.14,.12,.08,-.28,.66,0,M(C_.dk,.6,.2));});
+ },
+ anim(R,t){R.w.forEach(w=>w.rotation.z=-t*6);}};
+
+/* ---------------- bus ---------------- */
+DEFS.bus={n:B("รถบัสโดยสาร","Bus"),mass:B("ราว 18 ตันเมื่อบรรทุกเต็ม","about 18 t loaded"),ref:B("อ้างอิง: รถโค้ชชั้นเดียว 12 เมตร","Reference: 12 m single-deck coach"),
+ make:B("โครงสร้างและทางออกตาม UN R107 ความแข็งแรงเมื่อพลิกคว่ำตาม UN R66 วัสดุภายในตาม UN R118 ในไทย รถโดยสารที่จดทะเบียนใหม่ตั้งแต่ปี 2556 และสูงเกิน 3.6 ม. ต้องผ่านการทดสอบพื้นเอียง 30 องศา","Construction and exits to UN R107, rollover strength to UN R66, interior materials to UN R118. In Thailand, buses newly registered since 2013 and taller than 3.6 m must pass a 30-degree tilt test."),
+ keep:B("ตรวจสภาพตามรอบของกรมการขนส่งทางบก ถังก๊าซ CNG มีอายุใช้งานและต้องตรวจตามกำหนด ระบบเบรกลมต้องระบายน้ำและตรวจรั่วสม่ำเสมอ","Inspected on the Department of Land Transport's cycle. CNG cylinders have a service life and scheduled checks, and air brakes need regular draining and leak tests."),
+ txt:{
+  super:["โครงตัวถังกันพลิกคว่ำ","Rollover superstructure","โครงเหล็กกล่องเชื่อมเป็นวงรอบห้องโดยสาร ต้องคงพื้นที่รอดชีวิตไว้เมื่อรถพลิกคว่ำ","Welded steel hoops around the cabin that must keep a survival space when the bus rolls over.","UN R66 (ความแข็งแรงของโครงสร้างเมื่อพลิกคว่ำ) UN R107 · ดูแล: ตรวจสนิมที่โคนเสาและรอยเชื่อม","UN R66 (superstructure strength in rollover), UN R107 · Upkeep: check pillar bases and welds for rust.","จุดศูนย์ถ่วงสูง โดยเฉพาะรถสองชั้น การทดสอบพื้นเอียงกำหนดไว้ที่ 28–35 องศาแล้วแต่ประเทศและแบบรถ (ไทย 30 องศา)","A high centre of gravity, above all on double-deckers. Tilt tests are set at 28–35 degrees depending on country and type (Thailand: 30 degrees)."],
+  chassis:["แชสซีและเพลา","Chassis and axles","คานเหล็กตามยาวสองเส้น รับน้ำหนักเครื่องยนต์ เพลา และตัวถัง","Two long steel rails that carry the engine, the axles and the body.","ดูแล: ตรวจรอยร้าวและการต่อเติมที่ไม่ได้รับอนุญาต","Upkeep: check for cracks and unauthorised modifications.","การต่อเติมตัวถังให้สูงหรือยาวกว่าที่แชสซีออกแบบไว้ทำให้การทรงตัวและเบรกแย่ลง","Bodies built taller or longer than the chassis was designed for hurt stability and braking."],
+  engine:["เครื่องยนต์ท้ายรถและรีทาร์เดอร์","Rear engine and retarder","เครื่องดีเซลหรือก๊าซวางท้าย มีรีทาร์เดอร์ช่วยหน่วงความเร็วโดยไม่ใช้เบรกล้อ","A rear diesel or gas engine with a retarder that slows the bus without the wheel brakes.","ดูแล: น้ำมันเครื่อง ระบบหล่อเย็น และการรั่วของเชื้อเพลิงในห้องเครื่อง","Upkeep: oil, cooling system and fuel leaks in the engine bay.","ลงเขายาวถ้าใช้เบรกล้ออย่างเดียว เบรกจะร้อนจนจาง ต้องใช้เกียร์ต่ำและรีทาร์เดอร์","On a long descent the wheel brakes alone overheat and fade; low gear and the retarder are essential."],
+  airbrake:["ระบบเบรกลม","Air brake system","ถังลม คอมเพรสเซอร์ และหม้อลมเบรกที่ล้อ แบ่งเป็นสองวงจรแยกกัน","Air tanks, a compressor and brake chambers at the wheels, split into two separate circuits.","UN R13 (เบรกรถหนัก) · ดูแล: ระบายน้ำถังลม ตรวจรั่ว ตรวจผ้าเบรก","UN R13 (heavy vehicle braking) · Upkeep: drain tanks, leak-test, check linings.","ถ้าลมหมด เบรกสปริงจะล็อกเองเพื่อความปลอดภัย แต่เบรกจางจากความร้อนยังเกิดได้","If air is lost the spring brakes apply by themselves, but heat fade can still happen."],
+  doors:["ประตูและทางออกฉุกเฉิน","Doors and emergency exits","ประตูบริการ ประตูฉุกเฉิน ช่องหลังคา และค้อนทุบกระจก","Service door, emergency door, roof hatches and glass hammers.","UN R107 กำหนดจำนวนและขนาดทางออกตามจำนวนผู้โดยสาร · ดูแล: ทางออกต้องเปิดได้และไม่มีของขวาง","UN R107 sets the number and size of exits by passenger count · Upkeep: exits must open and stay clear.","เมื่อรถล้มตะแคง ประตูด้านหนึ่งใช้ไม่ได้ และควันทำให้เวลาหนีเหลือไม่กี่นาที","With the bus on its side, one side's doors are useless, and smoke leaves only minutes to get out."],
+  seats:["ที่นั่งและเข็มขัด","Seats and belts","ที่นั่งยึดกับพื้นและผนัง ออกแบบให้รับแรงของคนด้านหลังที่พุ่งมาชน","Seats anchored to floor and wall, designed to take the load of the passenger behind.","UN R80 (ความแข็งแรงของที่นั่ง) R14/R16 (เข็มขัด) · ดูแล: จุดยึดที่นั่งและหัวเข็มขัด","UN R80 (seat strength), R14/R16 (belts) · Upkeep: seat mounts and buckles.","ที่นั่งที่เพิ่มเองหรือยึดไม่ได้มาตรฐานหลุดจากพื้นเมื่อชน","Added or poorly anchored seats tear loose in a crash."],
+  fuel:["ถังก๊าซ CNG","CNG cylinders","ถังความดันสูงราว 200 บาร์ ติดตั้งใต้ท้องรถ","High-pressure cylinders at about 200 bar under the floor.","UN R110 (ระบบ CNG) · ดูแล: ตรวจถัง วาล์ว และท่อตามกำหนด ถังมีวันหมดอายุ","UN R110 (CNG systems) · Upkeep: scheduled checks of cylinders, valves and lines; cylinders have an expiry date.","ก๊าซที่รั่วในที่ปิดติดไฟได้เร็ว วาล์วระบายความดันปล่อยก๊าซออกเมื่อถังร้อน","Leaked gas ignites fast in enclosed spaces; relief valves vent the gas when a cylinder gets hot."],
+  fire:["ระบบตรวจจับและดับเพลิงห้องเครื่อง","Engine-bay fire detection and suppression","สายตรวจจับความร้อนรอบเครื่องยนต์ และถังสารดับเพลิงพร้อมหัวฉีด","A heat-sensing line around the engine and an extinguisher bottle with nozzles.","UN R107 (ตรวจจับและดับเพลิงห้องเครื่อง) UN R118 (วัสดุภายในลามไฟช้า) · ดูแล: ตรวจความดันถังและสายตรวจจับ","UN R107 (engine-bay detection and suppression), UN R118 (slow-burning interior materials) · Upkeep: check bottle pressure and the sensing line.","ดับได้เฉพาะในห้องเครื่อง ไฟที่เริ่มในห้องโดยสารหรือที่ยางต้องพึ่งการหนีออกให้เร็ว","Covers only the engine bay; a fire starting in the cabin or at a tyre leaves escape as the only defence."],
+  wheels:["ล้อและยาง","Wheels and tyres","ล้อหน้าเดี่ยว ล้อหลังคู่ รับน้ำหนักเพลาละหลายตัน","Single front and twin rear wheels, each axle carrying several tonnes.","UN R54 (ยางรถเพื่อการพาณิชย์) · ดูแล: ลมยาง ดอกยาง และยางหล่อดอกที่หมดสภาพ","UN R54 (commercial vehicle tyres) · Upkeep: pressures, tread and worn retreads.","ยางระเบิดที่ล้อหน้าทำให้เสียการบังคับทันที ยางที่ลมอ่อนร้อนจนลุกไหม้ได้","A front blowout takes away steering at once, and an under-inflated tyre can heat until it burns."]},
+ build(V){
+  V.P("super",[0,1.5,0],1,g=>{const m=M(C_.or,.5,.3),sk=M(C_.or,.5,.2,{transparent:true,opacity:.22});for(let x=-5.7;x<=5.75;x+=1.27){[-1.23,1.23].forEach(z=>bx(g,.08,2.45,.08,x,2.3,z,m));bx(g,.08,.08,2.54,x,3.5,0,m);}
+   [[3.5,1.23],[3.5,-1.23],[1.95,1.23],[1.95,-1.23],[1.1,1.23],[1.1,-1.23]].forEach(([y,z])=>bx(g,11.6,.07,.07,0,y,z,m));bx(g,11.9,2.5,2.5,0,2.3,0,sk);});
+  V.P("chassis",[0,0,0],0,g=>{const m=M(C_.dk,.6,.4);[-.6,.6].forEach(z=>bx(g,11.4,.24,.1,0,.82,z,m));for(let x=-5;x<=5;x+=1.65)bx(g,.1,.16,1.2,x,.82,0,m);bx(g,11.8,.06,2.46,0,1.07,0,M(C_.gy,.8,0));const a=M(C_.st,.5,.6);cy(g,.09,.09,2.1,3.7,.5,0,a,"z",12);cy(g,.12,.12,1.9,-3.3,.5,0,a,"z",12);sp(g,.26,-3.3,.5,0,a);});
+  V.P("engine",[-1.6,0,0],0,g=>{bx(g,1.3,.85,.95,-5.1,1.5,0,M(0x5d646b,.5,.6));bx(g,1.1,.14,.9,-5.1,2.0,0,M(C_.dk,.6,.3));cy(g,.26,.26,.9,-4.0,1.3,0,M(C_.st,.5,.6),"x",16);cy(g,.3,.3,.4,-3.5,1.3,0,M(C_.bl,.5,.4),"x",16);bx(g,.1,.9,.9,-5.85,1.6,.7,M(0x3a4048,.6,.4));});
+  V.P("airbrake",[0,0,1.9],0,g=>{const m=M(C_.gy,.4,.6),c=M(C_.ye,.5,.3);[.95,-.95].forEach(z=>cy(g,.16,.16,1.0,2.0,.6,z,m,"x",16));cy(g,.16,.16,.9,.8,.6,.95,m,"x",16);bx(g,.3,.3,.3,-4.4,1.25,.6,M(C_.dk,.5,.4));[[3.7,.8],[3.7,-.8],[-3.3,.6],[-3.3,-.6]].forEach(([x,z])=>cy(g,.11,.11,.16,x-.3,.62,z,c,"x",12));});
+  V.P("doors",[0,.5,2.4],0,(g,R)=>{const m=M(0x2d5d8a,.4,.3,{transparent:true,opacity:.8});R.door=bx(g,1.0,2.1,.06,4.7,2.15,1.3,m);bx(g,.9,1.9,.06,-2.2,2.2,1.3,M(C_.rd,.5,.2,{transparent:true,opacity:.8}));[2.5,-2.5].forEach(x=>bx(g,.8,.06,.6,x,3.57,0,M(C_.gy,.5,.3)));for(let x=-4;x<=3;x+=2.3)bx(g,.05,.16,.05,x,2.9,1.2,M(C_.rd,.5,.2));});
+  V.P("seats",[0,.75,0],0,g=>{const s=M(0x2d5d8a,.9,0),b=M(0x23486b,.9,0);for(let x=-4.1;x<=3.9;x+=.92)[-.72,.72].forEach(z=>{bx(g,.46,.1,.9,x,1.55,z,s);const k=bx(g,.08,.72,.9,x-.24,1.95,z,b);k.rotation.z=-.12;});});
+  V.P("fuel",[0,0,-2.1],0,g=>{const m=M(C_.wh,.4,.3);[-.9,-.3,.3,.9].forEach(z=>{cy(g,.2,.2,1.9,-.9,.55,z,m,"x",16);sp(g,.2,.05,.55,z,m);sp(g,.2,-1.85,.55,z,m);});tb(g,[.15,.55,-.9],[.15,.55,.9],.02,M(C_.ye,.5,.4));});
+  V.P("fire",[-1.2,1.6,0],0,g=>{const r=M(C_.rd,.5,.2);cy(g,.1,.1,.5,-4.3,2.35,.95,r,"y",12);[[.5],[-.5]].forEach(([z])=>tb(g,[-5.75,2.15,z],[-4.45,2.15,z],.015,r,6));tb(g,[-5.75,2.15,-.5],[-5.75,2.15,.5],.015,r,6);tb(g,[-4.45,2.15,-.5],[-4.45,2.15,.5],.015,r,6);tb(g,[-4.3,2.15,.5],[-4.3,2.2,.95],.012,r,6);});
+  V.P("wheels",[0,0,0],0,(g,R)=>{const t=M(C_.rb,.9,0),r=M(C_.gy,.35,.7);R.w=[];[[3.7,1.12],[3.7,-1.12],[-3.3,1.12],[-3.3,-1.12],[-3.3,.8],[-3.3,-.8]].forEach(([x,z])=>{R.w.push(wh(sub(g,x,.5,z,[0,0,Math.sign(z)*(Math.abs(z)>1?1.1:.75)]),0,0,0,.5,.28,t,r));});});
+ },
+ anim(R,t,on){R.w.forEach(w=>w.rotation.z=-t*4);R.door.position.x=4.7-(on?(.5+.5*Math.sin(t*1.2))*1.0:0);}};
+
+/* ---------------- train ---------------- */
+DEFS.train={n:B("รถไฟฟ้า","Electric train"),mass:B("ราว 40 ตันต่อตู้","about 40 t per car"),ref:B("อ้างอิง: รถไฟฟ้าชานเมือง หนึ่งตู้มีห้องคนขับ","Reference: one driving car of a commuter EMU"),
+ make:B("ในยุโรปรวมอยู่ในข้อกำหนด TSI สำหรับรถจักรและรถโดยสาร ซึ่งอ้างมาตรฐาน EN 12663 (ตัวถัง) EN 15227 (การชน) EN 45545 (ไฟ) และ EN 13749 (โบกี้) ระบบอาณัติสัญญาณพัฒนาตาม EN 50126/50128/50129","In Europe these sit under the Locomotives and Passenger rolling stock TSI, which calls up EN 12663 (bodies), EN 15227 (crashworthiness), EN 45545 (fire) and EN 13749 (bogies). Signalling is developed to EN 50126/50128/50129."),
+ keep:B("มีหน่วยงานรับผิดชอบการซ่อมบำรุงที่ต้องได้รับการรับรอง ตรวจรายวันก่อนให้บริการ ซ่อมตามระยะทาง และซ่อมใหญ่ตามจำนวนปี ล้อและเพลาตรวจด้วยอัลตราโซนิกตามรอบ","A certified entity in charge of maintenance; daily checks before service, mileage-based exams and overhauls by years. Wheels and axles get scheduled ultrasonic tests."),
+ txt:{
+  body:["ตัวถังรถ","Carbody","ท่ออะลูมิเนียมรีดขึ้นรูปหรือสเตนเลสเชื่อมเป็นท่อแข็ง พื้น ผนัง และหลังคาช่วยกันรับแรง","Welded aluminium extrusions or stainless steel forming a stiff tube in which floor, walls and roof all carry load.","EN 12663 (ความแข็งแรงตัวถัง) EN 45545 (วัสดุทนไฟ) · ดูแล: ตรวจรอยร้าวที่มุมประตูและหน้าต่าง","EN 12663 (body strength), EN 45545 (fire-safe materials) · Upkeep: check door and window corners for cracks.","รับแรงอัดที่ปลายรถได้ตามพิกัดของประเภทรถ เกินกว่านั้นห้องโดยสารเริ่มยุบ","Takes an end compression load set by its category; beyond that the passenger space starts to crush."],
+  crash:["ส่วนดูดซับแรงชนและตัวกันปีน","Crash absorbers and anti-climbers","ข้อต่อพ่วงพร้อมตัวดูดซับ กล่องยุบตัว และแผ่นซี่กันตู้ปีนขึ้นทับกัน","A coupler with an absorber, crush boxes and ribbed plates that stop one car riding up over another.","EN 15227 กำหนดสถานการณ์ชน เช่น ชนขบวนแบบเดียวกันที่ 36 กม./ชม. และชนรถบรรทุกที่จุดตัดที่ 110 กม./ชม. · ดูแล: เปลี่ยนชิ้นที่ยุบแล้ว","EN 15227 sets collision scenarios such as an identical train at 36 km/h and a lorry on a crossing at 110 km/h · Upkeep: replace any crushed element.","ออกแบบไว้สำหรับการชนที่ความเร็วไม่กี่สิบกม./ชม. ที่ความเร็วสูงกว่านั้นต้องพึ่งระบบอาณัติสัญญาณไม่ให้ชนเลย","Designed for collisions at a few tens of km/h; at higher speeds safety depends on signalling preventing the collision."],
+  bogie:["โครงโบกี้","Bogie frame","โครงเหล็กรูปตัว H รับน้ำหนักตัวถังและยึดล้อเพลา มอเตอร์ และเบรก","An H-shaped steel frame that carries the body and holds wheelsets, motors and brakes.","EN 13749 · ดูแล: ตรวจรอยร้าวด้วยวิธีไม่ทำลาย (NDT) ตามรอบ","EN 13749 · Upkeep: scheduled non-destructive crack testing.","เป็นชิ้นส่วนรับความล้า รอยร้าวที่ไม่ถูกพบจะลามจนหัก","A fatigue-loaded part: an undetected crack grows until the frame breaks."],
+  wheelset:["ล้อและเพลา","Wheelsets","ล้อเหล็กอัดติดกับเพลา หน้าล้อเป็นทรงกรวยเพื่อให้ขบวนกลับเข้ากลางรางเอง","Steel wheels pressed onto an axle; the coned treads steer the train back to the centre of the track.","EN 13260–13262 (ล้อและเพลา) EN 15313 (การบำรุงรักษา) · ดูแล: ตรวจเพลาด้วยอัลตราโซนิก กลึงล้อเมื่อสึกหรือแบน","EN 13260–13262 (wheels and axles), EN 15313 (maintenance) · Upkeep: ultrasonic axle tests, reprofile worn or flatted wheels.","ล้อเหล็กบนรางเหล็กเกาะได้น้อย (สัมประสิทธิ์ราว 0.1–0.3) ระยะเบรกจึงยาวหลายร้อยเมตรถึงเป็นกิโลเมตร","Steel on steel grips poorly (coefficient about 0.1–0.3), so stopping takes hundreds of metres to kilometres."],
+  susp:["ระบบรองรับ","Suspension","สปริงขั้นแรกที่กล่องเพลา และถุงลมขั้นที่สองระหว่างโบกี้กับตัวถัง","Primary springs at the axleboxes and secondary air springs between bogie and body.","EN 14363 (ทดสอบสมรรถนะการวิ่ง) · ดูแล: ถุงลม โช้ค และระดับความสูงของรถ","EN 14363 (running behaviour tests) · Upkeep: air springs, dampers and ride height.","เกินความเร็ววิกฤต โบกี้จะส่ายซ้ายขวา (hunting) และมีเกณฑ์แรงด้านข้างต่อแรงกดล้อเพื่อกันล้อปีนราง","Above a critical speed the bogie hunts from side to side, and a lateral-to-vertical wheel force limit guards against flange climb."],
+  traction:["มอเตอร์ขับและอินเวอร์เตอร์","Traction motors and inverter","มอเตอร์ไฟฟ้ากระแสสลับขับเพลาผ่านเฟืองทด อินเวอร์เตอร์ใต้พื้นคุมกำลัง","AC motors drive the axles through gears; an under-floor inverter controls the power.","ดูแล: ลูกปืนมอเตอร์ น้ำมันเฟืองทด และระบบระบายความร้อน","Upkeep: motor bearings, gear oil and cooling.","แรงฉุดถูกจำกัดด้วยแรงเกาะล้อกับราง รางเปียกหรือมีใบไม้ทำให้ล้อหมุนฟรี","Tractive effort is capped by wheel-rail grip; wet or leaf-covered rails cause wheelslip."],
+  brake:["ระบบเบรก","Brakes","เบรกคืนพลังงานผ่านมอเตอร์ เสริมด้วยจานเบรกลม","Regenerative braking through the motors, backed by pneumatic disc brakes.","EN 14531 (การคำนวณสมรรถนะเบรก) · ดูแล: ผ้าเบรก จานเบรก และระบบกันล้อล็อก","EN 14531 (brake performance calculation) · Upkeep: pads, discs and wheel-slide protection.","ล้อล็อกบนรางลื่นทำให้ล้อแบนเป็นจุด และระยะหยุดยาวเกินที่สัญญาณเผื่อไว้","A locked wheel on a slippery rail gets a flat spot, and the stop overruns what the signalling allowed for."],
+  panto:["แพนโทกราฟ","Pantograph","แขนสปริงดันแถบคาร์บอนแตะสายไฟเหนือศีรษะเพื่อรับไฟ","A sprung arm pressing a carbon strip against the overhead wire to collect current.","EN 50206 (แพนโทกราฟ) EN 50367 (การทำงานร่วมกับสายส่ง) · ดูแล: ความหนาแถบคาร์บอนและแรงกด","EN 50206 (pantographs), EN 50367 (interaction with the overhead line) · Upkeep: carbon strip wear and contact force.","แรงกดต้องพอดี เร็วเกินไปสายไฟแกว่งจนหน้าสัมผัสหลุด เกิดประกายไฟและสายขาดได้","Contact force must be just right; too fast and the wire bounces, arcing and risking a dewirement."],
+  cab:["ห้องคนขับและระบบป้องกันอัตโนมัติ","Cab and automatic train protection","แผงควบคุม สายอากาศรับข้อมูลจากราง และคอมพิวเตอร์ที่สั่งเบรกเองเมื่อฝ่าสัญญาณหรือเร็วเกิน","The desk, an antenna reading trackside data and a computer that brakes by itself for a passed signal or overspeed.","ETCS หรือ CBTC พัฒนาตาม EN 50126/50128/50129 · ดูแล: ทดสอบระบบก่อนออกให้บริการ","ETCS or CBTC, developed to EN 50126/50128/50129 · Upkeep: system test before entering service.","ป้องกันได้เฉพาะเส้นทางที่ติดตั้งและเปิดใช้ระบบ ถ้าตัดระบบออกก็เหลือแค่คนขับ","Protects only where the system is fitted and switched on; isolate it and only the driver is left."],
+  doors:["ประตูผู้โดยสาร","Passenger doors","ประตูบานเลื่อนไฟฟ้า ล็อกเองเมื่อรถเคลื่อน","Powered sliding doors that lock when the train moves.","EN 14752 (ระบบประตู) · ดูแล: เซนเซอร์กันหนีบและกลไกเปิดฉุกเฉิน","EN 14752 (door systems) · Upkeep: obstacle detection and the emergency release.","ผู้โดยสารเปิดเองได้เมื่อดึงคันฉุกเฉินเท่านั้น ในอุโมงค์หรือบนทางยกระดับการลงจากรถยังอันตราย","Passengers can open them only with the emergency handle, and getting down in a tunnel or on a viaduct is still dangerous."]},
+ build(V){
+  V.P("body",[0,1.75,0],1,g=>{const w=M(C_.wh,.5,.2),a=M(C_.or,.5,.2);bx(g,20.2,2.7,2.86,-.9,2.55,0,w);ext(g,[[9.2,1.2],[11.0,1.2],[11.0,2.2],[10.3,3.9],[9.2,3.9]],2.86,w);bx(g,20.2,.3,2.9,-.9,1.5,0,a);const gl=M(0x1b2733,.1,.5,{transparent:true,opacity:.8});[-1.45,1.45].forEach(z=>bx(g,18.6,.9,.04,-1.2,2.9,z,gl));const cg=ext(g,[[10.42,2.3],[10.98,2.3],[10.4,3.6]],2.5,gl);});
+  V.P("crash",[1.6,0,0],0,g=>{const m=M(C_.dk,.5,.5);cy(g,.14,.14,1.1,11.3,1.0,0,m,"x",12);bx(g,.3,.3,.34,11.9,1.0,0,m);[-.75,.75].forEach(z=>{bx(g,.8,.3,.3,10.75,1.3,z,M(C_.ye,.6,.2));bx(g,.1,.3,.5,11.2,1.3,z,M(C_.rd,.5,.3));for(let i=0;i<3;i++)bx(g,.14,.03,.5,11.22,1.21+i*.09,z,m);});});
+  const bogies=[7.5,-7.5];
+  V.P("bogie",[0,0,0],0,g=>{const m=M(0x5d646b,.6,.4);bogies.forEach(x=>{[-1.0,1.0].forEach(z=>bx(g,3.2,.2,.18,x,.62,z,m));bx(g,.5,.24,2.1,x,.62,0,m);});});
+  V.P("wheelset",[0,-1.0,0],0,(g,R)=>{const s=M(C_.st,.35,.8);R.w=[];bogies.forEach(x=>[-1.25,1.25].forEach(d=>{const G=sub(g,x+d,.43,0);cy(G,.085,.085,2.1,0,0,0,s,"z",12);[-.75,.75].forEach(z=>{cy(G,.43,.43,.13,0,0,z,s,"z",28);cy(G,.47,.47,.03,0,0,z*.92,s,"z",28);bx(G,.5,.06,.14,0,0,z,M(C_.dk,.5,.5));});g.add(G);R.w.push(G);}));});
+  V.P("susp",[0,.9,0],0,g=>{const r=M(C_.rb,.9,0),y=M(C_.ye,.5,.3);bogies.forEach(x=>{[-1.0,1.0].forEach(z=>{cy(g,.28,.28,.3,x,.95,z,r,"y",18);[-1.25,1.25].forEach(d=>cy(g,.09,.09,.26,x+d,.62,z,y,"y",10));tb(g,[x+.5,.66,z*1.12],[x+.9,1.12,z*1.12],.035,M(C_.dk,.5,.5));});});});
+  V.P("traction",[0,-.2,-2.0],0,g=>{const m=M(C_.bl,.5,.4);bogies.forEach(x=>[-.62,.62].forEach(d=>{cy(g,.26,.26,.7,x+d,.5,-.1,m,"z",16);bx(g,.3,.5,.16,x+d*2.0,.45,.5,M(C_.st,.5,.6));}));bx(g,2.6,.5,1.7,0,.82,0,M(C_.dk,.6,.3));bx(g,1.2,.45,1.5,-3,.82,0,M(0x3a4048,.6,.3));});
+  V.P("brake",[0,-.2,2.0],0,g=>{const d=M(C_.gy,.35,.8),c=M(C_.rd,.5,.3);bogies.forEach(x=>[-1.25,1.25].forEach(e=>{cy(g,.3,.3,.07,x+e,.43,.33,d,"z",24);bx(g,.16,.2,.16,x+e-.3*Math.sign(e),.5,.33,c);}));bx(g,1.2,.42,.8,3.4,.8,.6,M(C_.gy,.5,.4));cy(g,.2,.2,1.2,4.9,.78,.7,M(C_.gy,.4,.6),"x",14);});
+  V.P("panto",[0,3.0,0],0,(g,R)=>{const m=M(C_.dk,.5,.5);bx(g,1.7,.08,1.1,4,3.98,0,m);[[3.3,.4],[3.3,-.4],[4.7,.4],[4.7,-.4]].forEach(([x,z])=>cy(g,.06,.08,.14,x,3.92,z,M(C_.wh,.4,.1),"y",10));const G=sub(g,3.4,4.02,0);tb(G,[0,0,0],[1.0,.62,0],.035,M(C_.rd,.5,.3));tb(G,[1.0,.62,0],[.2,1.22,0],.03,M(C_.rd,.5,.3));bx(G,.12,.05,1.6,.2,1.25,0,m);bx(G,.3,.03,.9,.2,1.25,0,m);R.pan=G;});
+  V.P("cab",[1.2,.6,0],0,g=>{const m=M(C_.dk,.6,.3);bx(g,.5,.5,1.8,10.0,2.0,0,m);bx(g,.4,.08,.44,9.4,1.85,.5,M(0x2d5d8a,.8,0));bx(g,.08,.6,.44,9.2,2.2,.5,M(0x2d5d8a,.8,0));bx(g,.9,.1,.5,9.6,.38,0,M(C_.ye,.5,.3));bx(g,.5,.8,.5,8.8,1.65,-1.0,M(0x3a4048,.5,.3));cy(g,.03,.03,.5,9.4,4.15,0,m,"y",8);});
+  V.P("doors",[0,.6,0],0,(g,R)=>{const m=M(C_.or,.5,.3);R.doors=[];[5,0,-5,-9.6].forEach(x=>[-1,1].forEach(s=>{const G=sub(g,x,2.3,s*1.46,[0,0,s*.55]);const a=bx(G,.65,2.0,.06,-.33,0,0,m),b=bx(G,.65,2.0,.06,.33,0,0,m);R.doors.push([a,b]);}));});
+ },
+ anim(R,t,on){R.w.forEach(w=>w.rotation.z=-t*5);R.pan.scale.y=on?.55+.45*Math.min(1,Math.max(0,Math.sin(t*.8)*1.4+.6)):1;const o=on?Math.max(0,Math.sin(t*.9))*.6:0;R.doors.forEach(([a,b])=>{a.position.x=-.33-o;b.position.x=.33+o;});}};
+
+/* ---------------- ship ---------------- */
+DEFS.ship={n:B("เรือสินค้า","Cargo ship"),mass:B("ระวางขับน้ำราว 130,000 ตัน","about 130,000 t displacement"),ref:B("อ้างอิง: เรือตู้สินค้ายาว 300 เมตร","Reference: 300 m container ship"),
+ make:B("ออกแบบและต่อตามกฎของสมาคมจัดชั้นเรือ (สมาชิก IACS) และอนุสัญญาของ IMO ได้แก่ SOLAS (ความปลอดภัย) MARPOL (มลพิษ) และ Load Lines (แนวน้ำบรรทุก)","Designed and built to the rules of a classification society (an IACS member) and the IMO conventions: SOLAS (safety), MARPOL (pollution) and Load Lines."),
+ keep:B("สมาคมจัดชั้นเรือตรวจประจำปี ตรวจกลางรอบ และตรวจใหญ่ทุก 5 ปี เรือต้องขึ้นอู่แห้งตรวจท้องเรือ 2 ครั้งในรอบ 5 ปี บริษัทเรือต้องมีระบบจัดการความปลอดภัยตาม ISM Code และรัฐเมืองท่าสุ่มตรวจเรือที่เข้าเทียบ","Class carries out annual, intermediate and five-yearly special surveys, with the bottom inspected in dry dock twice in five years. The operator runs a safety management system under the ISM Code, and port states inspect visiting ships."),
+ txt:{
+  hull:["ตัวเรือ","Hull","แผ่นเหล็กเชื่อมบนโครงกงและคานตามยาว ท้องเรือและข้างเรือเป็นสองชั้น","Welded steel plating on frames and longitudinals, with a double bottom and double sides.","กฎสมาคมจัดชั้นเรือ และ IACS UR S11A (ความแข็งแรงตามยาวของเรือตู้สินค้า) · ดูแล: วัดความหนาเหล็กและตรวจการผุกร่อนตอนขึ้นอู่","Class rules and IACS UR S11A (longitudinal strength of container ships) · Upkeep: thickness measurements and corrosion surveys in dry dock.","ตัวเรือเป็นเหมือนคานยาว คลื่นทำให้แอ่นกลาง (sagging) หรือโก่งกลาง (hogging) ถ้าจัดน้ำหนักผิดหรือเจอคลื่นใหญ่เกิน เรืออาจหักกลางลำ","The hull is a long beam that waves bend into sagging or hogging; with bad loading or extreme seas it can break its back."],
+  bow:["หัวเรือกระเปาะ","Bulbous bow","กระเปาะใต้น้ำสร้างคลื่นหักล้างคลื่นหัวเรือ ลดแรงต้านและประหยัดเชื้อเพลิง","An underwater bulb whose wave cancels the bow wave, cutting drag and fuel use.","ดูแล: ตรวจรอยบุบและการผุกร่อน","Upkeep: check for dents and corrosion.","ออกแบบมาสำหรับความเร็วและระดับกินน้ำค่าเดียว วิ่งช้าลงหรือบรรทุกเบากว่านั้นประสิทธิภาพลดลง","Tuned for one speed and draught; slower steaming or lighter loading makes it less effective."],
+  holds:["ระวาง ผนังกั้นน้ำ และตู้สินค้า","Holds, bulkheads and containers","ผนังกั้นน้ำตามขวางแบ่งเรือเป็นห้อง ตู้สินค้าซ้อนในระวางและบนฝาระวาง ยึดด้วยตัวล็อกและเหล็กรัด","Transverse watertight bulkheads divide the ship; containers stack in the holds and on the hatch covers, held by twistlocks and lashing rods.","CSS Code (การจัดเก็บและผูกรัดสินค้า) · SOLAS บังคับแจ้งน้ำหนักตู้ที่ชั่งจริง (VGM) · ดูแล: ตรวจตัวล็อกและอุปกรณ์ผูกรัด","CSS Code (cargo stowage and securing) · SOLAS requires a verified gross mass for each container · Upkeep: inspect twistlocks and lashings.","ตู้ซ้อนสูง เรือโคลงแรงตู้หล่นทะเลได้ น้ำหนักตู้ที่แจ้งผิดทำให้คำนวณเสถียรภาพผิด","Tall stacks can go overboard in heavy rolling, and mis-declared weights throw off the stability calculation."],
+  engine:["เครื่องยนต์หลัก","Main engine","เครื่องดีเซลสองจังหวะรอบต่ำ ต่อตรงกับเพลาใบจักร สูงเท่าตึกหลายชั้น","A slow-speed two-stroke diesel coupled straight to the propeller shaft, as tall as a multi-storey building.","MARPOL Annex VI (ไอเสีย) และกฎสมาคมจัดชั้นเรือ · ดูแล: ซ่อมตามชั่วโมงทำงาน","MARPOL Annex VI (exhaust emissions) and class rules · Upkeep: overhauls by running hours.","เรือส่วนใหญ่มีเครื่องเดียว ใบจักรเดียว ถ้าเครื่องดับหรือไฟดับ เรือบังคับไม่ได้","Most ships have one engine and one propeller; if it stops or the power fails, the ship cannot be controlled."],
+  prop:["เพลาและใบจักร","Shaft and propeller","เพลาเหล็กยาวหมุนใบจักรทองเหลืองผสมขนาดเส้นผ่านศูนย์กลางเกือบ 10 เมตร","A long steel shaft turning a bronze-alloy propeller almost 10 m across.","IMO MSC.137(76) (มาตรฐานการบังคับเรือ) · ดูแล: ซีลเพลา และขัดผิวใบจักร","IMO MSC.137(76) (manoeuvrability standards) · Upkeep: shaft seals and blade polishing.","เดินเครื่องถอยหลังเต็มที่แล้วเรือยังไถลต่อไปอีกไกล เกณฑ์ IMO ยอมให้ถึง 15 เท่าของความยาวเรือ","Even at full astern the ship keeps going a long way; the IMO criterion allows up to 15 ship lengths."],
+  rudder:["หางเสือและเครื่องถือท้าย","Rudder and steering gear","หางเสือหลังใบจักร หมุนด้วยเครื่องไฮดรอลิก","A rudder behind the propeller turned by hydraulic steering gear.","SOLAS บทที่ II-1 กำหนดให้มีเครื่องถือท้ายหลักและสำรอง · ดูแล: ทดสอบเครื่องถือท้ายก่อนออกเรือ","SOLAS chapter II-1 requires main and auxiliary steering gear · Upkeep: steering gear test before departure.","หางเสือทำงานได้เมื่อมีน้ำไหลผ่าน ความเร็วต่ำเรือเลี้ยวช้า วงเลี้ยวกว้างได้ถึงราว 5 เท่าของความยาวเรือ","A rudder needs water flowing past it; at low speed the ship turns slowly, in a circle up to about 5 ship lengths across."],
+  bridge:["สะพานเดินเรือและที่พัก","Bridge and accommodation","ห้องบังคับเรือ อุปกรณ์เดินเรือ ที่พักลูกเรือ และปล่องไอเสีย","The wheelhouse, navigation equipment, crew quarters and the funnel.","SOLAS บทที่ V (เรดาร์ AIS แผนที่อิเล็กทรอนิกส์ เครื่องบันทึกข้อมูลการเดินเรือ) และ STCW (คุณวุฒิคนประจำเรือ)","SOLAS chapter V (radar, AIS, electronic charts, voyage data recorder) and STCW (crew qualifications).","ตู้สินค้าบังสายตาด้านหน้า SOLAS ยอมให้มีจุดบอดหน้าเรือได้ไม่เกิน 2 ช่วงลำเรือหรือ 500 เมตร แล้วแต่ค่าใดน้อยกว่า","Containers block the view ahead; SOLAS allows a blind sector of up to two ship lengths or 500 m, whichever is less."],
+  ballast:["ถังอับเฉา","Ballast tanks","ถังน้ำทะเลในท้องเรือและข้างเรือ ใช้ปรับการทรงตัวและระดับกินน้ำ","Seawater tanks in the double bottom and sides, used to trim and steady the ship.","Intact Stability Code (เสถียรภาพ) และอนุสัญญาน้ำอับเฉา (BWM) · ดูแล: สีเคลือบถังและการผุกร่อน","Intact Stability Code and the Ballast Water Management Convention · Upkeep: tank coatings and corrosion.","เสถียรภาพขึ้นกับการจัดน้ำอับเฉาและสินค้า จัดผิดเรือเอียงหรือพลิกคว่ำได้","Stability depends on how ballast and cargo are arranged; get it wrong and the ship lists or capsizes."],
+  lifeboat:["เรือชูชีพและแพชูชีพ","Lifeboat and liferafts","เรือชูชีพแบบปล่อยทิ้งตัวที่ท้ายเรือ และแพชูชีพในถังที่ปล่อยตัวเองได้","A free-fall lifeboat at the stern and liferafts in canisters that release by themselves.","SOLAS บทที่ III และ LSA Code · ดูแล: ซ้อมสละเรือและตรวจอุปกรณ์เป็นประจำ","SOLAS chapter III and the LSA Code · Upkeep: regular abandon-ship drills and equipment checks.","ใช้ได้ผลเมื่อลูกเรือซ้อมมาและมีเวลาพอ เรือที่เอียงมากหรือจมเร็วปล่อยเรือชูชีพยาก","Works when the crew is drilled and there is time; a heavy list or fast sinking makes launching hard."]},
+ build(V){
+  V.P("hull",[0,-1.1,0],1,g=>{ext(g,[[-150,0],[124,0],[150,24],[146,25],[-150,25]],45,M(0x1f4e79,.6,.2));bx(g,286,.5,45.4,-7,13,0,M(C_.wh,.6,.1));});
+  V.P("bow",[.45,-.2,0],0,g=>{sp(g,5.5,133,5,0,M(C_.rd,.6,.2),2.6,1,1);});
+  V.P("holds",[0,.75,0],0,g=>{const b=M(C_.gy,.7,.2);[-88,-52,-14,24,62,98].forEach(x=>bx(g,1,22,42,x,13,0,b));const t=new THREE.CanvasTexture((()=>{const c=document.createElement("canvas");c.width=256;c.height=128;const k=c.getContext("2d"),cols=["#c0392b","#2e86c1","#d4ac0d","#1e8449","#7d3c98","#e67e22","#95a5a6"];let s=5;for(let i=0;i<16;i++)for(let j=0;j<6;j++){s=(s*16807)%2147483647;k.fillStyle=cols[s%7];k.fillRect(i*16,j*21.4,15,20.4);}return c;})());t.encoding=THREE.sRGBEncoding;
+   const cm=M(0xffffff,.7,.1,{map:t});[[-125,22],[-70,34],[-33,36],[5,36],[43,36],[80,34],[112,24]].forEach(([x,l])=>bx(g,l,13,41,x,32,0,cm));});
+  V.P("engine",[0,0,-1.2],0,g=>{bx(g,22,13,9,-105,10,0,M(0x5d646b,.5,.6));bx(g,22,2,7,-105,17.5,0,M(C_.dk,.6,.3));[-4,4].forEach(z=>cy(g,1.6,1.6,4,-98,14,z,M(C_.st,.4,.6),"x",16));[[-112,9],[-112,-9],[-100,10]].forEach(([x,z])=>bx(g,6,3.5,3,x,5,z,M(C_.bl,.5,.4)));});
+  V.P("prop",[-.6,0,0],0,(g,R)=>{cy(g,.55,.55,34,-133,4.6,0,M(C_.st,.4,.7),"x",14);const G=sub(g,-151.5,4.6,0);const m=M(0xb8893b,.35,.8);cy(G,.9,.9,2.2,0,0,0,m,"x",16);for(let i=0;i<5;i++){const b=bx(G,.25,4.4,2.0,0,2.3,0,m);const p=new THREE.Group();p.rotation.x=i*Math.PI*2/5;b.rotation.y=.5;p.add(b);G.add(p);}R.prop=G;});
+  V.P("rudder",[-1.0,0,0],0,(g,R)=>{const G=sub(g,-157,0,0);bx(G,6,11,.9,-1.5,6,0,M(C_.rd,.6,.2));cy(G,.5,.5,6,0,14,0,M(C_.st,.4,.7),"y",12);R.rud=G;bx(g,5,3,7,-156,18.5,0,M(C_.ye,.5,.3));});
+  V.P("bridge",[-.12,1.25,0],0,g=>{const w=M(C_.wh,.6,.1);bx(g,14,25,40,-97,37.5,0,w);bx(g,8,3.2,50,-95,51.6,0,w);bx(g,8.2,1.4,42,-94.9,51.8,0,M(0x1b2733,.1,.5));bx(g,7,13,8,-112,36,0,M(C_.or,.5,.2));cy(g,.3,.3,9,-97,57.5,0,M(C_.st,.5,.5),"y",8);bx(g,.4,.4,5,-97,61,0,M(C_.st,.5,.5));});
+  V.P("ballast",[0,0,1.3],0,g=>{const m=M(0x4aa3d8,.4,.1,{transparent:true,opacity:.55});bx(g,250,2.2,40,-15,1.4,0,m);[-20.7,20.7].forEach(z=>bx(g,250,18,2.6,-15,11.6,z,m));});
+  V.P("lifeboat",[-.25,.95,0],0,g=>{const o=M(C_.or,.5,.1);const b=cy(g,1.5,1.5,8,-145,30,0,o,"x",14);b.rotation.y=0;b.rotation.z=Math.PI/2-.5;bx(g,10,.5,3.4,-145,27.4,0,M(C_.st,.5,.5)).rotation.z=-.5;[[-90,21.5],[-90,-21.5],[-80,21.5],[-80,-21.5]].forEach(([x,z])=>cy(g,.7,.7,1.6,x,26.6,z,M(C_.wh,.5,.1),"x",12));});
+ },
+ anim(R,t,on){R.prop.rotation.x=t*1.6;R.rud.rotation.y=on?Math.sin(t*.7)*.5:0;}};
+
+/* ---------------- airliner ---------------- */
+DEFS.plane={n:B("เครื่องบินโดยสาร","Airliner"),mass:B("น้ำหนักวิ่งขึ้นสูงสุดราว 78 ตัน","about 78 t maximum take-off"),ref:B("อ้างอิง: เครื่องบินทางเดินเดี่ยวสองเครื่องยนต์","Reference: single-aisle twinjet"),
+ make:B("ต้องได้ใบรับรองแบบตาม 14 CFR Part 25 ของสหรัฐฯ หรือ CS-25 ของยุโรป เครื่องยนต์รับรองแยกตาม Part 33 หรือ CS-E โรงงานต้องมีใบรับรองการผลิต และเครื่องทุกลำต้องมีใบสำคัญสมควรเดินอากาศ","Needs a type certificate under US 14 CFR Part 25 or European CS-25, with engines certified separately under Part 33 or CS-E. The factory holds a production approval and every aircraft an airworthiness certificate."),
+ keep:B("แผนซ่อมบำรุงจัดทำตามหลัก MSG-3 ตั้งแต่ตรวจก่อนบิน ตรวจย่อยทุกไม่กี่ร้อยชั่วโมงบิน ตรวจใหญ่ราวทุก 2 ปี ไปจนถึงตรวจโครงสร้างทั้งลำทุก 6–12 ปี งานทำโดยศูนย์ซ่อมที่ได้รับการรับรอง (Part 145) และเมื่อพบข้อบกพร่อง หน่วยงานกำกับออกคำสั่งบังคับแก้ไข (AD)","The maintenance programme follows MSG-3 logic: pre-flight checks, light checks every few hundred flight hours, heavy checks about every 2 years and full structural inspections every 6–12 years. Work is done by approved organisations (Part 145), and regulators issue mandatory airworthiness directives when defects emerge."),
+ txt:{
+  fuselage:["ลำตัว","Fuselage","เปลือกอะลูมิเนียมหรือคอมโพสิตบนกงและคานยาว ทำหน้าที่เป็นถังอัดความดันให้ห้องโดยสาร","An aluminium or composite skin on frames and stringers, acting as the pressure vessel for the cabin.","Part/CS 25.571 (ทนความเสียหายและความล้า) และ 25.365 (ภาระจากความดัน) · ดูแล: ตรวจรอยร้าวและการผุกร่อนตามแผนตรวจโครงสร้าง","Part/CS 25.571 (damage tolerance and fatigue) and 25.365 (pressurisation loads) · Upkeep: scheduled structural inspections for cracks and corrosion.","ทุกเที่ยวบินคือหนึ่งรอบของการพองและหด เครื่องบินมีจำนวนรอบสูงสุดที่แผนซ่อมบำรุงรองรับ","Every flight is one pressurisation cycle, and the aircraft has a maximum number of cycles its maintenance programme supports."],
+  wing:["ปีกและถังเชื้อเพลิง","Wing and fuel tanks","กล่องปีกจากคานหน้า คานหลัง และผิวปีก ข้างในเป็นถังเชื้อเพลิง","A wing box of front and rear spars and skins, with the fuel tanks inside.","Part/CS 25.301–25.337: แรงใช้งานสูงสุด 2.5 g และต้องทนได้ 1.5 เท่าของแรงนั้นโดยไม่พัง · ดูแล: ตรวจจุดต่อปีกกับลำตัวและการรั่วของถัง","Part/CS 25.301–25.337: a 2.5 g limit manoeuvring load, and no failure at 1.5 times limit load · Upkeep: wing-to-fuselage joints and tank leaks.","น้ำหนัก ความเร็ว และแรง g สูงสุด รวมกันเป็นกรอบการบิน บินเกินกรอบแล้วโครงสร้างเสียหายถาวรได้","Maximum weight, speed and g together form the flight envelope; outside it the structure can be permanently damaged."],
+  highlift:["แฟลปและสแลต","Flaps and slats","แผ่นที่ยื่นออกจากชายปีกหน้าและหลัง เพิ่มแรงยกตอนบินช้า","Surfaces that extend from the leading and trailing edges to add lift at low speed.","Part/CS 25.697–25.701 · ดูแล: รางเลื่อน สกรูขับ และการหล่อลื่น","Part/CS 25.697–25.701 · Upkeep: tracks, drive screws and lubrication.","ถ้ากางไม่ออก ความเร็วร่อนลงสูงขึ้นและต้องใช้รันเวย์ยาวขึ้นมาก","If they fail to extend, the landing speed and the runway needed both go up sharply."],
+  tail:["แพนหางและพื้นบังคับ","Tail and control surfaces","แพนหางดิ่งพร้อมหางเสือ และแพนหางระดับพร้อมแผ่นบังคับขึ้นลง","The fin with its rudder and the tailplane with its elevators.","Part/CS 25.671 (ระบบบังคับต้องทนความขัดข้องเดี่ยวได้) · ดูแล: ตัวขับไฮดรอลิกและจุดหมุน","Part/CS 25.671 (controls must tolerate single failures) · Upkeep: hydraulic actuators and hinges.","เหยียบหางเสือสุดสลับซ้ายขวาที่ความเร็วสูงสร้างแรงเกินที่แพนหางดิ่งออกแบบไว้","Full alternating rudder inputs at speed can load the fin beyond its design strength."],
+  engine:["เครื่องยนต์เทอร์โบแฟน","Turbofan engines","พัดลมหน้าสร้างแรงขับส่วนใหญ่ แกนกลางเผาเชื้อเพลิงเพื่อหมุนกังหัน","The front fan makes most of the thrust; the core burns fuel to drive the turbines.","14 CFR Part 33 / CS-E: ทดสอบดูดนก และใบพัดที่หลุดต้องถูกกักไว้ในตัวเรือน · ดูแล: ส่องกล้องตรวจภายใน และชิ้นส่วนหมุนจำกัดอายุตามรอบการใช้งาน","14 CFR Part 33 / CS-E: bird-ingestion tests, and a released fan blade must be contained · Upkeep: borescope inspections and life-limited rotating parts.","ออกแบบให้บินต่อและไต่ได้เมื่อเครื่องยนต์ดับหนึ่งเครื่อง ไม่ใช่ทั้งสองเครื่อง ฝูงนกใหญ่หรือเถ้าภูเขาไฟอยู่นอกขอบเขตที่ทดสอบ","Designed to keep flying and climbing with one engine out, not both; large bird flocks or volcanic ash go beyond what was tested."],
+  gear:["ฐานล้อ","Landing gear","ฐานล้อหน้าและฐานล้อหลักพับเก็บได้ มีโช้คน้ำมัน-ก๊าซและเบรกคาร์บอน","Retractable nose and main gear with oleo struts and carbon brakes.","Part/CS 25.721–25.735 · ดูแล: โช้ค ยาง เบรก และซ่อมใหญ่ตามจำนวนเที่ยวบิน","Part/CS 25.721–25.735 · Upkeep: struts, tyres, brakes, and overhaul by number of landings.","เบรกดูดซับพลังงานได้จำกัด ถ้ายกเลิกวิ่งขึ้นหลังความเร็วตัดสินใจ (V1) อาจหยุดไม่ทันในรันเวย์","Brakes can absorb only so much energy; rejecting a take-off after decision speed (V1) may not stop the aircraft on the runway."],
+  cockpit:["ห้องนักบินและระบบควบคุมการบิน","Flight deck and flight controls","คอมพิวเตอร์ควบคุมการบินหลายชุดทำงานซ้ำซ้อนกัน รับข้อมูลจากเซนเซอร์วัดความเร็วและมุมปะทะ","Several redundant flight control computers fed by airspeed and angle-of-attack sensors.","Part/CS 25.1309: ความขัดข้องขั้นหายนะต้องเกิดได้ยากอย่างยิ่ง · ซอฟต์แวร์ตาม DO-178C · ดูแล: ทดสอบระบบและอัปเดตซอฟต์แวร์ตามคำสั่ง","Part/CS 25.1309: catastrophic failures must be extremely improbable · software to DO-178C · Upkeep: system tests and mandated software updates.","ระบบป้องกันพึ่งเซนเซอร์ ถ้าเซนเซอร์ให้ค่าผิด ระบบอาจสั่งงานผิด นักบินต้องรู้วิธีตัดระบบและบินเอง","Protections rely on sensors; with bad sensor data the system can command the wrong thing, and pilots must know how to take over."],
+  apu:["ผนังกั้นความดันท้ายและ APU","Aft pressure bulkhead and APU","ผนังโดมปิดท้ายห้องโดยสารที่อัดความดัน ถัดไปคือเครื่องยนต์ช่วย (APU) สำหรับไฟฟ้าและลมตอนจอด","A dome closing the back of the pressurised cabin; behind it the auxiliary power unit supplies electricity and air on the ground.","Part/CS 25.365 และ 25.571 · ดูแล: ตรวจผนังกั้นและงานซ่อมเก่าอย่างละเอียด","Part/CS 25.365 and 25.571 · Upkeep: close inspection of the bulkhead and of old repairs.","งานซ่อมที่ทำผิดวิธีอาจล้าจนแตกหลังบินไปหลายปี ดังอุบัติเหตุ JAL เที่ยวบิน 123 ปี 1985","A wrongly made repair can fatigue and burst years later, as in the Japan Air Lines flight 123 accident of 1985."]},
+ build(V){
+  const Y=3.9;
+  V.P("fuselage",[0,0,0],1,g=>{const w=M(C_.wh,.4,.2);cy(g,1.98,1.98,22,2,Y,0,w,"x",28);sp(g,1.98,13,Y,0,w,2.9,1,1);cy(g,.45,1.98,9.8,-13.9,Y+.55,0,w,"x",28).rotation.z=Math.PI/2+.055;const gl=M(0x1b2733,.1,.5);[-1.985,1.985].forEach(z=>bx(g,19,.28,.03,2.5,Y+.45,z,gl));bx(g,1.3,.5,2.2,16.3,Y+.75,0,gl).rotation.z=-.5;bx(g,22,.14,3.98,2,Y-.2,0,M(C_.or,.5,.2));});
+  const wingPts=s=>[[4.6,s*1.9],[-3.4,s*17.6],[-5.2,s*17.6],[-4.3,s*7],[-4.3,s*1.9]];
+  V.P("wing",[0,-.55,0],0,g=>{const m=M(C_.gy,.4,.3);[1,-1].forEach(s=>{const G=sub(g,0,0,0,[0,0,s*.35]);G.rotation.x=-s*.09;pl(G,wingPts(s),.5,m,2.95);const wl=bx(G,1.6,2.2,.12,-4.6,3.9,s*17.6,M(C_.or,.4,.2));wl.rotation.z=-.35;});bx(g,6.5,.9,4.2,.3,2.55,0,m);});
+  V.P("highlift",[-.3,-1.1,0],0,(g,R)=>{const m=M(C_.st,.4,.3);R.flaps=[];[1,-1].forEach(s=>{const G=sub(g,0,0,0,[0,0,s*.35]);G.rotation.x=-s*.09;const f=sub(G,-4.3,2.75,0);pl(f,[[0,s*2.1],[0,s*6.9],[-1.5,s*6.9],[-1.5,s*2.1]],.18,m,0);const f2=sub(G,-4.3,2.78,0);pl(f2,[[0,s*7.2],[-.75,s*13.2],[-1.9,s*13.2],[-1.4,s*7.2]],.16,m,0);R.flaps.push(f,f2);pl(G,[[4.75,s*2.2],[-2.6,s*16.8],[-3.1,s*16.8],[4.2,s*2.2]],.14,M(C_.ye,.5,.3),3.02);});});
+  V.P("tail",[-.5,.45,0],0,(g,R)=>{const w=M(C_.wh,.4,.2),a=M(C_.or,.4,.2);ext(g,[[-12.6,5.7],[-17.2,11.8],[-18.9,11.8],[-17.6,5.6]],.34,a);R.rudder=ext(sub(g,-17.9,0,0),[[0,5.7],[-.25,11.6],[-1.3,11.6],[-.9,5.7]],.2,w);[1,-1].forEach(s=>{pl(g,[[-14.2,s*.9],[-17.6,s*6.2],[-18.7,s*6.2],[-18.2,s*.9]],.22,w,5.2);});});
+  V.P("engine",[.35,-.75,0],0,(g,R)=>{R.fans=[];[5.8,-5.8].forEach(z=>{const n=M(C_.wh,.4,.3);cy(g,1.12,1.18,2.6,4.6,1.75,z,n,"x",28);cy(g,.75,1.05,2.2,2.3,1.75,z,M(C_.st,.4,.6),"x",24);bx(g,3.4,.9,.3,3.3,2.75,z,n);const F=sub(g,5.92,1.75,z);const d=M(C_.dk,.4,.6);cy(F,.3,.02,.7,.2,0,0,M(C_.gy,.3,.6),"x",16).rotation.z=-Math.PI/2;for(let i=0;i<9;i++){const p=new THREE.Group();p.rotation.x=i*Math.PI*2/9;const b=bx(p,.05,.95,.3,0,.56,0,d);b.rotation.y=.5;F.add(p);}R.fans.push(F);});});
+  V.P("gear",[0,-1.2,0],0,(g,R)=>{const s=M(C_.st,.35,.8),t=M(C_.rb,.9,0),r=M(C_.gy,.35,.7);R.gear=[];const N=sub(g,13.2,2.2,0);tb(N,[0,0,0],[0,-1.75,0],.09,s);[-.26,.26].forEach(z=>wh(N,0,-1.78,z,.4,.22,t,r));N.userData.ax="z";R.gear.push(N);
+   [1,-1].forEach(sg=>{const G=sub(g,-.9,2.55,sg*3.8);tb(G,[0,0,0],[0,-1.95,0],.13,s);tb(G,[0,-.5,0],[0,-1.6,-sg*1.1],.06,s);[-.42,.42].forEach(z=>wh(G,0,-1.97,z,.58,.4,t,r));G.userData.ax="x";G.userData.sg=sg;R.gear.push(G);});});
+  V.P("cockpit",[.45,.55,0],0,g=>{const m=M(C_.dk,.6,.3),se=M(0x2d5d8a,.8,0);bx(g,.4,.5,2.0,16.0,Y+.1,0,m);[-.6,.6].forEach(z=>{bx(g,.5,.1,.5,15.2,Y-.1,z,se);bx(g,.1,.8,.5,14.9,Y+.3,z,se);});bx(g,2.2,.8,1.4,13.6,Y-1.0,0,M(0x3a4048,.5,.3));cy(g,.7,.7,.06,18.2,Y,0,M(C_.gy,.4,.5),"x",20);[1,-1].forEach(s=>bx(g,.3,.05,.05,16.6,Y-.5,s*1.4,M(C_.ye,.4,.5)));});
+  V.P("apu",[-.6,-.1,0],0,g=>{sp(g,1.9,-8.9,Y+.1,0,M(C_.st,.5,.4),.25,1,1);cy(g,.42,.42,1.5,-17.3,Y+.75,0,M(C_.bl,.5,.5),"x",16);cy(g,.2,.3,.6,-18.4,Y+.8,0,M(C_.dk,.5,.5),"x",12);});
+ },
+ anim(R,t,on){const s=on?.5+.5*Math.sin(t*.7):0;R.fans.forEach(f=>f.rotation.x=t*14);R.flaps.forEach((f,i)=>{f.rotation.z=s*(i%2?.45:.55);f.position.x=-4.3-s*.7;});R.rudder.parent.rotation.y=on?Math.sin(t*1.3)*.25:0;
+  const gk=on?Math.max(0,Math.sin(t*.7-1.2)):0;R.gear.forEach(G=>{if(G.userData.ax==="z")G.rotation.z=gk*1.45;else G.rotation.x=-G.userData.sg*gk*1.4;});}};
+
+/* ---------------- helicopter ---------------- */
+DEFS.heli={n:B("เฮลิคอปเตอร์","Helicopter"),mass:B("ราว 6–7 ตัน","about 6–7 t"),ref:B("อ้างอิง: เฮลิคอปเตอร์สองเครื่องยนต์ขนาดกลาง","Reference: medium twin-engine helicopter"),
+ make:B("รับรองแบบตาม 14 CFR Part 27 หรือ CS-27 สำหรับเครื่องขนาดเล็ก และ Part 29 หรือ CS-29 สำหรับเครื่องขนาดใหญ่ที่ใช้ขนส่ง","Type-certified to 14 CFR Part 27 or CS-27 for small rotorcraft and Part 29 or CS-29 for large transport rotorcraft."),
+ keep:B("ชิ้นส่วนหมุนเกือบทุกชิ้นจำกัดอายุตามชั่วโมงบินและต้องเปลี่ยนเมื่อครบแม้ยังดูดี ตรวจตามชั่วโมงบิน เครื่องขนาดใหญ่มีระบบเฝ้าระวังการสั่น (HUMS) เพื่อจับความผิดปกติของเกียร์และลูกปืนก่อนพัง","Almost every rotating part is life-limited by flight hours and replaced on time even if it looks fine. Inspections run by flight hours, and larger types carry vibration monitoring (HUMS) to catch gear and bearing faults early."),
+ txt:{
+  fuselage:["ลำตัวและห้องโดยสาร","Fuselage and cabin","โครงอะลูมิเนียมและคอมโพสิต พื้นและที่นั่งออกแบบให้ยุบดูดซับแรงกระแทกแนวดิ่ง","An aluminium and composite structure whose floor and seats crush to absorb vertical impact.","Part/CS 27 และ 29 ข้อ .561–.562 (สภาพการชนและที่นั่งดูดซับแรง) · ดูแล: ตรวจรอยร้าวที่จุดยึดเกียร์และหาง","Part/CS 27 and 29, .561–.562 (crash conditions and energy-absorbing seats) · Upkeep: cracks at gearbox and tail attachments.",null,null],
+  blades:["ใบพัดหลัก","Main rotor blades","ใบคอมโพสิตยาว สร้างทั้งแรงยกและแรงขับด้วยการเปลี่ยนมุมใบขณะหมุน","Long composite blades that make both lift and thrust by changing pitch as they turn.","Part/CS 29.571 (ความล้า) · ดูแล: ตรวจรอยร้าวและการหลุดล่อนของชั้นวัสดุ เปลี่ยนเมื่อครบอายุ","Part/CS 29.571 (fatigue) · Upkeep: check for cracks and delamination; replace at life limit.","ยิ่งบินเร็ว ใบที่หมุนถอยหลังยิ่งเสียแรงยก (retreating blade stall) เฮลิคอปเตอร์จึงมีความเร็วสูงสุดต่ำกว่าเครื่องบินมาก","The faster it flies, the more the retreating blade stalls, so a helicopter's top speed is far below an aeroplane's."],
+  hub:["ดุมใบพัดและสวอชเพลต","Rotor hub and swashplate","สวอชเพลตแปลงการขยับคันบังคับเป็นมุมใบที่เปลี่ยนไปตลอดรอบหมุน","The swashplate turns stick movements into blade pitch that varies around each revolution.","ดูแล: ลูกปืน ก้านปรับมุมใบ และแรงขันของน็อตยึดเพลา","Upkeep: bearings, pitch links and mast nut torque.","เป็นเส้นทางรับแรงเส้นเดียวที่ไม่มีสำรอง ก้านปรับมุมใบหรือน็อตยึดเพลาหลุดคือเสียการควบคุมทั้งหมด","A single load path with no backup: a lost pitch link or mast nut means total loss of control."],
+  gearbox:["ห้องเกียร์หลัก","Main gearbox","ลดรอบจากเครื่องยนต์หลายหมื่นรอบต่อนาทีเหลือไม่กี่ร้อยรอบที่ใบพัด","Reduces tens of thousands of engine rpm to a few hundred at the rotor.","Part/CS 29.927: เครื่องหมวด A ต้องทำงานต่อได้อย่างน้อย 30 นาทีหลังน้ำมันหล่อลื่นรั่วหมด · ดูแล: ตรวจเศษโลหะในน้ำมันและการสั่น","Part/CS 29.927: Category A types must keep running at least 30 minutes after loss of oil · Upkeep: oil chip detection and vibration monitoring.","ถ้าเกียร์หลักพัง ใบพัดหยุดหมุนและไม่มีทางร่อนลง ต่างจากเครื่องยนต์ดับที่ยังร่อนได้","If the main gearbox fails the rotor stops and no glide is possible, unlike an engine failure."],
+  engine:["เครื่องยนต์เทอร์โบชาฟต์","Turboshaft engines","เครื่องยนต์กังหันสองเครื่องส่งกำลังเข้าเกียร์หลัก","Two turbine engines feeding the main gearbox.","14 CFR Part 33 / CS-E · ดูแล: ส่องกล้องตรวจ ล้างคอมเพรสเซอร์ และชิ้นส่วนจำกัดอายุ","14 CFR Part 33 / CS-E · Upkeep: borescope checks, compressor washes and life-limited parts.","เครื่องดับหมดยังร่อนลงได้ด้วยการหมุนอิสระของใบพัด (autorotation) แต่มีช่วงความสูงกับความเร็วที่ทำไม่ทัน เรียกว่า dead man's curve","With all engines out it can still land by autorotation, but in some height and speed combinations there is not enough time: the dead man's curve."],
+  tail:["หางและใบพัดหาง","Tail boom and tail rotor","ใบพัดหางต้านแรงบิดจากใบพัดหลัก ขับด้วยเพลายาวตามแนวหาง","The tail rotor counters main rotor torque, driven by a long shaft along the boom.","ดูแล: ลูกปืนเพลาขับ เกียร์หาง และรอยร้าวที่หาง","Upkeep: driveshaft bearings, tail gearbox and boom cracks.","ถ้าใบพัดหางเสียแรงหรือเพลาขับขาด เครื่องจะหมุนรอบตัวเอง","If the tail rotor loses effectiveness or its shaft fails, the helicopter spins."],
+  gear:["ฐานสกี","Skid landing gear","ท่อโลหะดัดโค้ง ยุบตัวได้เพื่อดูดซับแรงเมื่อลงแรง","Bent metal tubes that deform to absorb a hard landing.","Part/CS 27/29.725 (ทดสอบปล่อยตก) · ดูแล: ตรวจการเสียรูปหลังลงแรง","Part/CS 27/29.725 (drop tests) · Upkeep: check for deformation after a hard landing.","ฐานแคบและจุดศูนย์ถ่วงสูง ลงบนพื้นเอียงหรือสกีเกี่ยวพื้นทำให้พลิกคว่ำ (dynamic rollover)","A narrow base and high centre of gravity: a slope or a caught skid can cause dynamic rollover."],
+  fuel:["ถังเชื้อเพลิงทนการชน","Crash-resistant fuel tank","ถังยางเสริมแรงใต้พื้นห้องโดยสาร มีวาล์วตัดเองเมื่อท่อขาด","Reinforced bladder tanks under the cabin floor with valves that seal when lines break.","Part/CS 27/29.952 (ระบบเชื้อเพลิงทนการชน) · ดูแล: ตรวจรั่วและสภาพถัง","Part/CS 27/29.952 (fuel system crash resistance) · Upkeep: leak checks and bladder condition.","เครื่องรุ่นเก่าที่รับรองก่อนกฎนี้ไม่มีถังแบบทนการชน ไฟหลังชนจึงเป็นสาเหตุการเสียชีวิตในอุบัติเหตุที่น่าจะรอดได้","Older types certified before this rule lack such tanks, so post-crash fire kills in otherwise survivable accidents."]},
+ build(V){
+  V.P("fuselage",[0,0,0],1,g=>{ext(g,[[3.7,1.25],[3.3,2.2],[1.9,2.78],[-1.7,2.78],[-2.7,2.3],[-3.0,1.5],[-2.4,.78],[2.7,.72]],2.1,M(C_.or,.35,.3));ext(g,[[3.55,1.45],[3.22,2.15],[1.95,2.7],[1.3,2.7],[1.3,1.5]],2.12,M(0x1b2733,.1,.5,{transparent:true,opacity:.7}));});
+  V.P("blades",[0,1.15,0],0,(g,R)=>{const G=sub(g,0,3.62,0),m=M(C_.dk,.5,.3);for(let i=0;i<4;i++){const p=new THREE.Group();p.rotation.y=i*Math.PI/2;bx(p,6.2,.06,.42,3.7,0,0,m);bx(p,.5,.07,.44,6.6,0,0,M(C_.ye,.5,.2));G.add(p);}R.rot=G;});
+  V.P("hub",[0,.6,0],0,(g,R)=>{const s=M(C_.st,.35,.8);cy(g,.11,.11,1.0,0,3.1,0,s,"y",12);const H=sub(g,0,3.62,0);cy(H,.34,.34,.22,0,0,0,s,"y",16);for(let i=0;i<4;i++){const a=i*Math.PI/2;tb(H,[.3*Math.cos(a),-.55,.3*Math.sin(a)],[.55*Math.cos(a+.5),0,.55*Math.sin(a+.5)],.02,M(C_.rd,.5,.3),6);}R.hub=H;const S=sub(g,0,3.05,0);cy(S,.33,.33,.05,0,.04,0,M(C_.ye,.5,.3),"y",20);cy(S,.33,.33,.05,0,-.03,0,M(C_.dk,.5,.4),"y",20);R.swash=S;});
+  V.P("gearbox",[0,.15,1.5],0,g=>{cy(g,.6,.7,.6,0,2.55,0,M(0x5d646b,.5,.6),"y",18);[-.45,.45].forEach(z=>tb(g,[-.65,2.6,z],[-.3,2.55,z*.5],.06,M(C_.st,.4,.7)));bx(g,.5,.3,.5,.7,2.6,0,M(C_.dk,.5,.4));});
+  V.P("engine",[-.75,.85,0],0,g=>{[-.45,.45].forEach(z=>{cy(g,.3,.3,1.4,-1.4,2.62,z,M(C_.bl,.5,.5),"x",16);cy(g,.2,.26,.5,-2.35,2.66,z,M(C_.dk,.5,.5),"x",12);cy(g,.24,.3,.3,-.6,2.62,z,M(C_.st,.4,.6),"x",12);});});
+  V.P("tail",[-1.3,0,0],0,(g,R)=>{const m=M(C_.or,.35,.3);cy(g,.2,.48,5.6,-5.6,2.05,0,m,"x",16);ext(g,[[-7.9,2.0],[-8.9,3.9],[-9.4,3.9],[-8.8,1.7]],.14,m);bx(g,.8,.06,2.2,-7.6,2.2,0,m);tb(g,[-2.9,2.5,0],[-8.6,2.9,0],.035,M(C_.st,.4,.7),6);const T_=sub(g,-8.75,2.95,.22);for(let i=0;i<2;i++){const b=bx(T_,.16,1.9,.03,0,0,0,M(C_.dk,.5,.3));b.rotation.z=i*Math.PI/2;}cy(T_,.09,.09,.16,0,0,0,M(C_.st,.4,.7),"z",10);R.tr=T_;});
+  V.P("gear",[0,-.75,0],0,g=>{const m=M(C_.st,.4,.7);[-1.15,1.15].forEach(z=>{tb(g,[2.4,.08,z],[-1.9,.08,z],.05,m);tb(g,[2.4,.08,z],[2.75,.3,z],.05,m);[1.3,-1.0].forEach(x=>tb(g,[x,.08,z],[x,.8,z*.55],.045,m));});[1.3,-1.0].forEach(x=>tb(g,[x,.8,-.63],[x,.8,.63],.045,m));});
+  V.P("fuel",[0,-.2,-1.5],0,g=>{bx(g,1.9,.42,1.5,-.5,1.0,0,M(C_.dk,.8,.1));[[.5,.5],[.5,-.5]].forEach(([x,z])=>cy(g,.05,.05,.12,x,1.25,z,M(C_.rd,.5,.3),"y",8));});
+ },
+ anim(R,t,on){R.rot.rotation.y=t*7;R.hub.rotation.y=t*7;R.tr.rotation.z=t*20;R.swash.rotation.z=on?Math.sin(t*1.1)*.14:0;R.swash.rotation.x=on?Math.cos(t*.9)*.1:0;}};
+
+/* ---------------- drone ---------------- */
+DEFS.drone={n:B("โดรน","Drone"),mass:B("ราว 0.9 กก.","about 0.9 kg"),ref:B("อ้างอิง: โดรนถ่ายภาพสี่ใบพัด","Reference: camera quadcopter"),
+ make:B("ในยุโรปต้องได้เครื่องหมายคลาส C0–C6 ตาม Regulation (EU) 2019/945 ซึ่งกำหนดน้ำหนัก ความเร็ว เสียง และระบบระบุตัวตนระยะไกล แบตเตอรี่ต้องผ่านการทดสอบ UN 38.3 จึงขนส่งได้","In Europe a drone carries a C0–C6 class mark under Regulation (EU) 2019/945, which sets mass, speed, noise and remote identification. Batteries must pass UN 38.3 testing before they can be shipped."),
+ keep:B("ไม่มีรอบซ่อมบังคับเหมือนอากาศยานใหญ่ ผู้บังคับต้องตรวจก่อนบินทุกครั้ง ได้แก่ ใบพัด แบตเตอรี่ เข็มทิศ และเฟิร์มแวร์ ในไทยต้องขึ้นทะเบียนโดรนและผู้บังคับตามที่กฎหมายกำหนด","There is no mandated overhaul cycle as for large aircraft: the pilot checks propellers, battery, compass and firmware before every flight. Thailand requires drones and pilots to be registered as the law sets out."),
+ txt:{
+  frame:["โครงและแขน","Frame and arms","พลาสติกเสริมใยหรือคาร์บอนไฟเบอร์ แขนพับได้ น้ำหนักต้องเบาที่สุด","Fibre-reinforced plastic or carbon fibre with folding arms, as light as possible.","EU 2019/945 แบ่งคลาสตามน้ำหนักวิ่งขึ้นสูงสุด · ดูแล: ตรวจรอยร้าวที่ข้อพับแขน","EU 2019/945 sets classes by maximum take-off mass · Upkeep: check arm hinges for cracks.","เกณฑ์ 250 กรัมเป็นเส้นแบ่งสำคัญของกฎหลายประเทศ เพราะหนักกว่านั้นพลังงานตอนตกใส่คนสูงขึ้นมาก","The 250 g threshold matters in many countries' rules because above it the energy of a fall onto a person rises sharply."],
+  motors:["มอเตอร์ไร้แปรงถ่าน","Brushless motors","มอเตอร์สี่ตัวเปลี่ยนรอบหมุนหลายร้อยครั้งต่อวินาทีเพื่อทรงตัว","Four motors that change speed hundreds of times a second to keep the drone level.","ดูแล: ฟังเสียงลูกปืนและเป่าฝุ่นทราย","Upkeep: listen to the bearings and clear sand and dust.","ความร้อนและลมแรงทำให้มอเตอร์ทำงานเต็มกำลังตลอด เหลือกำลังสำรองน้อย","Heat and strong wind keep the motors at full power with little in reserve."],
+  props:["ใบพัด","Propellers","ใบพลาสติกสองคู่ หมุนสวนทางกันเพื่อหักล้างแรงบิด","Two pairs of plastic blades turning in opposite directions to cancel torque.","ดูแล: เปลี่ยนทันทีเมื่อบิ่นหรือร้าว","Upkeep: replace at once if chipped or cracked.","โดรนสี่ใบพัดไม่มีสำรอง มอเตอร์หรือใบพัดเสียหนึ่งตัวก็ตก","A quadcopter has no redundancy: lose one motor or propeller and it falls."],
+  fc:["แผงควบคุมการบินและ GPS","Flight controller and GPS","เซนเซอร์วัดการเอียง เข็มทิศ GPS และตัวขับมอเตอร์ รวมกันบนแผงวงจร","Attitude sensors, compass, GPS and motor drivers on one set of boards.","ระบบระบุตัวตนระยะไกล (Remote ID) ตาม ASTM F3411 หรือข้อกำหนดยุโรป · ดูแล: อัปเดตเฟิร์มแวร์และสอบเทียบเข็มทิศ","Remote ID to ASTM F3411 or the European rules · Upkeep: firmware updates and compass calibration.","พึ่ง GPS และเข็มทิศ สัญญาณรบกวนหรือโครงเหล็กใกล้ๆ ทำให้โดรนลอยหลุดตำแหน่ง","Depends on GPS and compass; jamming or nearby steel can make it drift away."],
+  battery:["แบตเตอรี่ลิเทียม","Lithium battery","แบตลิเทียมโพลิเมอร์ เป็นชิ้นที่หนักที่สุดของโดรน","A lithium-polymer pack, the heaviest single part.","UN 38.3 (ทดสอบแบตเตอรี่ลิเทียมเพื่อการขนส่ง) · ดูแล: ไม่ใช้แบตบวม เก็บที่ประจุราวครึ่ง","UN 38.3 (lithium battery transport tests) · Upkeep: never fly a swollen pack; store at about half charge.","บินได้ราว 20–40 นาที อากาศหนาวแรงดันตกเร็ว แบตที่เสียหายลุกไหม้ได้","Flight time is about 20–40 minutes; cold makes voltage sag, and a damaged pack can catch fire."],
+  gimbal:["กล้องและกิมบอล","Camera and gimbal","กล้องบนแกนกันสั่นสามแกน","A camera on a three-axis stabilised mount.","ดูแล: ถอดตัวล็อกก่อนบินและเช็ดเลนส์","Upkeep: remove the lock before flight and clean the lens.","มุมมองแคบและไม่มีเสียง ผู้บังคับที่ดูแต่จอจะไม่เห็นอากาศยานอื่นที่เข้ามาใกล้","A narrow, silent view: a pilot watching only the screen will not notice other aircraft approaching."],
+  radio:["วิทยุและเสาอากาศ","Radio and antennas","รับคำสั่งและส่งภาพกลับ ใช้คลื่น 2.4 และ 5.8 กิกะเฮิรตซ์","Receives commands and sends video back on 2.4 and 5.8 GHz.","ดูแล: ตั้งค่า failsafe (กลับบ้านหรือลงจอด) ก่อนบินทุกครั้ง","Upkeep: set the failsafe (return home or land) before every flight.","ระยะสัญญาณจำกัด อาคารและภูเขาบังสัญญาณได้ เมื่อหลุดแล้วทุกอย่างขึ้นกับ failsafe ที่ตั้งไว้","Range is limited and buildings or hills block the link; once it drops, everything depends on the failsafe."],
+  gear:["ขาลงจอดและเซนเซอร์ด้านล่าง","Landing legs and downward sensors","ขาสั้นใต้แขน พร้อมกล้องและเซนเซอร์วัดความสูงสำหรับลงจอด","Short legs under the arms with cameras and height sensors for landing.","ดูแล: เช็ดเซนเซอร์ให้สะอาด","Upkeep: keep the sensors clean.","เซนเซอร์หลบสิ่งกีดขวางมองไม่เห็นสายไฟ กิ่งไม้เล็ก และกระจก","Obstacle sensors miss wires, thin branches and glass."]},
+ build(V){
+  const A=[[1,1],[1,-1],[-1,1],[-1,-1]],r=.125;
+  V.P("frame",[0,0,0],1,g=>{const m=M(0x5d646b,.5,.2);bx(g,.2,.05,.09,0,0,0,m);A.forEach(([a,b])=>tb(g,[a*.07,.005,b*.035],[a*r,.012,b*r],.011,m,6));});
+  V.P("motors",[0,.5,0],0,g=>{A.forEach(([a,b])=>cy(g,.016,.016,.026,a*r,.03,b*r,M(C_.dk,.4,.6),"y",14));});
+  V.P("props",[0,1.0,0],0,(g,R)=>{R.pr=A.map(([a,b])=>{const G=sub(g,a*r,.048,b*r);bx(G,.13,.003,.016,0,0,0,M(C_.or,.5,.1));cy(G,.008,.008,.01,0,0,0,M(C_.dk,.5,.3),"y",8);G.userData.d=a*b;return G;});});
+  V.P("fc",[0,1.5,0],0,g=>{bx(g,.075,.006,.06,0,.034,0,M(C_.gn,.6,.1));bx(g,.03,.008,.03,.02,.042,0,M(C_.dk,.5,.3));cy(g,.02,.02,.01,-.045,.04,0,M(C_.wh,.5,.1),"y",14);bx(g,.06,.005,.07,-.01,.022,0,M(0x2d5d8a,.6,.1));});
+  V.P("battery",[-1.1,0,0],0,g=>{bx(g,.11,.034,.06,-.02,0,0,M(C_.dk,.6,.2));bx(g,.012,.02,.05,-.08,0,0,M(C_.ye,.5,.3));});
+  V.P("gimbal",[.9,-.3,0],0,g=>{bx(g,.03,.03,.034,.115,-.03,0,M(C_.dk,.4,.3));cy(g,.011,.011,.012,.133,-.03,0,M(0x1b2733,.1,.6),"x",12);tb(g,[.1,.0,0],[.108,-.02,.022],.004,M(C_.st,.4,.6),6);});
+  V.P("radio",[-.4,-.9,0],0,g=>{[-.03,.03].forEach(z=>tb(g,[-.07,-.02,z],[-.085,-.07,z*1.4],.003,M(C_.dk,.5,.3),6));bx(g,.04,.006,.05,-.06,-.03,0,M(C_.gn,.6,.1));});
+  V.P("gear",[0,-.6,0],0,g=>{A.forEach(([a,b])=>tb(g,[a*r,.01,b*r],[a*r*1.05,-.05,b*r*1.05],.005,M(0x5d646b,.5,.2),6));[[.03],[-.03]].forEach(([x])=>cy(g,.008,.008,.006,x,-.027,0,M(0x1b2733,.1,.6),"y",10));});
+ },
+ anim(R,t){R.pr.forEach(p=>p.rotation.y=t*40*p.userData.d);}};
+
+/* ---------------- rocket ---------------- */
+DEFS.rocket={n:B("จรวด","Rocket"),mass:B("ราว 550 ตันตอนปล่อย","about 550 t at lift-off"),ref:B("อ้างอิง: จรวดสองท่อนบรรทุกลูกเรือ ท่อนแรกใช้ซ้ำได้","Reference: two-stage crewed launcher with a reusable first stage"),
+ make:B("โครงสร้างออกแบบตามค่าความปลอดภัยของ NASA-STD-5001 หรือ ECSS ของยุโรป จรวดเชิงพาณิชย์ของสหรัฐฯ ต้องได้ใบอนุญาตปล่อยตาม 14 CFR Part 450 และยานบรรทุกคนต้องผ่านข้อกำหนด human-rating ของ NASA","Structures use the safety factors of NASA-STD-5001 or Europe's ECSS. US commercial launches need a licence under 14 CFR Part 450, and crewed vehicles must meet NASA's human-rating requirements."),
+ keep:B("จรวดใช้ครั้งเดียวไม่มีการซ่อมบำรุง ใช้การทดสอบรับรองทุกชิ้นและทดสอบจุดเครื่องก่อนปล่อยแทน ส่วนท่อนแรกที่ใช้ซ้ำต้องตรวจและฟื้นสภาพเครื่องยนต์ ขา และถังก่อนบินเที่ยวถัดไป","An expendable rocket is never maintained; acceptance tests of every part and a static fire before launch take its place. A reusable first stage is inspected and refurbished (engines, legs, tanks) before each reflight."),
+ txt:{
+  s1:["ถังเชื้อเพลิงท่อนแรก","First-stage tanks","ถังอะลูมิเนียม-ลิเทียมผนังบาง บรรจุออกซิเจนเหลวและเชื้อเพลิง ต้องอัดความดันเพื่อช่วยรับแรง","Thin-walled aluminium-lithium tanks of liquid oxygen and fuel, pressurised to help carry the loads.","NASA-STD-5001: ค่าความปลอดภัยขั้นต่ำ 1.4 ต่อจุดแตกหักสำหรับโครงสร้างโลหะที่ทดสอบต้นแบบ · ดูแล: ทดสอบอัดความดันและตรวจรอยเชื่อมทุกถัง","NASA-STD-5001: a minimum ultimate factor of 1.4 for metallic structure verified by prototype test · Upkeep: proof-pressure tests and weld inspection of every tank.","เชื้อเพลิงคิดเป็นราว 90% ของมวลตอนปล่อย โครงสร้างจึงเผื่อได้น้อยกว่าเครื่องบิน (1.4 เทียบกับ 1.5)","Propellant is about 90% of lift-off mass, so structural margins are thinner than an aircraft's (1.4 against 1.5)."],
+  engines:["เครื่องยนต์และโครงรับแรงขับ","Engines and thrust structure","เครื่องยนต์เก้าตัวบนโครงรับแรงขับ ปั๊มเทอร์โบส่งเชื้อเพลิงหลายร้อยกิโลกรัมต่อวินาที","Nine engines on a thrust structure, each turbopump moving hundreds of kilograms of propellant a second.","ดูแล: ทดสอบจุดเครื่องทุกตัวก่อนติดตั้ง และทดสอบจุดทั้งท่อนบนแท่นก่อนปล่อย","Upkeep: acceptance firing of each engine, then a static fire of the whole stage on the pad.","ทำงานใกล้ขีดจำกัดของวัสดุ จรวดที่มีเครื่องยนต์หลายตัวอาจทนเครื่องดับได้หนึ่งตัว และต้องมีตัวหน่วงการสั่นตามแนวแกน (pogo)","Runs close to material limits; a multi-engine stage may tolerate one engine out, and needs suppressors for axial (pogo) oscillation."],
+  inter:["ช่วงต่อระหว่างท่อน","Interstage","ปลอกคอมโพสิตเชื่อมท่อนแรกกับท่อนสอง ภายในมีกลไกดันแยกท่อน","A composite sleeve joining the stages, with the separation pushers inside.","ดูแล: ทดสอบกลไกแยกท่อนบนพื้นก่อนประกอบ","Upkeep: ground tests of the separation mechanism before stacking.","การแยกท่อนต้องเกิดในจังหวะที่กำหนดพอดี ถ้าแยกไม่ออกภารกิจจบทันที","Separation must happen exactly on time; if it fails, the mission is over."],
+  s2:["ท่อนที่สอง","Second stage","ท่อนบนมีเครื่องยนต์หัวฉีดใหญ่สำหรับสุญญากาศ ส่งยานเข้าวงโคจร","The upper stage with a large vacuum nozzle that takes the spacecraft to orbit.","NASA-STD-5001 · ดูแล: ใช้ครั้งเดียว ตรวจรับก่อนประกอบ","NASA-STD-5001 · Upkeep: single use; accepted before stacking.","ต้องจุดเครื่องในสุญญากาศได้สำเร็จ จุดไม่ติดคือไปไม่ถึงวงโคจร","It must ignite in vacuum; no ignition means no orbit."],
+  capsule:["แคปซูลลูกเรือและโล่กันความร้อน","Crew capsule and heat shield","ห้องอัดความดันสำหรับลูกเรือ มีโล่กันความร้อนด้านล่างและร่มชูชีพสำหรับลงจอด","A pressurised cabin with a heat shield underneath and parachutes for landing.","NASA NPR 8705.2 (ข้อกำหนดสำหรับระบบที่บรรทุกคน) · ดูแล: ตรวจและเปลี่ยนโล่กันความร้อนและร่มทุกเที่ยว","NASA NPR 8705.2 (human-rating requirements) · Upkeep: inspect or replace the heat shield and parachutes every flight.","กลับเข้าบรรยากาศที่ราว 7.8 กม./วินาที ถ้าโล่กันความร้อนเสียหายไม่มีทางแก้กลางทาง","Re-entry is at about 7.8 km/s, and a damaged heat shield cannot be fixed on the way down."],
+  les:["ระบบหนีภัยขณะปล่อย","Launch escape system","จรวดเชื้อเพลิงแข็งดึงแคปซูลออกจากจรวดที่กำลังมีปัญหา","Solid rocket motors that pull the capsule clear of a failing launcher.","ดูแล: ทดสอบการหนีภัยจากแท่นปล่อยและระหว่างบินก่อนใช้งานจริง","Upkeep: pad-abort and in-flight abort tests before crewed use.","ช่วยได้เฉพาะช่วงการบินที่ออกแบบไว้ และลูกเรือต้องรับแรงหลายเท่าของแรงโน้มถ่วง","Covers only the flight phases it was designed for, and the crew takes many g."],
+  legs:["ขาลงจอดและครีบตะแกรง","Landing legs and grid fins","ขาคาร์บอนไฟเบอร์กางออกตอนลงจอด ครีบตะแกรงบังคับทิศทางตอนตกกลับ","Carbon-fibre legs deploy for landing; grid fins steer the stage on the way down.","ดูแล: ตรวจและฟื้นสภาพระหว่างเที่ยวบิน","Upkeep: inspected and refurbished between flights.","เชื้อเพลิงสำหรับลงจอดเหลือน้อยมาก จุดเครื่องช้าหรือเร็วไปเสี้ยววินาทีคือชนพื้นหรือเชื้อเพลิงหมดกลางอากาศ","Landing propellant is tiny: lighting the engine a fraction of a second early or late means hitting the ground or running dry in the air."],
+  avionics:["คอมพิวเตอร์การบินและระบบยุติการบิน","Flight computers and flight termination","คอมพิวเตอร์สามชุดคุมทิศทาง พร้อมระบบทำลายจรวดเมื่อออกนอกเขตปลอดภัย","Triple-redundant computers steer the rocket, with a system that destroys it if it leaves the safe corridor.","14 CFR Part 450 (ใบอนุญาตปล่อยและความปลอดภัยสาธารณะ) และ RCC 319 (ระบบยุติการบิน) · ดูแล: ทดสอบระบบก่อนปล่อยทุกครั้ง","14 CFR Part 450 (launch licensing and public safety) and RCC 319 (flight termination systems) · Upkeep: end-to-end test before every launch.","ช่วงแรงอากาศสูงสุด (max-q) ต้องลดแรงขับ ถ้าลมชั้นบนแรงเกินเกณฑ์ต้องเลื่อนปล่อย","Thrust is throttled down through maximum dynamic pressure (max-q), and upper winds beyond the limit scrub the launch."]},
+ build(V){
+  const Rr=1.85;
+  V.P("s1",[0,0,0],1,g=>{const w=M(C_.wh,.4,.2);cy(g,Rr,Rr,38,0,23,0,w,"y",32);cy(g,Rr+.01,Rr+.01,.5,0,24,0,M(C_.dk,.5,.3),"y",32);});
+  V.P("engines",[0,-.28,0],0,(g,R)=>{cy(g,Rr,Rr,1.3,0,3.35,0,M(C_.dk,.5,.5),"y",32);const m=M(0x5d646b,.4,.7);R.noz=[];[[0,0]].concat([...Array(8)].map((_,i)=>[1.22*Math.cos(i*Math.PI/4),1.22*Math.sin(i*Math.PI/4)])).forEach(([x,z])=>{const G=sub(g,x,2.7,z);cy(G,.24,.46,1.6,0,-.8,0,m,"y",16);const f=fx(cy(G,.42,.05,7,0,-5.1,0,fxM(0xffb347,.8),"y",12));f.userData.on=false;R.noz.push([G,f]);});});
+  V.P("inter",[0,.14,0],0,g=>{cy(g,Rr,Rr,5,0,44.5,0,M(C_.dk,.5,.2),"y",32);});
+  V.P("s2",[0,.34,0],0,g=>{cy(g,Rr,Rr,11,0,52.5,0,M(C_.wh,.4,.2),"y",32);cy(g,.4,1.4,3.2,0,45.4,0,M(0x5d646b,.4,.7),"y",20);});
+  V.P("capsule",[0,.55,0],0,g=>{cy(g,Rr,Rr,3,0,59.5,0,M(C_.gy,.4,.3),"y",32);cy(g,1.0,Rr,3.3,0,62.9,0,M(C_.wh,.4,.2),"y",32);cy(g,Rr+.02,Rr+.02,.3,0,61.15,0,M(C_.dk,.8,.1),"y",32);[0,1.6,3.2,4.8].forEach(a=>bx(g,.5,.5,.06,1.5*Math.cos(a),62.9,1.5*Math.sin(a),M(0x1b2733,.1,.5)).rotation.y=-a+Math.PI/2);});
+  V.P("les",[0,.78,0],0,g=>{const r=M(C_.rd,.5,.3);cy(g,.3,.3,3.2,0,67.6,0,M(C_.wh,.4,.2),"y",16);cy(g,.02,.3,.9,0,69.6,0,r,"y",16);[0,1.57,3.14,4.71].forEach(a=>tb(g,[.9*Math.cos(a),64.55,.9*Math.sin(a)],[.28*Math.cos(a),66.2,.28*Math.sin(a)],.05,r,6));});
+  V.P("legs",[0,0,0],0,(g,R)=>{const m=M(C_.dk,.5,.3);R.fins=[];[0,1,2,3].forEach(i=>{const a=i*Math.PI/2+Math.PI/4,cx=Math.cos(a),cz=Math.sin(a);const G=sub(g,0,0,0,[cx*.5,0,cz*.5]);tb(G,[cx*(Rr+.12),4.4,cz*(Rr+.12)],[cx*(Rr+.3),13.5,cz*(Rr+.3)],.22,m,10);const F=sub(G,cx*(Rr+.05),40.6,cz*(Rr+.05));F.rotation.y=-a;const f=bx(F,.12,1.5,1.3,.1,-.75,0,M(C_.st,.5,.6));R.fins.push(F);});});
+  V.P("avionics",[1.0,0,0],0,g=>{const t=new THREE.Mesh(new THREE.TorusGeometry(1.6,.13,8,28),M(C_.gn,.5,.2));t.rotation.x=Math.PI/2;t.position.y=57.4;g.add(t);bx(g,.1,30,.1,Rr+.06,24,0,M(C_.rd,.5,.2));bx(g,.3,.5,.4,Rr+.12,41,0,M(C_.ye,.5,.3));});
+ },
+ anim(R,t,on){R.noz.forEach(([G,f],i)=>{f.userData.on=on;f.visible=on&&st.mode==="3d";f.scale.y=.85+.25*Math.sin(t*30+i);G.rotation.z=on&&i===0?Math.sin(t*1.5)*.08:0;});R.fins.forEach(F=>F.rotation.z=on?-(.5+.5*Math.sin(t*.8))*1.45:0);}};
+
+const SRC=[
+["UNECE: UN Regulations 81–100 (R94, R95, R100 …)", "https://unece.org/transport/vehicle-regulations-wp29/standards/addenda-1958-agreement-regulations-81-100"],
+["UNECE: UN Regulations 101–120 (R107, R110, R118 …)", "https://unece.org/transport/vehicle-regulations-wp29/standards/addenda-1958-agreement-regulations-101-120"],
+["UNECE: UN Regulations 121–140 (R127, R135, R137, R140 …)", "https://unece.org/transport/vehicle-regulations-wp29/standards/addenda-1958-agreement-regulations-121-140"],
+["UNECE: UN Regulations 61–80 (R66, R78, R79, R80 …)", "https://unece.org/transport/vehicle-regulations-wp29/standards/addenda-1958-agreement-regulations-61-80"],
+["IATF: about IATF 16949", "https://www.iatfglobaloversight.org/iatf-169492016/about/"],
+["PPTV: รถโดยสารสูงเกิน 3.6 ม. ต้องทดสอบพื้นเอียง 30 องศา", "https://www.pptvhd36.com/news/ประเด็นร้อน/42901"],
+["EUR-Lex: Regulation (EU) 1302/2014, rolling stock TSI", "https://eur-lex.europa.eu/eli/reg/2014/1302/oj"],
+["IMO: SOLAS convention", "https://www.imo.org/en/About/Conventions/Pages/International-Convention-for-the-Safety-of-Life-at-Sea-(SOLAS),-1974.aspx"],
+["IMO: MSC.137(76), standards for ship manoeuvrability", "https://wwwcdn.imo.org/localresources/en/KnowledgeCentre/IndexofIMOResolutions/MSCResolutions/MSC.137(76).pdf"],
+["IACS: Unified Requirements, strength of ships (UR S)", "https://iacs.org.uk/resolutions/unified-requirements/ur-s"],
+["EASA: CS-25 Large Aeroplanes", "https://www.easa.europa.eu/en/document-library/certification-specifications/group/cs-25-large-aeroplanes"],
+["eCFR: 14 CFR 25.337, limit manoeuvring load factors", "https://www.ecfr.gov/current/title-14/section-25.337"],
+["EASA: CS-29 Large Rotorcraft", "https://www.easa.europa.eu/en/document-library/certification-specifications/group/cs-29-large-rotorcraft"],
+["eCFR: 14 CFR 29.927, additional tests (loss of lubrication)", "https://www.ecfr.gov/current/title-14/section-29.927"],
+["EUR-Lex: Delegated Regulation (EU) 2019/945, unmanned aircraft systems", "https://eur-lex.europa.eu/eli/reg_del/2019/945/oj"],
+["EASA: Open category, drone classes C0–C4", "https://www.easa.europa.eu/en/node/119320"],
+["NASA-STD-5001: Structural Design and Test Factors of Safety for Spaceflight Hardware", "https://standards.nasa.gov/standard/NASA/NASA-STD-5001"],
+["eCFR: 14 CFR Part 450, launch and reentry licence requirements", "https://www.ecfr.gov/current/title-14/chapter-III/subchapter-C/part-450"]
+];
+
+/* ---------- the people and organisations behind each vehicle, seen through four lenses ---------- */
+const PEOPLE={
+ car:{who:[B("ผู้ผลิตรถและผู้ผลิตชิ้นส่วน","Carmakers and parts suppliers"),B("หน่วยรับรองแบบ (UN WP.29, กรมการขนส่งทางบก)","Type-approval authorities (UN WP.29, national transport departments)"),B("โครงการทดสอบชนอิสระ เช่น Euro NCAP, ASEAN NCAP","Independent crash-test programmes such as Euro NCAP and ASEAN NCAP"),B("ช่างและศูนย์บริการ","Mechanics and service centres"),B("ตำรวจ กู้ภัย และผู้ออกแบบถนน","Police, rescuers and road designers")],
+  phys:B("พลังงานของรถที่วิ่งอยู่เพิ่มตามความเร็วยกกำลังสอง เร็วขึ้นสองเท่าต้องสลายพลังงานสี่เท่า โซนยุบตัวช่วยยืดเวลาการชนออกไปเสี้ยววินาที แรงที่ถึงตัวคนจึงลดลง","A moving car's energy rises with the square of its speed: twice as fast means four times the energy to get rid of. The crumple zone stretches the crash by a fraction of a second, which cuts the force reaching the people inside."),
+  mat:B("ใช้เหล็กหลายเกรดในคันเดียว ด้านหน้าและหลังนิ่มพอให้ยุบ ส่วนรอบห้องโดยสารแข็งมากเพื่อคงรูป อะลูมิเนียมและพลาสติกช่วยลดน้ำหนัก","One car uses many grades of steel: soft enough to fold at the front and rear, very strong around the cabin so it keeps its shape. Aluminium and plastics save weight."),
+  econ:B("ผลิตทีละเป็นล้านคัน ต้นทุนต่อคันจึงต่ำพอที่ระบบอย่าง ABS และระบบกันลื่นไถลจะบังคับใช้ได้กับทุกคัน คะแนนดาวจากการทดสอบชนทำให้ความปลอดภัยกลายเป็นจุดขาย","Built by the million, so each unit is cheap enough for systems such as ABS and stability control to be required on every car. Crash-test star ratings turn safety into a selling point."),
+  psy:B("คนรู้สึกปลอดภัยในรถเพราะคุมพวงมาลัยเองและคุ้นเคย ทั้งที่ความเสี่ยงต่อระยะทางสูงกว่าเครื่องบินหรือรถไฟมาก เมื่อรู้สึกว่ารถช่วยได้ บางคนก็ขับเสี่ยงขึ้น","People feel safe in a car because they hold the wheel and it is familiar, although the risk per kilometre is far higher than in an aircraft or train. When the car seems to help, some drivers take more risk."),
+  crew:B("ผู้ขับรถยนต์ได้รับการฝึกน้อยที่สุดในทุกโหมด สอบใบขับขี่ครั้งเดียวและแทบไม่มีการทบทวน รถและถนนจึงต้องออกแบบให้ให้อภัยความผิดพลาดของคน ส่วนทีมกู้ภัยฝึกตัดถ่างตามคู่มือกู้ภัยของรถแต่ละรุ่น","Car drivers are the least trained operators of any mode: one test and almost no refresher. So cars and roads have to forgive human error, while rescue crews train on extrication using each model's rescue sheet.")},
+ moto:{who:[B("ผู้ผลิตรถจักรยานยนต์","Motorcycle makers"),B("ผู้ผลิตหมวกและชุดป้องกัน","Helmet and protective-gear makers"),B("ครูฝึกขับขี่ปลอดภัย","Rider-training instructors"),B("หน่วยงานถนนและตำรวจจราจร","Road authorities and traffic police")],
+  phys:B("รถสองล้อทรงตัวได้เพราะเลี้ยวเข้าหาด้านที่กำลังล้ม ตอนเข้าโค้งต้องเอียงรถเพื่อสมดุลกับแรงเหวี่ยง ทุกอย่างจึงพึ่งแรงเสียดทานของยางสองเส้น","A two-wheeler stays up by steering into the fall. In a corner it must lean to balance the turning force, so everything depends on the grip of two tyres."),
+  mat:B("โครงรถเบาเพื่อความคล่อง การป้องกันจึงไปอยู่ที่ของที่คนสวม โฟมในหมวกกันน็อกยุบตัวดูดซับแรงได้ครั้งเดียว กระแทกแล้วต้องเปลี่ยน","The frame is light for agility, so protection moves to what the rider wears. Helmet foam crushes to absorb one impact; after that the helmet must be replaced."),
+  econ:B("ราคาถูก ประหยัดน้ำมัน และแทรกการจราจรได้ จึงเป็นพาหนะหลักของคนจำนวนมากในไทย แต่ค่าใช้จ่ายจากอุบัติเหตุตกอยู่กับผู้ขี่ ครอบครัว และระบบสาธารณสุข","Cheap, frugal and able to filter through traffic, so it is the main vehicle for a great many people in Thailand. The cost of crashes falls on riders, families and the health system."),
+  psy:B("ความคล่องตัวให้ความรู้สึกอิสระและสนุก คนที่ขี่ทุกวันมักประเมินความเสี่ยงต่ำเกินไป ส่วนคนขับรถยนต์มัก 'มองแต่ไม่เห็น' มอเตอร์ไซค์","Agility feels like freedom. Daily riders tend to underrate the risk, and car drivers often look but fail to see a motorcycle."),
+  crew:B("การฝึกเบรกฉุกเฉิน การเข้าโค้ง และการมองล่วงหน้าช่วยได้มาก แต่ผู้ขี่ส่วนใหญ่ไม่เคยฝึกอย่างเป็นระบบ หมวกกันน็อกที่ได้มาตรฐานและ ABS จึงเป็นด่านที่ช่วยได้จริงเมื่อคนพลาด","Training in emergency braking, cornering and looking ahead helps a lot, but most riders never get it. A certified helmet and ABS are the layers that work when the rider gets it wrong.")},
+ bus:{who:[B("ผู้ผลิตแชสซี","Chassis makers"),B("อู่ต่อตัวถัง","Body builders"),B("กรมการขนส่งทางบก","The land transport regulator"),B("ผู้ประกอบการเดินรถ","Bus operators"),B("พนักงานขับรถและช่างซ่อมบำรุง","Drivers and maintenance staff")],
+  phys:B("รถหนักและจุดศูนย์ถ่วงสูง จึงพลิกคว่ำง่ายกว่ารถเล็ก พลังงานทั้งหมดตอนเบรกกลายเป็นความร้อน ทางลงเขายาวจึงต้องใช้เกียร์ต่ำและเบรกเสริม","Heavy, with a high centre of gravity, so it rolls over more easily than a car. Braking turns all that energy into heat, so long descents need a low gear and the retarder."),
+  mat:B("โครงตัวถังเป็นท่อเหล็กเชื่อมเป็นกรง ต้องแข็งพอให้เหลือพื้นที่รอดชีวิตเมื่อรถพลิก วัสดุภายในต้องลามไฟช้าเพื่อให้มีเวลาหนี","The body is a welded steel-tube cage, strong enough to leave survival space in a rollover. Interior materials must burn slowly to buy time to escape."),
+  econ:B("ค่าโดยสารต่อคนถูกเพราะหารกันหลายสิบที่นั่ง แต่แรงกดดันเรื่องต้นทุนก็นำไปสู่การดัดแปลงรถ เพิ่มที่นั่ง ใช้รถเก่า และยืดชั่วโมงขับ","The fare per person is low because dozens share the cost. The same cost pressure leads to modified bodies, added seats, old vehicles and long driving hours."),
+  psy:B("ผู้โดยสารฝากความปลอดภัยไว้กับคนขับทั้งหมด และมักไม่คาดเข็มขัดเพราะรถใหญ่ทำให้รู้สึกมั่นคง ข่าวไฟไหม้หรือพลิกคว่ำครั้งเดียวทำให้คนกลัวไปนาน","Passengers hand their safety to the driver and often skip the belt because a big vehicle feels solid. One fire or rollover in the news makes people afraid for a long time."),
+  crew:B("พนักงานขับต้องมีใบขับขี่รถสาธารณะและถูกจำกัดชั่วโมงขับ ในไทยขับต่อเนื่องได้ไม่เกิน 4 ชั่วโมงแล้วต้องพักอย่างน้อย 30 นาที ผู้ประกอบการที่ดีฝึกการใช้ทางออกฉุกเฉินและถังดับเพลิง และแนะนำผู้โดยสารก่อนออกรถ","Drivers need a public-transport licence and limited hours: in Thailand no more than 4 hours at a stretch before a break of at least 30 minutes. Good operators train on emergency exits and extinguishers and brief passengers before departure.")},
+ train:{who:[B("ผู้ผลิตขบวนรถ","Train builders"),B("ผู้ดูแลรางและอาณัติสัญญาณ","Track and signalling managers"),B("ผู้ให้บริการเดินรถ","Train operators"),B("หน่วยกำกับระบบราง (ไทย: กรมการขนส่งทางราง)","The rail regulator"),B("ศูนย์ควบคุมการเดินรถและพนักงานขับ","The control centre and drivers")],
+  phys:B("ล้อเหล็กบนรางเหล็กกลิ้งได้ลื่นมาก รถไฟจึงประหยัดพลังงาน แต่ก็เบรกได้น้อยด้วยเหตุผลเดียวกัน ความปลอดภัยจึงมาจากการแบ่งทางเป็นตอนและไม่ให้สองขบวนอยู่ในตอนเดียวกัน","Steel wheels on steel rails roll with very little resistance, so trains are efficient, and for the same reason they brake poorly. Safety comes from dividing the line into blocks and keeping two trains out of the same block."),
+  mat:B("ตัวรถเป็นอะลูมิเนียมหรือสเตนเลส ล้อและเพลาเป็นเหล็กกล้าที่ต้องทนแรงซ้ำหลายล้านรอบ รอยร้าวจากความล้าจึงเป็นสิ่งที่ต้องตรวจหาเป็นประจำ","Bodies are aluminium or stainless steel. Wheels and axles are steel that takes millions of load cycles, so fatigue cracks are what inspections look for."),
+  econ:B("การสร้างรางและระบบแพงมาก แต่ขนคนได้มหาศาลต่อชั่วโมง จึงคุ้มในเส้นทางที่ผู้โดยสารหนาแน่น ขบวนรถใช้งานได้ 30–40 ปี การดูแลรักษาจึงเป็นค่าใช้จ่ายหลัก","Track and systems are very expensive but move huge numbers of people per hour, so rail pays off on busy corridors. Trains serve 30–40 years, which makes maintenance the main cost."),
+  psy:B("รางกำหนดเส้นทางไว้แน่นอน คนจึงรู้สึกว่าคาดเดาได้และปลอดภัย ความตรงเวลาสร้างความเชื่อมั่น แต่เหตุร้ายแรงครั้งเดียวกระทบความเชื่อมั่นได้นานหลายปี","Rails fix the route, so people find trains predictable and safe. Punctuality builds trust, but one serious accident can shake it for years."),
+  crew:B("พนักงานขับต้องเรียนรู้เส้นทางทุกช่วง ฝึกในเครื่องจำลอง และสอบทบทวนเป็นรอบ ระบบป้องกันขบวนรถอัตโนมัติจะสั่งเบรกเองถ้าฝ่าสัญญาณหรือเร็วเกิน ศูนย์ควบคุมซ้อมแผนอพยพร่วมกับหน่วยดับเพลิง","Drivers learn every section of the route, train in simulators and are re-assessed on a cycle. Automatic train protection brakes if a signal is passed or speed is too high, and control centres rehearse evacuations with the fire service.")},
+ ship:{who:[B("อู่ต่อเรือ","Shipyards"),B("สมาคมจัดชั้นเรือ","Classification societies"),B("รัฐเจ้าของธงและรัฐเมืองท่า","Flag states and port states"),B("เจ้าของเรือและบริษัทบริหารเรือ","Shipowners and ship managers"),B("นายเรือ ลูกเรือ และนำร่อง","Masters, crews and pilots")],
+  phys:B("เรือลอยได้เพราะแรงลอยตัวเท่ากับน้ำหนักน้ำที่ถูกแทนที่ จะตั้งตรงหรือคว่ำขึ้นกับตำแหน่งจุดศูนย์ถ่วงเทียบกับจุดลอยตัว มวลมหาศาลทำให้หยุดและเลี้ยวได้ช้ามาก","A ship floats because buoyancy equals the weight of water it displaces. Whether it stays upright depends on where its centre of gravity sits relative to its buoyancy, and its huge mass makes stopping and turning very slow."),
+  mat:B("ตัวเรือเป็นแผ่นเหล็กกล้าเชื่อมต่อกัน ศัตรูหลักคือสนิมจากน้ำทะเลและความล้าจากคลื่น จึงต้องมีสี แอโนดกันกร่อน และการวัดความหนาเหล็กเป็นรอบ","The hull is welded steel plate. Its enemies are seawater corrosion and wave fatigue, hence coatings, sacrificial anodes and regular thickness measurements."),
+  econ:B("เรือยิ่งใหญ่ ค่าขนส่งต่อตู้ยิ่งถูก การค้าโลกส่วนใหญ่จึงเดินทางทางทะเล แต่ตารางเวลาที่แน่นและลูกเรือจำนวนน้อยสร้างแรงกดดันต่อการตัดสินใจด้านความปลอดภัย","The bigger the ship, the cheaper each container, which is why most world trade moves by sea. Tight schedules and small crews put pressure on safety decisions."),
+  psy:B("ลูกเรืออยู่กลางทะเลครั้งละหลายเดือน ความล้าและความโดดเดี่ยวมีผลต่อการเฝ้าระวัง คนบนฝั่งแทบไม่เห็นอุตสาหกรรมนี้ จนกว่าจะมีเรือเกยตื้นหรือน้ำมันรั่ว","Crews spend months at sea, and fatigue and isolation affect watchkeeping. People ashore barely notice the industry until a ship runs aground or spills oil."),
+  crew:B("นายประจำเรือต้องมีประกาศนียบัตรตามอนุสัญญา STCW ฝึกในเครื่องจำลองสะพานเดินเรือ และซ้อมสละเรือกับดับไฟเป็นประจำ เมื่อเข้าท่า นำร่องที่รู้จักร่องน้ำจะขึ้นมาช่วยนำเรือ","Officers hold STCW certificates, train on bridge simulators and run abandon-ship and fire drills regularly. In port approaches a local pilot who knows the channel comes aboard to guide the ship.")},
+ plane:{who:[B("ผู้ผลิตเครื่องบินและเครื่องยนต์","Aircraft and engine makers"),B("หน่วยรับรอง (FAA, EASA, ไทย: กพท.)","Certification authorities (FAA, EASA, national CAAs)"),B("สายการบินและศูนย์ซ่อม","Airlines and maintenance organisations"),B("ควบคุมการจราจรทางอากาศ","Air traffic control"),B("นักบิน ลูกเรือ และหน่วยสอบสวนอิสระ","Pilots, cabin crew and independent investigators")],
+  phys:B("ปีกสร้างแรงยกจากอากาศที่ไหลผ่าน แรงยกเพิ่มตามความเร็วยกกำลังสอง จึงมีความเร็วต่ำสุดที่ยังบินได้ เครื่องบินบินสูงเพราะอากาศเบาบาง แรงต้านน้อย ประหยัดเชื้อเพลิง","Wings make lift from the air flowing over them, and lift rises with speed squared, so there is a minimum flying speed. Airliners cruise high because thin air means less drag and less fuel."),
+  mat:B("โครงสร้างเป็นอะลูมิเนียมอัลลอยและคาร์บอนไฟเบอร์ ออกแบบโดยสมมติว่าจะมีรอยร้าวเกิดขึ้น แล้ววางรอบตรวจให้เจอก่อนที่รอยร้าวจะยาวถึงขั้นอันตราย","The structure is aluminium alloy and carbon fibre, designed on the assumption that cracks will appear, with inspections timed to find them before they grow dangerous."),
+  econ:B("เครื่องบินแพงมาก จึงต้องบินวันละหลายเที่ยว น้ำหนักทุกกิโลกรัมที่ลดได้ประหยัดเชื้อเพลิงตลอดอายุเครื่อง แต่ส่วนเผื่อความปลอดภัยถูกกำหนดด้วยกฎ ลดเองไม่ได้ และอุบัติเหตุครั้งเดียวทำลายชื่อเสียงได้ทั้งบริษัท","Aircraft are very expensive, so they fly several sectors a day. Every kilogram saved cuts fuel for life, but safety margins are fixed by rule and cannot be traded away, and one accident can ruin a company's name."),
+  psy:B("หลายคนกลัวการบินเพราะไม่ได้คุมเองและเหตุร้ายเป็นข่าวใหญ่ ทั้งที่เป็นการเดินทางที่ปลอดภัยที่สุดต่อระยะทาง ในห้องนักบินใช้หลักการทำงานเป็นทีม (CRM) ให้ทุกคนกล้าทักท้วงกัปตัน","Many people fear flying because they are not in control and crashes are big news, though it is the safest way to travel per kilometre. On the flight deck, crew resource management makes it normal to challenge the captain."),
+  crew:B("นักบินสายการบินกลับเข้าเครื่องจำลองทุกประมาณ 6 เดือน เพื่อซ้อมเครื่องยนต์ดับ ไฟไหม้ และความดันตก และใช้รายการตรวจสอบแทนการจำ ลูกเรือฝึกอพยพผู้โดยสารและดับไฟในห้องโดยสารทุกปี","Airline pilots return to the simulator about every 6 months to practise engine failures, fires and decompression, and they work from checklists, not memory. Cabin crew retrain on evacuation and cabin fires every year.")},
+ heli:{who:[B("ผู้ผลิตเฮลิคอปเตอร์","Helicopter makers"),B("หน่วยรับรองการบิน","Aviation authorities"),B("ผู้ให้บริการกู้ภัย แพทย์ฉุกเฉิน และงานนอกชายฝั่ง","Rescue, air-ambulance and offshore operators"),B("ช่างอากาศยาน","Aircraft engineers"),B("นักบินและทีมภาคพื้น","Pilots and ground crews")],
+  phys:B("ใบพัดคือปีกที่หมุน จึงสร้างแรงยกได้แม้ลอยอยู่กับที่ แต่ต้องใช้กำลังมาก ถ้าเครื่องยนต์ดับ อากาศที่ไหลขึ้นผ่านใบพัดยังหมุนใบพัดต่อได้ ทำให้ร่อนลงจอดได้","The rotor is a spinning wing, so it lifts even in a hover, at a high cost in power. If the engines stop, air flowing up through the rotor keeps it turning, which allows a glide to a landing."),
+  mat:B("ใบพัดเป็นวัสดุคอมโพสิต ชิ้นส่วนหมุนรับแรงสลับไปมาทุกรอบ จึงกำหนดอายุใช้งานเป็นชั่วโมงบินและเปลี่ยนตามกำหนด ไม่รอให้เห็นความเสียหาย","Blades are composite. Rotating parts take a reversing load on every turn, so they have a life in flight hours and are replaced on schedule, without waiting for visible damage."),
+  econ:B("ค่าใช้จ่ายต่อชั่วโมงบินสูงกว่าเครื่องบินมาก จึงใช้ในงานที่คุ้มจริง เช่น ที่ที่ไม่มีรันเวย์ การกู้ภัย การส่งผู้ป่วย และแท่นขุดเจาะ","Each flight hour costs far more than an aeroplane's, so helicopters are used where they are worth it: places with no runway, rescue, air ambulance and offshore platforms."),
+  psy:B("เสียงเฮลิคอปเตอร์เป็นสัญญาณว่าความช่วยเหลือมาถึง แต่นักบินกู้ภัยก็เผชิญแรงกดดันว่า 'ต้องไปให้ถึง' ซึ่งทำให้บางครั้งฝืนบินในอากาศที่ไม่ควรบิน","The sound of a helicopter means help has arrived. Rescue pilots also feel pressure to get there, which sometimes leads them to press on in weather they should not fly in."),
+  crew:B("นักบินฝึกการร่อนลงเมื่อเครื่องดับ การบินด้วยเครื่องวัด และใช้เกณฑ์ตัดสินใจ 'ไป/ไม่ไป' ที่กำหนดไว้ก่อนรับภารกิจ ทีมภาคพื้นฝึกการเข้าใกล้เครื่องขณะใบพัดหมุน","Pilots practise autorotation and instrument flying, and use go/no-go criteria set before a mission is accepted. Ground crews train on approaching the aircraft while the rotors turn.")},
+ drone:{who:[B("ผู้ผลิตโดรน","Drone makers"),B("ชุมชนซอฟต์แวร์ควบคุมการบินแบบโอเพนซอร์ส","Open-source flight-control communities"),B("หน่วยกำกับการบินและคลื่นความถี่","Aviation and radio-spectrum regulators"),B("ผู้บังคับโดรน","Remote pilots"),B("ผู้ให้บริการจัดการจราจรโดรน","Drone traffic-management providers")],
+  phys:B("โดรนหลายใบพัดไม่มีปีก ทรงตัวด้วยการปรับรอบมอเตอร์แต่ละตัวหลายร้อยครั้งต่อวินาที โดยธรรมชาติแล้วไม่เสถียร ต้องพึ่งคอมพิวเตอร์ตลอดเวลาที่บิน","A multirotor has no wing. It balances by changing each motor's speed hundreds of times a second: it is naturally unstable and depends on its computer for every moment of flight."),
+  mat:B("โครงเป็นพลาสติกหรือคาร์บอนไฟเบอร์ที่เบา แบตเตอรี่ลิเทียมเก็บพลังงานต่อน้ำหนักได้จำกัด เวลาบินจึงสั้น","The frame is light plastic or carbon fibre. Lithium batteries store limited energy for their weight, so flights are short."),
+  econ:B("เซนเซอร์ ชิป และแบตเตอรี่มาจากอุตสาหกรรมโทรศัพท์มือถือ ราคาจึงถูกจนใครก็ซื้อได้ ผลคือมีโดรนจำนวนมากในมือผู้ใช้ที่ไม่เคยฝึก","Sensors, chips and batteries come from the phone industry, so drones are cheap enough for anyone. The result is many drones in untrained hands."),
+  psy:B("โดรนดูเหมือนของเล่น คนจึงประเมินความเสี่ยงต่ำ คนข้างล่างอาจรู้สึกถูกรบกวนหรือถูกแอบมอง แต่โดรนก็สร้างแรงบันดาลใจ เช่น ภาพมุมสูง และการส่งยาไปที่ห่างไกล","A drone looks like a toy, so people underrate the risk. People below may feel disturbed or watched. Drones also inspire, with aerial views and medicine deliveries to remote places."),
+  crew:B("งานเสี่ยงต่ำ ผู้บังคับเรียนและสอบออนไลน์ งานเสี่ยงสูงต้องประเมินความเสี่ยงของภารกิจและฝึกเฉพาะทาง สิ่งที่ช่วยได้จริงคือการตั้ง failsafe และเช็กเครื่องก่อนบินทุกครั้ง","For low-risk flying, pilots study and test online; higher-risk work needs a mission risk assessment and specific training. What helps most is setting the failsafe and doing a pre-flight check every time.")},
+ rocket:{who:[B("หน่วยงานอวกาศและบริษัทเอกชน","Space agencies and private companies"),B("ผู้ผลิตเครื่องยนต์","Engine makers"),B("หน่วยออกใบอนุญาตปล่อยจรวด","Launch licensing authorities"),B("เจ้าหน้าที่ความปลอดภัยสนามยิง","Range safety officers"),B("ศูนย์ควบคุมภารกิจ นักบินอวกาศ และทีมกู้ภัย","Mission control, astronauts and recovery teams")],
+  phys:B("ตามสมการจรวด ความเร็วที่ทำได้ขึ้นกับสัดส่วนของเชื้อเพลิงต่อมวลทั้งหมด จรวดจึงเป็นเชื้อเพลิงเกือบทั้งลำและต้องทิ้งท่อนที่ใช้หมดแล้ว การเข้าวงโคจรต้องเร็วราว 7.8 กม./วินาที","By the rocket equation, the speed gained depends on how much of the vehicle is propellant, so a rocket is almost all propellant and drops its empty stages. Orbit needs about 7.8 km/s."),
+  mat:B("ถังเชื้อเพลิงเป็นโลหะผนังบางที่ได้ความแข็งแรงจากความดันภายใน เครื่องยนต์ทนความร้อนได้เพราะให้เชื้อเพลิงเย็นไหลผ่านผนังก่อนเผา แคปซูลมีแผ่นกันความร้อนสำหรับกลับสู่บรรยากาศ","Tanks are thin-walled metal, stiffened by their own pressure. Engines survive the heat because cold propellant flows through their walls before burning, and the capsule carries a heat shield for re-entry."),
+  econ:B("เดิมจรวดใช้ครั้งเดียวทิ้ง แต่ละเที่ยวจึงแพงมาก การนำท่อนแรกกลับมาใช้ซ้ำลดต้นทุนต่อเที่ยวลง แต่เมื่อส่วนเผื่อทางโครงสร้างน้อย การทดสอบซ้ำๆ จึงเป็นสิ่งที่ซื้อความปลอดภัย","Rockets used to be thrown away after one flight, so each launch was very costly. Reusing the first stage cuts the price, but with thin structural margins it is repeated testing that buys safety."),
+  psy:B("การปล่อยจรวดสร้างแรงบันดาลใจและความภูมิใจได้มากกว่าพาหนะใด แต่แรงกดดันเรื่องกำหนดการก็เคยทำให้คำเตือนของวิศวกรถูกมองข้าม ดังกรณีกระสวยอวกาศแชลเลนเจอร์ปี 1986","A launch inspires more than any other vehicle. Schedule pressure has also led managers to overrule engineers' warnings, as with the space shuttle Challenger in 1986."),
+  crew:B("นักบินอวกาศฝึกหลายปีและซ้อมเหตุฉุกเฉินซ้ำในเครื่องจำลอง ศูนย์ควบคุมมีกฎการบินที่ตัดสินใจไว้ล่วงหน้าสำหรับแต่ละความผิดปกติ และผู้รับผิดชอบแต่ละระบบสั่งหยุดการนับถอยหลังได้","Astronauts train for years and rehearse emergencies again and again in simulators. Mission control works from flight rules that settle each failure in advance, and each system's controller can call a hold in the countdown.")}
+};
+
+/* ---------- statistics (each with its source) and on-board energy and computing ---------- */
+const S_={who:["WHO: Road traffic injuries (fact sheet)","https://www.who.int/news-room/fact-sheets/detail/road-traffic-injuries"],
+ rac:["RAC Foundation: Car parked for 23 hours out of every 24","https://www.racfoundation.org/?p=3787"],
+ owid:["Our World in Data: Which form of transport has the smallest carbon footprint?","https://ourworldindata.org/travel-carbon-footprint"],
+ whoth:["WHO Thailand: Road safety","https://www.who.int/thailand/our-work/road-safety"],
+ iata:["IATA: 2024 Safety Report (press release)","https://www.iata.org/en/pressroom/2025-releases/2025-02-26-01/"],
+ wsc:["SWZ Maritime: WSC, 576 containers lost at sea in 2024","https://swzmaritime.nl/news/2025/07/01/wsc-576-container-lost-at-sea-in-2024-well-below-average/"],
+ unctad:["UNCTAD: Review of Maritime Transport","https://unctad.org/topic/transport-and-trade-logistics/review-of-maritime-transport"],
+ faaw:["FAA: Wildlife strikes, frequently asked questions","https://www.faa.gov/airports/airport_safety/wildlife/faq"],
+ faad:["FAA: UAS sightings report","https://www.faa.gov/uas/resources/public_records/uas_sightings_report"],
+ space:["Space.com: SpaceX's 165 orbital flights in 2025","https://www.space.com/space-exploration/private-spaceflight/spacex-shatters-its-rocket-launch-record-yet-again-167-orbital-flights-in-2025"],
+ vai:["Vertical Aviation International: US helicopter safety in 2024","https://verticalavi.org/vai-daily/us-helicopter-industry-enjoys-record-safe-year-in-2024/"],
+ pptv:["PPTV: รถโดยสารสูงเกิน 3.6 ม. ต้องทดสอบพื้นเอียง 30 องศา","https://www.pptvhd36.com/news/ประเด็นร้อน/42901"],
+ imo:["IMO: MSC.137(76), standards for ship manoeuvrability","https://wwwcdn.imo.org/localresources/en/KnowledgeCentre/IndexofIMOResolutions/MSCResolutions/MSC.137(76).pdf"],
+ easa:["EASA: Open category, drone classes C0–C4","https://www.easa.europa.eu/en/node/119320"],
+ nasa:["NASA-STD-5001: Structural Design and Test Factors of Safety for Spaceflight Hardware","https://standards.nasa.gov/standard/NASA/NASA-STD-5001"],
+ r927:["eCFR: 14 CFR 29.927, additional tests (loss of lubrication)","https://www.ecfr.gov/current/title-14/section-29.927"]};
+/* [kind, value, text, source]: kind "w" = striking, "d" = dull but it matters */
+const STATS={
+ car:[["w",B("1.16 ล้านคน","1.16 million"),B("คนเสียชีวิตบนถนนทั่วโลกต่อปี และเป็นสาเหตุการตายอันดับหนึ่งของคนอายุ 5–29 ปี","people die on the world's roads each year; it is the leading cause of death for ages 5–29"),"who"],
+  ["d",B("4%","4%"),B("ของเวลาเท่านั้นที่รถยนต์ถูกขับ (ข้อมูลอังกฤษ) อีก 96% จอดอยู่เฉยๆ ที่บ้านหรือที่อื่น","of the time is all a car is actually driven (England); the other 96% it sits parked"),"rac"],
+  ["d",B("170 กรัม","170 g"),B("CO₂ ต่อคนต่อกิโลเมตรของรถเบนซินขนาดกลาง เทียบกับรถไฟราว 35 กรัม","of CO₂ per person per km for an average petrol car, against about 35 g by rail"),"owid"]],
+ moto:[["w",B("83.8%","83.8%"),B("ของผู้เสียชีวิตบนถนนในไทยเป็นผู้ใช้รถจักรยานยนต์ (ประมาณการ WHO ปี 2021)","of road deaths in Thailand are motorcyclists (WHO estimate, 2021)"),"whoth"],
+  ["d",B("กว่า 6 เท่า","More than 6×"),B("คือความเสี่ยงเสียชีวิตที่ลดลงเมื่อสวมหมวกกันน็อกอย่างถูกต้อง","lower risk of dying in a crash when a helmet is worn correctly"),"who"],
+  ["w",B("ราว 50 คนต่อวัน","About 50 a day"),B("คือจำนวนคนที่เสียชีวิตบนถนนในไทย (18,218 คนในปี 2021)","people die on Thailand's roads (18,218 in 2021)"),"whoth"]],
+ bus:[["d",B("ถึง 50%","Up to 50%"),B("คือความเสี่ยงเสียชีวิตของคนในรถที่ลดลงเมื่อคาดเข็มขัดนิรภัย แต่ผู้โดยสารรถบัสจำนวนมากไม่คาด","lower risk of death for vehicle occupants who wear a seat belt, yet many bus passengers do not"),"who"],
+  ["d",B("30 องศา","30 degrees"),B("คือมุมเอียงที่รถโดยสารสูงเกิน 3.6 เมตรในไทยต้องทนได้โดยไม่พลิกคว่ำ","is the tilt a bus taller than 3.6 m must survive without rolling over in Thailand"),"pptv"],
+  ["w",B("3.06% ของ GDP","3.06% of GDP"),B("คือความสูญเสียทางเศรษฐกิจจากอุบัติเหตุทางถนนของไทยในปี 2022 ตามการประเมินของ TDRI","is what road crashes cost Thailand's economy in 2022, by TDRI's estimate"),"whoth"]],
+ train:[["w",B("ราว 35 กรัม","About 35 g"),B("CO₂ ต่อคนต่อกิโลเมตรของรถไฟ น้อยกว่ารถเบนซิน (170) เกือบ 5 เท่า และน้อยกว่าเที่ยวบินในประเทศ (246) ราว 7 เท่า","of CO₂ per person per km by rail: nearly 5 times less than a petrol car (170) and about 7 times less than a domestic flight (246)"),"owid"],
+  ["d",B("มากกว่าครึ่ง","More than half"),B("ของผู้เสียชีวิตบนถนนคือคนเดินเท้า คนขี่จักรยาน และคนขี่มอเตอร์ไซค์ การย้ายการเดินทางไปขึ้นรางจึงลดความเสี่ยงของคนกลุ่มนี้","of road deaths are pedestrians, cyclists and motorcyclists, so moving trips onto rail cuts the risk for exactly these people"),"who"]],
+ ship:[["w",B("ราว 80%","About 80%"),B("ของปริมาณสินค้าในการค้าระหว่างประเทศเดินทางทางทะเล","of the volume of international trade in goods travels by sea"),"unctad"],
+  ["d",B("576 ตู้","576 boxes"),B("คือตู้คอนเทนเนอร์ที่ตกทะเลในปี 2024 จากราว 250 ล้านตู้ที่ขนส่ง หรือ 0.0002%","containers were lost at sea in 2024 out of about 250 million carried: 0.0002%"),"wsc"],
+  ["d",B("15 ช่วงลำเรือ","15 ship lengths"),B("คือระยะหยุดสูงสุดที่เกณฑ์ IMO ยอมให้เมื่อถอยหลังเต็มกำลัง เรือยาว 300 เมตรจึงอาจใช้ระยะถึง 4.5 กม.","is the most the IMO criterion allows for a full-astern stop, so a 300 m ship may need up to 4.5 km"),"imo"]],
+ plane:[["w",B("1 ใน 880,000","1 in 880,000"),B("คืออัตราอุบัติเหตุต่อเที่ยวบินของสายการบินทั่วโลกในปี 2024 จาก 40.6 ล้านเที่ยวบิน มีอุบัติเหตุถึงชีวิต 7 ครั้ง","flights ended in an accident worldwide in 2024; among 40.6 million flights there were 7 fatal accidents"),"iata"],
+  ["d",B("ราว 24,500 ครั้ง","About 24,500"),B("คือจำนวนที่เครื่องบินพลเรือนชนสัตว์ในสหรัฐฯ ปี 2025 ราว 96% เป็นนก และ 70% เกิดที่ความสูงไม่เกิน 500 ฟุต","wildlife strikes on civil aircraft in the US in 2025; about 96% were birds and 70% happened below 500 feet"),"faaw"],
+  ["d",B("246 กรัม","246 g"),B("CO₂ ต่อคนต่อกิโลเมตรของเที่ยวบินในประเทศ สูงที่สุดในบรรดาการเดินทางที่เทียบกัน","of CO₂ per person per km on a domestic flight, the highest of the modes compared"),"owid"]],
+ heli:[["w",B("2.99","2.99"),B("อุบัติเหตุต่อ 100,000 ชั่วโมงบินของเฮลิคอปเตอร์ในสหรัฐฯ ปี 2024 ต่ำสุดในรอบ 25 ปี (88 ครั้ง ถึงชีวิต 13 ครั้ง)","accidents per 100,000 flight hours for US helicopters in 2024, the lowest in 25 years (88 accidents, 13 fatal)"),"vai"],
+  ["d",B("30 นาที","30 minutes"),B("คือเวลาที่ห้องเกียร์หลักของเฮลิคอปเตอร์ขนาดใหญ่ต้องทำงานต่อได้หลังน้ำมันหล่อลื่นรั่วหมด เพื่อให้มีเวลาหาที่ลง","is how long a large helicopter's main gearbox must keep running after losing its oil, to give time to land"),"r927"]],
+ drone:[["w",B("กว่า 100 ครั้งต่อเดือน","Over 100 a month"),B("คือรายงานการพบโดรนใกล้สนามบินที่ FAA ของสหรัฐฯ ได้รับ","reports of drones seen near airports reach the US FAA"),"faad"],
+  ["d",B("250 กรัม","250 g"),B("คือเส้นแบ่งคลาสเบาที่สุด (C0) ของยุโรป คลาสถัดไปคือไม่เกิน 900 กรัม 4 กก. และ 25 กก.","marks Europe's lightest class (C0); the next classes stop at 900 g, 4 kg and 25 kg"),"easa"]],
+ rocket:[["w",B("165 ครั้งในปีเดียว","165 in one year"),B("คือจำนวนที่ Falcon 9 ขึ้นสู่วงโคจรในปี 2025 ท่อนแรกลงจอดสำเร็จ 162 ครั้ง และมีท่อนหนึ่งบินมาแล้ว 32 เที่ยว","orbital launches by Falcon 9 in 2025; the first stage landed 162 times and one booster has flown 32 times"),"space"],
+  ["d",B("1.4 เทียบกับ 1.5","1.4 against 1.5"),B("คือค่าความปลอดภัยของโครงสร้างจรวดเทียบกับเครื่องบิน จรวดจึงมีส่วนเผื่อน้อยกว่าและพึ่งการทดสอบมากกว่า","is a rocket's structural safety factor against an aircraft's: less margin, more reliance on testing"),"nasa"]]
+};
+/* [fuel/energy, part to show, computing, part to show] */
+const SYS={
+ car:[B("น้ำมันเบนซิน 1 ลิตรเก็บพลังงานได้ราว 9 กิโลวัตต์ชั่วโมง แต่เครื่องยนต์เปลี่ยนเป็นการเคลื่อนที่ได้เพียงราวหนึ่งในสาม ที่เหลือเป็นความร้อน รถไฟฟ้าเก็บไฟในแบตเตอรี่ 40–100 กิโลวัตต์ชั่วโมงที่แรงดันราว 400 โวลต์ มอเตอร์ใช้พลังงานได้คุ้มกว่ามาก แต่แบตเตอรี่หนักหลายร้อยกิโลกรัม","A litre of petrol holds about 9 kWh, but the engine turns only about a third into motion; the rest is heat. An EV stores 40–100 kWh in a battery at about 400 volts. Its motor wastes far less, but the pack weighs hundreds of kilograms."),"tank",
+  B("รถรุ่นใหม่มีกล่องควบคุมอิเล็กทรอนิกส์ (ECU) หลายสิบถึงกว่าร้อยกล่อง คุยกันผ่านสายสัญญาณ CAN กล่องถุงลมต้องตัดสินใจจุดระเบิดภายในไม่กี่สิบมิลลิวินาทีหลังเริ่มชน ซอฟต์แวร์รวมทั้งคันยาวนับสิบล้านบรรทัดขึ้นไป","A modern car has dozens to over a hundred electronic control units talking over a CAN bus. The airbag unit must decide to fire within a few tens of milliseconds of impact, and the software runs to tens of millions of lines or more."),"adas"],
+ moto:[B("ถังน้ำมันจุราว 4–15 ลิตร รถเล็กวิ่งได้หลายสิบกิโลเมตรต่อลิตรเพราะเบา มอเตอร์ไซค์ไฟฟ้าใช้แบตเตอรี่ที่ถอดเปลี่ยนได้ในบางรุ่น","The tank holds about 4–15 litres; small bikes cover tens of kilometres per litre because they are light. Some electric motorcycles use swappable batteries."),"tank",
+  B("มีกล่องควบคุมหลักตัวเดียวคุมหัวฉีดและจุดระเบิด กับชุด ABS ที่อ่านความเร็วล้อ รุ่นสูงมีเซนเซอร์วัดการเอียงเพื่อให้ ABS และระบบกันล้อหมุนฟรีทำงานได้ขณะเข้าโค้ง","One main control unit runs fuel injection and ignition, plus an ABS unit reading wheel speeds. Higher models add a lean-angle sensor so ABS and traction control work in corners."),"brakes"],
+ bus:[B("ใช้ดีเซลหลายร้อยลิตร หรือก๊าซธรรมชาติ (CNG) อัดในถังที่ความดันราว 200 บาร์ รถบัสไฟฟ้าใช้แบตเตอรี่ขนาดหลายร้อยกิโลวัตต์ชั่วโมง ใหญ่กว่ารถเก๋งไฟฟ้าหลายเท่า","Runs on several hundred litres of diesel, or natural gas stored at about 200 bar. An electric bus carries a battery of several hundred kWh, many times a car's."),"fuel",
+  B("มีกล่องควบคุมเครื่องยนต์ ระบบเบรกลมอิเล็กทรอนิกส์ และระบบประตู ในไทยรถโดยสารสาธารณะต้องติด GPS ส่งความเร็ว ตำแหน่ง และชั่วโมงขับเข้าศูนย์ของกรมการขนส่งทางบกตลอดเวลา","Has control units for the engine, electronic air brakes and doors. In Thailand public buses must carry GPS that reports speed, position and driving hours to the Department of Land Transport."),"airbrake"],
+ train:[B("รับไฟฟ้าจากภายนอก ไม่ต้องแบกเชื้อเพลิง ในไทย BTS และ MRT ใช้รางที่สาม 750 โวลต์กระแสตรง ส่วนแอร์พอร์ต เรล ลิงก์ และสายสีแดงใช้สายเหนือหัว 25,000 โวลต์กระแสสลับ ตอนเบรก มอเตอร์กลายเป็นเครื่องปั่นไฟส่งไฟกลับเข้าระบบ","Takes power from outside, so it carries no fuel. In Thailand the BTS and MRT use a 750 V DC third rail; the Airport Rail Link and Red Line use 25,000 V AC overhead wire. In braking, the motors act as generators and feed power back."),"panto",
+  B("คอมพิวเตอร์จัดการขบวนรถคุมประตู แอร์ และแรงขับ ส่วนคอมพิวเตอร์ป้องกันขบวนรถใช้หลายชุดคำนวณซ้ำกันแล้วเทียบผล ถ้าไม่ตรงกันจะสั่งเบรก ออกแบบตามระดับความปลอดภัยสูงสุด (SIL 4)","A train management computer runs doors, air-conditioning and traction. The train-protection computer uses several channels that compute the same thing and compare; if they disagree it brakes. It is built to the highest safety integrity level (SIL 4)."),"cab"],
+ ship:[B("เครื่องยนต์ดีเซลสองจังหวะรอบต่ำเผาน้ำมันเตา และเปลี่ยนพลังงานเป็นงานได้ราวครึ่งหนึ่ง สูงที่สุดในบรรดาเครื่องยนต์ของยานพาหนะ ตั้งแต่ปี 2020 กำมะถันในเชื้อเพลิงถูกจำกัดที่ 0.5% เรือใหม่บางลำใช้ LNG หรือเมทานอล","A slow two-stroke diesel burns heavy fuel oil and turns about half its energy into work, the best of any vehicle engine. Since 2020 fuel sulphur is capped at 0.5%, and some new ships burn LNG or methanol."),"engine",
+  B("สะพานเดินเรือรวมเรดาร์ แผนที่อิเล็กทรอนิกส์ AIS และระบบถือท้ายอัตโนมัติไว้ด้วยกัน คอมพิวเตอร์บรรทุกคำนวณเสถียรภาพและแรงดัดตัวเรือก่อนออกจากท่า และเครื่องบันทึกข้อมูลการเดินเรือทำหน้าที่เหมือนกล่องดำ","The bridge integrates radar, electronic charts, AIS and autopilot. A loading computer checks stability and hull bending before departure, and a voyage data recorder acts as the black box."),"bridge"],
+ plane:[B("น้ำมันเจ็ต (เคโรซีน) เก็บในปีก รวมราวสองหมื่นกว่าลิตร คิดเป็นราวหนึ่งในห้าถึงหนึ่งในสี่ของน้ำหนักขึ้นบิน น้ำหนักเชื้อเพลิงในปีกยังช่วยถ่วงไม่ให้ปีกงอขึ้นมากเกินไป","Jet fuel (kerosene) is carried in the wings, a little over twenty thousand litres, about a fifth to a quarter of take-off weight. Its weight in the wings also relieves upward bending."),"wing",
+  B("ระบบควบคุมการบินด้วยไฟฟ้าใช้คอมพิวเตอร์หลายชุดที่ออกแบบต่างกันโดยเจตนา เพื่อไม่ให้ข้อบกพร่องเดียวล้มทั้งหมด เครื่องยนต์แต่ละตัวมีคอมพิวเตอร์ควบคุมสองช่องสัญญาณ ซอฟต์แวร์ระดับวิกฤตพัฒนาตาม DO-178C","Fly-by-wire uses several computers deliberately built differently so one flaw cannot take out all of them. Each engine has a two-channel control computer, and critical software is developed to DO-178C."),"cockpit"],
+ heli:[B("ใช้น้ำมันเจ็ตเหมือนเครื่องบิน เครื่องยนต์เทอร์โบชาฟต์ส่งกำลังผ่านห้องเกียร์ไปหมุนใบพัด การลอยตัวอยู่กับที่กินเชื้อเพลิงมาก พิสัยบินจึงสั้นกว่าเครื่องบินขนาดใกล้กัน","Burns jet fuel like an aeroplane. Turboshaft engines drive the rotor through the gearbox. Hovering is thirsty, so range is shorter than a similar-sized aeroplane's."),"fuel",
+  B("คอมพิวเตอร์ควบคุมเครื่องยนต์รักษารอบใบพัดให้คงที่ ระบบช่วยทรงตัวและนักบินอัตโนมัติลดภาระนักบิน และระบบ HUMS บันทึกการสั่นของเกียร์และแบริ่งทุกเที่ยวบินเพื่อหาความผิดปกติก่อนพัง","Engine computers hold rotor speed constant, stability augmentation and autopilot ease the pilot's workload, and HUMS records gear and bearing vibration every flight to catch faults before they fail."),"gearbox"],
+ drone:[B("แบตเตอรี่ลิเทียมเก็บพลังงานได้ราว 150–250 วัตต์ชั่วโมงต่อกิโลกรัม น้อยกว่าน้ำมันหลายสิบเท่า โดรนถ่ายภาพทั่วไปจึงบินได้ราว 20–40 นาทีต่อการชาร์จ","Lithium batteries hold about 150–250 Wh per kilogram, tens of times less than fuel, so a camera drone flies for about 20–40 minutes per charge."),"battery",
+  B("แผงควบคุมการบินอ่านเซนเซอร์วัดการเอียงหลายร้อยถึงหลายพันครั้งต่อวินาที แล้วสั่งมอเตอร์ทั้งสี่ ถ้าแผงนี้ค้างเสี้ยววินาที โดรนจะตก ชิปแยกอีกชุดประมวลผลภาพเพื่อหลบสิ่งกีดขวางและจับตำแหน่งจาก GPS","The flight controller reads its motion sensors hundreds to thousands of times a second and commands the four motors; if it hangs for a fraction of a second the drone falls. Separate chips process vision for obstacle avoidance and GPS for position."),"fc"],
+ rocket:[B("เชื้อเพลิงเคโรซีน (หรือมีเทน ไฮโดรเจน) เผากับออกซิเจนเหลวที่เย็น −183 °C ซึ่งต้องบรรทุกไปเองเพราะในอวกาศไม่มีอากาศ ถังต้องเติมก่อนปล่อยไม่นานเพราะออกซิเจนเหลวเดือดระเหยตลอดเวลา","Kerosene (or methane, or hydrogen) burns with liquid oxygen at −183 °C, which the rocket must carry because space has no air. Tanks are filled shortly before launch because the oxygen boils off all the time."),"s1",
+  B("คอมพิวเตอร์นำวิถีมีหลายชุดทำงานซ้ำกันและลงคะแนนเสียง คำนวณเส้นทางและสั่งหันเครื่องยนต์หลายสิบครั้งต่อวินาที ระบบยุติการบินอัตโนมัติจะทำลายจรวดเองถ้าออกนอกเขตปลอดภัย","Several guidance computers run in parallel and vote, recomputing the path and steering the engines tens of times a second. An autonomous flight termination system destroys the rocket if it leaves the safe corridor."),"avionics"]
+};
+
+
+/* ---------- viewer ---------- */
+const ORDER=["car","moto","bus","train","ship","plane","heli","drone","rocket"];
+const st={veh:"car",mode:"3d",sel:null,k:0,run:false,xray:false};
+let G3=null,V=null,VS={},cam={th:.9,ph:1.15,r:10,tgt:new THREE.Vector3()},dirty=true,kT=null;
+function has3D(){if(G3===false)return false;if(G3)return true;
+ try{if(!window.THREE)throw 0;const c=document.createElement("canvas");if(!(c.getContext("webgl")||c.getContext("experimental-webgl")))throw 0;}catch(e){G3=false;$("gl").innerHTML=`<p class="no3d">${esc(tx(T.no3d))}</p>`;return false;}
+ const r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setClearColor(0x000000,0);r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));r.outputEncoding=THREE.sRGBEncoding;r.toneMapping=THREE.ACESFilmicToneMapping;$("gl").appendChild(r.domElement);
+ const sc=new THREE.Scene();sc.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,.95));const d=new THREE.DirectionalLight(0xfff4e6,1.25);d.position.set(.5,1,.7);sc.add(d);const d2=new THREE.DirectionalLight(0xdfe8ff,.35);d2.position.set(-.6,.3,-.8);sc.add(d2);
+ G3={r,sc,pc:new THREE.PerspectiveCamera(40,16/9,.01,5000),oc:new THREE.OrthographicCamera(-1,1,1,-1,.01,10000),grid:null,ray:new THREE.Raycaster()};bind();return true;}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function sizeGL(){if(!G3)return;const w=$("view").clientWidth||800,h=Math.round(st.mode==="2d"?Math.max(360,Math.min(640,w*.68)):Math.max(280,Math.min(540,w*.6)));G3.w=w;G3.h=h;G3.r.setSize(w,h,false);G3.r.domElement.style.height=h+"px";G3.pc.aspect=w/h;G3.pc.updateProjectionMatrix();$("ov").setAttribute("viewBox",`0 0 ${w} ${h}`);dirty=true;}
+function setVeh(k){st.veh=k;st.sel=null;st.k=0;$("ex").value=0;if(!VS[k])VS[k]=vehicle(k,DEFS[k]);V=VS[k];
+ if(G3){[...G3.sc.children].forEach(o=>{if(o.userData.veh||o.userData.grid)G3.sc.remove(o);});V.root.userData.veh=1;G3.sc.add(V.root);
+  const s=Math.max(V.size.x,V.size.z),gs=Math.pow(10,Math.ceil(Math.log10(s*1.2))),g=new THREE.GridHelper(gs,20,0x8a96a3,0xb5bec8);g.material.transparent=true;g.material.opacity=.5;g.position.set(V.ctr.x,V.box.min.y-.001*s,V.ctr.z);g.userData.grid=1;G3.sc.add(g);G3.grid=g;
+  resetCam();}
+ explode();look();dirty=true;}
+function resetCam(){cam.th=.9;cam.ph=1.15;cam.r=V.size.length()*1.25;cam.tgt.copy(V.ctr);}
+function explode(){const k=st.k,E=V.E;V.parts.forEach(p=>{p.g.position.set(p.ex[0]*k*E,p.ex[1]*k*E,p.ex[2]*k*E);p.g.traverse(o=>{if(o.userData.ex){const h=o.userData.home,e=o.userData.ex;o.position.set(h[0]+e[0]*k*E,h[1]+e[1]*k*E,h[2]+e[2]*k*E);}});});V.root.updateMatrixWorld(true);V.ctrK=new THREE.Box3().setFromObject(V.root).getCenter(new THREE.Vector3());if(G3&&G3.grid)G3.grid.visible=st.mode==="3d"&&k<.03;dirty=true;}
+function look(){const two=st.mode==="2d";V.parts.forEach(p=>{const on=!st.sel||st.sel===p.id,f=st.sel?(on?1:.1):(st.xray&&p.shell?.2:1);
+  p.mats.forEach(m=>{const o=m.userData.o*f;m.opacity=o;const tr=o<.99;if(m.transparent!==tr){m.transparent=tr;m.needsUpdate=true;}m.depthWrite=!tr||m.userData.o<1&&f===1;});
+  p.line.color.set(st.sel===p.id?0xffb347:0xe9f2fb);p.line.opacity=on?1:.22;p.fill.color.copy(lin(st.sel===p.id?0x6b4a1e:0x18426f));
+  p.g.traverse(o=>{if(o.userData.edge)o.visible=two;else if(o.isMesh&&!o.userData.fx){o.material=two?p.fill:o.userData.m0;}if(o.userData.fx)o.visible=!two&&o.userData.on!==false;});});dirty=true;}
+function select(id){st.sel=st.sel===id?null:id;look();ui();if(st.mode==="3d"){if(st.sel){const p=V.parts.find(q=>q.id===st.sel),b=new THREE.Box3().setFromObject(p.g);b.getCenter(cam.tgt);}else cam.tgt.copy(V.ctr);}}
+function frame3(){const c=G3.pc,rr=cam.r*(1+st.k*1.25),tg=st.sel?cam.tgt:(V.ctrK||cam.tgt),sp_=new THREE.Vector3().setFromSphericalCoords(rr,cam.ph,cam.th);c.position.copy(tg).add(sp_);c.near=rr*.01;c.far=rr*30;c.lookAt(tg);c.updateProjectionMatrix();
+ G3.r.setScissorTest(false);G3.r.setViewport(0,0,G3.w,G3.h);G3.r.render(G3.sc,c);}
+/* 2D sheet: four orthographic views of the same model, hidden lines removed by a fill in the sheet colour */
+function frame2(){const w=G3.w,h=G3.h,r=G3.r,oc=G3.oc,box=new THREE.Box3().setFromObject(V.root),sz=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3()),D=sz.length()*2+10;
+ const lw=Math.round(w*.62),th=Math.round(h*.56),views=[
+  {k:"side",x:0,y:0,w:lw,h:th,dir:[0,0,1],up:[0,1,0],hx:sz.x,vy:sz.y,cu:c.x,cv:c.y},
+  {k:"front",x:lw,y:0,w:w-lw,h:th,dir:[1,0,0],up:[0,1,0],hx:sz.z,vy:sz.y,cu:-c.z,cv:c.y},
+  {k:"top",x:0,y:th,w:lw,h:h-th,dir:[0,1,0],up:[0,0,-1],hx:sz.x,vy:sz.z,cu:c.x,cv:-c.z},
+  {k:"iso",x:lw,y:th,w:w-lw,h:h-th,dir:[.62,.5,.6],up:[0,1,0],hx:sz.length()*.8,vy:sz.length()*.62,cu:0,cv:0}];
+ r.setScissorTest(false);r.clear();r.setScissorTest(true);
+ views.forEach(v=>{const s=Math.min((v.w-70)/Math.max(v.hx,1e-6),(v.h-(v.k==="side"?96:60))/Math.max(v.vy,1e-6));v.s=s;oc.left=-v.w/2/s;oc.right=v.w/2/s;oc.top=v.h/2/s;oc.bottom=-v.h/2/s;oc.near=.01;oc.far=D*2;oc.up.set(...v.up);
+  const d=new THREE.Vector3(...v.dir).normalize();oc.position.copy(c).addScaledVector(d,D);oc.lookAt(c);oc.updateProjectionMatrix();r.setViewport(v.x,h-v.y-v.h,v.w,v.h);r.setScissor(v.x,h-v.y-v.h,v.w,v.h);r.render(G3.sc,oc);});
+ r.setScissorTest(false);if(dirty){overlay(views,box,sz,c);dirty=false;}}
+function overlay(views,box,sz,c){const w=G3.w,h=G3.h,f=n=>n>=100?n.toFixed(0):n>=10?n.toFixed(1):n>=1?n.toFixed(2):n.toFixed(3);let s="";
+ const lab={side:T.vSide,front:T.vFront,top:T.vTop,iso:T.vIso};
+ views.forEach(v=>{s+=`<rect class="fr" x="${v.x+.5}" y="${v.y+.5}" width="${v.w-1}" height="${v.h-1}"/><text x="${v.x+10}" y="${v.y+v.h-10}">${esc(tx(lab[v.k]))}</text>`;});
+ const S=views[0],px=(v,u,vv)=>[v.x+v.w/2+(u-v.cu)*v.s,v.y+v.h/2-(vv-v.cv)*v.s];
+ const dimH=(v,u0,u1,vy,val,below=1)=>{const a=px(v,u0,vy),b=px(v,u1,vy),y=a[1]+below*22;return `<path class="dim" d="M${a[0]},${a[1]+below*4}V${y+below*5}M${b[0]},${b[1]+below*4}V${y+below*5}M${a[0]},${y}H${b[0]}M${a[0]+6},${y-3}L${a[0]},${y}l6,3M${b[0]-6},${y-3}L${b[0]},${y}l-6,3"/><text x="${(a[0]+b[0])/2}" y="${y-5}" text-anchor="middle">${f(val)}</text>`;};
+ const dimV=(v,uu,v0,v1,val)=>{const a=px(v,uu,v0),b=px(v,uu,v1),x=a[0]+22;return `<path class="dim" d="M${a[0]+4},${a[1]}H${x+5}M${b[0]+4},${b[1]}H${x+5}M${x},${a[1]}V${b[1]}M${x-3},${a[1]-6}L${x},${a[1]}l3,-6M${x-3},${b[1]+6}L${x},${b[1]}l3,6"/><text x="${x+5}" y="${(a[1]+b[1])/2+4}">${f(val)}</text>`;};
+ if(st.k<.02){s+=dimH(S,box.min.x,box.max.x,box.min.y,sz.x)+dimV(S,box.max.x,box.min.y,box.max.y,sz.y);const Tp=views[2],F=views[1];s+=dimV(Tp,box.max.x,-box.max.z,-box.min.z,sz.z)+dimH(F,-box.max.z,-box.min.z,box.min.y,sz.z);}
+ const ps=V.parts.map(p=>{const b=new THREE.Box3().setFromObject(p.g),q=b.getCenter(new THREE.Vector3());return {p,pt:px(S,q.x,q.y)};}).sort((a,b)=>a.pt[0]-b.pt[0]);
+ ps.forEach((o,i)=>{const bxp=S.x+26+(S.w-52)*(ps.length>1?i/(ps.length-1):.5),byp=S.y+20,on=st.sel===o.p.id;
+  s+=`<path class="ld" d="M${bxp},${byp+10}L${o.pt[0]},${o.pt[1]}"/><circle cx="${o.pt[0]}" cy="${o.pt[1]}" r="2" fill="var(--sheet-ink)"/><circle class="bal${on?" on":""}" data-part="${o.p.id}" cx="${bxp}" cy="${byp}" r="10"/><text class="bt${on?" on":""}" x="${bxp}" y="${byp+3.5}">${o.p.idx+1}</text>`;});
+ const tw=Math.min(250,w*.36),tx0=w-tw-8,ty0=h-52;s+=`<rect class="tb" x="${tx0}" y="${ty0}" width="${tw}" height="44"/><path class="dim" d="M${tx0},${ty0+22}H${tx0+tw}"/><text x="${tx0+8}" y="${ty0+15}" style="font-weight:600">${esc(tx(DEFS[st.veh].n))}</text><text x="${tx0+8}" y="${ty0+37}">${esc(tx(T.tbScale))} 1:${Math.max(1,Math.round(1000/(S.s*.2646)))}${tw>=230?" · "+esc(tx(T.unit)):""}</text>`;
+ $("ov").innerHTML=s;}
+function tick(ts){requestAnimationFrame(tick);if(!G3||!V)return;const t=ts/1000;
+ if(kT!==null){const d=kT-st.k;if(Math.abs(d)<.01){st.k=kT;kT=null;}else st.k+=d*.12;$("ex").value=Math.round(st.k*100);explode();}
+ if(V.anim)V.anim(V.ref,st.run?t:0,st.run);if(st.run&&st.mode==="2d")dirty=false;
+ if(st.mode==="2d")frame2();else frame3();}
+function bind(){const el=$("view"),pts=new Map();let pinch=0,moved=0,down=null;
+ el.addEventListener("pointerdown",e=>{if(e.target.closest("button")||e.target.classList.contains("bal"))return;try{el.setPointerCapture(e.pointerId)}catch(_){}pts.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=0;down={x:e.clientX,y:e.clientY};});
+ el.addEventListener("pointermove",e=>{if(!pts.has(e.pointerId)||st.mode!=="3d")return;const p=pts.get(e.pointerId);
+  if(pts.size===1){cam.th-=(e.clientX-p.x)*.007;cam.ph=Math.max(.08,Math.min(3.05,cam.ph-(e.clientY-p.y)*.006));moved+=Math.abs(e.clientX-p.x)+Math.abs(e.clientY-p.y);}
+  p.x=e.clientX;p.y=e.clientY;if(pts.size===2){const [a,b]=[...pts.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch)cam.r*=pinch/d;pinch=d;moved=99;}});
+ const up=e=>{const had=pts.has(e.pointerId);pts.delete(e.pointerId);if(pts.size<2)pinch=0;if(had&&moved<6&&st.mode==="3d"&&e.type==="pointerup")pickAt(e);};
+ el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
+ el.addEventListener("wheel",e=>{if(st.mode!=="3d")return;e.preventDefault();cam.r*=Math.exp(e.deltaY*.0012);},{passive:false});
+ $("orb").addEventListener("click",e=>{const b=e.target.closest("[data-orb]");if(!b)return;const k=b.dataset.orb;if(k==="in")cam.r/=1.3;else if(k==="out")cam.r*=1.3;else resetCam();});
+ $("ov").addEventListener("click",e=>{const p=e.target.dataset&&e.target.dataset.part;if(p)select(p);});}
+function pickAt(e){const r=G3.r.domElement.getBoundingClientRect(),m=new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1));G3.ray.setFromCamera(m,G3.pc);
+ const hit=G3.ray.intersectObjects(V.root.children,true).find(h=>h.object.isMesh&&h.object.userData.part&&h.object.visible&&!h.object.userData.fx);if(hit){const p=hit.object.userData.part;if(st.sel&&st.sel!==p.id){/* a dimmed part was hit first: still switch to it */}select(p.id);}else if(st.sel)select(st.sel);}
+
+/* ---------- panels ---------- */
+function ui(){const D=DEFS[st.veh];
+ $("vehs").innerHTML=ORDER.map(k=>`<button type="button" id="veh-${k}" data-veh="${k}" aria-pressed="${k===st.veh}">${esc(tx(DEFS[k].n))}</button>`).join("");
+ $("mode-3d").setAttribute("aria-pressed",st.mode==="3d");$("mode-2d").setAttribute("aria-pressed",st.mode==="2d");
+ $("run").textContent=tx(st.run?T.runOn:T.run);$("run").setAttribute("aria-pressed",st.run);$("xray").setAttribute("aria-pressed",st.xray);$("xray").hidden=st.mode==="2d";
+ $("view").classList.toggle("sheet",st.mode==="2d");$("ov").style.display=st.mode==="2d"?"":"none";$("orb").hidden=st.mode==="2d";$("hint").hidden=st.mode==="2d";$("tag").hidden=st.mode==="2d";
+ $("capt").textContent=tx(st.mode==="2d"?T.cap2:T.cap3);$("tag").textContent=tx(D.n);
+ const ps=V?V.parts:[];
+ $("parts").innerHTML=`<li><button type="button" id="part-all" data-part="" aria-pressed="${!st.sel}"><i>◎</i><span>${esc(tx(T.all))}</span></button></li>`+ps.map(p=>`<li><button type="button" id="part-${p.id}" data-part="${p.id}" aria-pressed="${st.sel===p.id}"><i>${p.idx+1}</i><span>${esc(tx(p.n))}${p.lim?" ⚠":""}</span></button></li>`).join("");
+ const p=ps.find(q=>q.id===st.sel);
+ $("sheet").innerHTML=p?`<h3>${p.idx+1}. ${esc(tx(p.n))}</h3><dl><div><dt>${esc(tx(T.dFn))}</dt><dd>${esc(tx(p.fn))}</dd></div><div><dt>${esc(tx(T.dStd))}</dt><dd>${esc(tx(p.std))}</dd></div>${p.lim?`<div><dt>${esc(tx(T.dLim))}</dt><dd class="lim">${esc(tx(p.lim))}</dd></div>`:""}</dl>`:`<p class="note">${esc(tx(T.pick))}</p>`;
+ $("h-std").textContent=tx(T.hStd)+": "+tx(D.n);
+ if(V){const f=n=>n>=100?n.toFixed(0):n>=10?n.toFixed(1):n.toFixed(2),u=lang==="th"?" ม.":" m";$("spec").innerHTML=`<span>${esc(tx(T.sL))} <b>${f(V.size.x)}${u}</b></span><span>${esc(tx(T.sW))} <b>${f(V.size.z)}${u}</b></span><span>${esc(tx(T.sH))} <b>${f(V.size.y)}${u}</b></span><span>${esc(tx(T.sM))} <b>${esc(tx(D.mass))}</b></span><span>${esc(tx(D.ref))}</span>`;}
+ $("make").textContent=tx(D.make);$("keep").textContent=tx(D.keep);
+ {const Y=SYS[st.veh];$("h-sys").textContent=tx(T.hSys)+": "+tx(D.n);$("sys").innerHTML=[[T.lFuel,Y[0],Y[1]],[T.lCpu,Y[2],Y[3]]].map(([l,t,pid])=>`<div><span class="lbl">${esc(tx(l))}</span><p>${esc(tx(t))}</p><button type="button" data-lim="${pid}">${esc(tx(T.showPart))}</button></div>`).join("");
+  $("h-stat").textContent=tx(T.hStat)+": "+tx(D.n);$("stats").innerHTML=STATS[st.veh].map(([k,v,t,sr])=>`<div class="stat ${k}"><span class="k">${esc(tx(k==="w"?T.kW:T.kD))}</span><b>${esc(tx(v))}</b><p>${esc(tx(t))}</p><a href="${S_[sr][1]}" target="_blank" rel="noopener">${esc(tx(T.srcLbl))}: ${esc(S_[sr][0].split(":")[0])}</a></div>`).join("");}
+ {const P=PEOPLE[st.veh];$("h-ppl").textContent=tx(T.hPpl)+": "+tx(D.n);$("who").innerHTML=P.who.map(w=>`<li>${esc(tx(w))}</li>`).join("");
+  $("lens").innerHTML=[["phys",T.lnPhys,"var(--accent)"],["mat",T.lnMat,"var(--muted)"],["econ",T.lnEcon,"var(--ok)"],["psy",T.lnPsy,"var(--warn)"]].map(([k,l,c])=>`<div class="ln" style="--lc:${c}"><small>${esc(tx(l))}</small><p>${esc(tx(P[k]))}</p></div>`).join("");$("crew").textContent=tx(P.crew);}
+ $("lims").innerHTML=ps.filter(q=>q.lim).map(q=>`<li><button type="button" data-lim="${q.id}"><b>${q.idx+1}. ${esc(tx(q.n))}</b><span>${esc(tx(q.lim))}</span></button></li>`).join("");
+ dirty=true;}
+function render(){document.documentElement.lang=lang;document.title=tx(T.title);document.querySelectorAll("[data-i]").forEach(el=>el.textContent=tx(T[el.dataset.i]));
+ document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===lang));$("lk-board").href=BOARD_URL;
+ Object.values(S_).forEach(x=>{if(!SRC.some(y=>y[1]===x[1]))SRC.push(x);});
+ $("src").innerHTML=SRC.map(([t,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("");ui();}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.veh){setVeh(b.dataset.veh);ui();try{history.replaceState(null,"","#"+b.dataset.veh)}catch(_){}}
+ else if(b.dataset.mode){st.mode=b.dataset.mode;sizeGL();explode();look();ui();}
+ else if(b.id==="run"){st.run=!st.run;ui();}
+ else if(b.id==="xray"){st.xray=!st.xray;look();ui();}
+ else if(b.id==="asm"){kT=0;}else if(b.id==="exp"){kT=1;}
+ else if(b.dataset.part!==undefined&&b.closest("#parts")){if(b.dataset.part==="")(st.sel&&select(st.sel));else select(b.dataset.part);}
+ else if(b.dataset.lim){if(st.sel!==b.dataset.lim)select(b.dataset.lim);$("view").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});}});
+document.addEventListener("input",e=>{if(e.target.id==="ex"){kT=null;st.k=+e.target.value/100;explode();}});
+window.addEventListener("resize",sizeGL);
+{const h=location.hash.slice(1);if(DEFS[h])st.veh=h;}
+window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(DEFS[h]&&h!==st.veh){setVeh(h);ui();}});
+if(has3D())sizeGL();
+if(G3!==false||true){try{setVeh(st.veh);}catch(e){console.error(e);}}
+render();requestAnimationFrame(tick);
+</script>
+</body>
+</html>
