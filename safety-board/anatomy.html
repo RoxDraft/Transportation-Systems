@@ -113,6 +113,25 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(-
 .stat a{font-size:12px;color:var(--muted)}
 .sys{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
 .sys p{margin:0 0 8px;font-size:14.5px}
+.rm{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.rm .lbl{margin:0 4px 0 0}
+.rmp{margin-top:12px;border-top:3px solid var(--accent);padding-top:10px;display:grid;gap:10px}
+.rmp p{margin:0;font-size:14.5px}
+.chips,.phs{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.phs button{font:600 13px var(--f-body);padding:6px 11px 6px 7px;border-radius:999px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.phs button i{font:600 11px var(--f-mono);font-style:normal;width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center}
+.phs button[aria-current="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.pht{border-left:3px solid var(--accent);padding-left:10px}
+.pht b{display:block}
+.view[data-sky="rain"]:not(.sheet){background:#a9b4be}
+.view[data-sky="sun"]:not(.sheet){background:linear-gradient(#ffe6ad,#f6dfb0)}
+.view[data-sky="pres"]:not(.sheet){background:#cbd3e8}
+.view[data-sky="chem"]:not(.sheet){background:#dccfb6}
+.chain{display:flex;flex-wrap:wrap;gap:6px 4px;list-style:none;margin:0 0 12px;padding:0;align-items:center}
+.chain li{display:inline-flex;align-items:center;gap:4px;font-size:13.5px}
+.chain li span{padding:5px 11px;border-radius:999px;background:var(--tag-bg);border:1px solid var(--line)}
+.chain li+li::before{content:"→";color:var(--muted);font-family:var(--f-mono)}
+.stat .ap{font-size:12px;color:var(--muted)}
 .bioA{margin:0 0 14px;font:600 17px var(--f-body)}
 .sys button{font:600 13px var(--f-body);padding:6px 12px;border-radius:999px;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);cursor:pointer}
 .crew{margin-top:16px;padding:12px 14px;background:var(--tag-bg);border-left:4px solid var(--accent)}
@@ -145,6 +164,8 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(-
     <button type="button" class="chip" id="run" data-i="run"></button>
     <button type="button" class="chip" id="xray" data-i="xray"></button>
    </div>
+   <div class="rm" role="group" aria-labelledby="l-rm"><span class="lbl" id="l-rm" data-i="lRm"></span>
+    <button type="button" class="chip" id="rm-cad" data-rm="cad" data-i="rmCad"></button><button type="button" class="chip" id="rm-env" data-rm="env" data-i="rmEnv"></button><button type="button" class="chip" id="rm-use" data-rm="use" data-i="rmUse"></button></div>
    <div class="view" id="view"><div id="gl"></div><svg id="ov" aria-hidden="true"></svg>
     <span class="tag" id="tag"></span>
     <div class="orb" id="orb"><button type="button" data-orb="in" aria-label="Zoom in">+</button><button type="button" data-orb="out" aria-label="Zoom out">−</button><button type="button" data-orb="reset" aria-label="Reset view">⟲</button></div>
@@ -152,6 +173,7 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(-
    </div>
    <div class="range"><button type="button" id="asm" data-i="asm"></button><input type="range" id="ex" min="0" max="100" value="0" aria-label="Explode"><button type="button" id="exp" data-i="exp"></button></div>
    <p class="capt" id="capt"></p>
+   <div class="rmp" id="rmp" hidden></div>
   </div>
   <div class="card">
    <span class="lbl" data-i="lParts"></span>
@@ -182,6 +204,14 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(-
   <h2 id="h-stat"></h2>
   <p class="note" data-i="statNote" style="margin-bottom:12px"></p>
   <div class="stats" id="stats"></div>
+ </section>
+
+ <section class="card">
+  <h2 id="h-cost"></h2>
+  <p class="note" data-i="costNote" style="margin-bottom:12px"></p>
+  <div class="stats" id="cost" style="margin-bottom:16px"></div>
+  <span class="lbl" data-i="lMakers"></span><ol class="chain" id="ch-make"></ol>
+  <span class="lbl" data-i="lUsers"></span><ol class="chain" id="ch-use"></ol>
  </section>
 
  <section class="card">
@@ -226,6 +256,11 @@ const T={
  dFn:B("หน้าที่และวัสดุ","Function and material"),dStd:B("มาตรฐานและการดูแล","Standards and maintenance"),dLim:B("ขีดจำกัดจากการออกแบบ","Design limit"),
  pick:B("เลือกชิ้นส่วนจากรายการ จากโมเดล หรือจากเลขบนแบบ เพื่อดูรายละเอียด","Pick a part from the list, the model or a balloon on the drawing to see its data sheet."),
  hStd:B("มาตรฐานการผลิตและการดูแล","Standards for building and maintaining"),lMake:B("การออกแบบและผลิต","Design and manufacture"),lKeep:B("การดูแลระหว่างใช้งาน","In-service maintenance"),
+ lRm:B("ทดสอบแบบไหน","Test where"),rmCad:B("ในโปรแกรมออกแบบ","In design software"),rmEnv:B("ในสภาพแวดล้อมจริง","In the real environment"),rmUse:B("ใช้งานจริง","In real use"),
+ cadTxt:B("ในโปรแกรมออกแบบ (CAD/CAE) วิศวกรประกอบชิ้นส่วนเสมือน แล้วคำนวณความเค้นและการไหลของอากาศหรือน้ำ ทุกชิ้นใหม่เอี่ยมและขนาดตรงแบบ ไม่มีลม ฝุ่น สนิม หรือคน จึงลองได้เร็วและถูก แต่ผลต้องยืนยันด้วยการทดสอบของจริงเสมอ","In design software (CAD/CAE) engineers assemble virtual parts and compute stress and the flow of air or water. Every part is new and exactly to size, with no wind, dust, rust or people, so trials are fast and cheap. The results must still be confirmed by testing the real thing."),
+ envCrit:B("ที่สำคัญที่สุดสำหรับ","What matters most for"),need3d:B("สลับไปที่โมเดล 3D เพื่อดูภาพเคลื่อนไหวของโหมดนี้","Switch to the 3D model to see this mode animated."),
+ lOut:B("ผลของภารกิจ","Outcome"),outOk:B("สำเร็จ","Success"),outFail:B("ล้มเหลว (ระเบิด)","Failure (explosion)"),misNote:B("ลำดับภารกิจเป็นภาพประกอบแบบรวม ย่อเวลาและระยะทาง ไม่ใช่ภารกิจของจรวดรุ่นใดรุ่นหนึ่ง","The mission sequence is a composite illustration with time and distance compressed, not any one rocket's flight."),
+ hCost:B("ต้นทุนย้อนหลัง และห่วงโซ่ผู้ผลิตถึงผู้ใช้","Cost over time, and the chain from makers to users"),costNote:B("ต้นทุนการผลิตจริงมักเป็นความลับทางการค้า ตัวเลขนี้จึงเป็นราคาขายหรือราคาสั่งซื้อ ไม่ได้ปรับเงินเฟ้อ รายการที่ไม่มีลิงก์เป็นค่าประมาณคร่าวๆ","Real production cost is usually a trade secret, so these are selling or order prices, not adjusted for inflation. Items without a link are rough estimates."),lMakers:B("ฝั่งผู้ผลิต","Makers"),lUsers:B("ฝั่งผู้ใช้","Users"),approx:B("ค่าประมาณ","Rough estimate"),
  hBio:B("แรงบันดาลใจจากธรรมชาติ","Inspiration from nature"),bioNote:B("ธรรมชาติให้หลักการ แต่วิศวกรมักเลือกกลไกคนละแบบ ตัวเลขในส่วนนี้เป็นค่าประมาณจากความรู้ทั่วไป","Nature supplies the principle, but engineers usually choose a different mechanism. Figures here are approximate general knowledge."),lBio:B("ต้นแบบในธรรมชาติ","Natural counterpart"),bSame:B("หลักการที่เหมือนกัน","What is the same"),bDiff:B("การขับเคลื่อนที่ต่างกัน","How propulsion differs"),bSee:B("การมองเห็น","Seeing the way ahead"),
  hSys:B("พลังงานและคอมพิวเตอร์บนยาน","Energy and on-board computing"),lFuel:B("เชื้อเพลิงและพลังงาน","Fuel and energy"),lCpu:B("แผงวงจรและคอมพิวเตอร์","Circuit boards and computers"),showPart:B("ดูชิ้นนี้ในโมเดล","Show this part in the model"),
  hStat:B("สถิติ: ที่น่าทึ่ง และที่น่าเบื่อแต่สำคัญ","Statistics: the striking and the dull-but-important"),statNote:B("ตัวเลขเมื่อคน สิ่งของ และสภาพแวดล้อมอยู่ร่วมกับยานพาหนะแบบนี้ ทุกตัวเลขมีลิงก์ไปที่แหล่งข้อมูล","Numbers from where people, things and the environment meet this vehicle. Every figure links to its source."),kW:B("น่าทึ่ง","Striking"),kD:B("น่าเบื่อแต่สำคัญ","Dull but important"),srcLbl:B("แหล่งข้อมูล","Source"),
@@ -749,19 +784,84 @@ const BIO={
   B("หมึกดูดน้ำรอบตัวมาพ่นซ้ำได้ไม่จำกัด จรวดอยู่ในสุญญากาศ ต้องแบกทุกอย่างที่จะพ่นไปเองตั้งแต่ต้น น้ำหนักส่วนใหญ่ของจรวดจึงเป็นเชื้อเพลิง และพ่นหมดแล้วเติมไม่ได้","A squid refills from the water around it and can jet again and again. A rocket is in vacuum and must carry everything it will ever throw out, which is why most of its weight is propellant and none can be topped up."),
   B("จรวดเร็วเกินกว่าที่คนจะบังคับด้วยสายตา จึงรับรู้ด้วยไจโรและเครื่องวัดความเร่งที่บอกว่าตัวเองหมุนและเร่งไปเท่าไร และยานอวกาศใช้กล้องจับตำแหน่งดาวเพื่อรู้ทิศ คล้ายนกอพยพบางชนิดที่ใช้ดาวนำทางตอนกลางคืน","A rocket moves too fast to be flown by eye, so it senses with gyroscopes and accelerometers that report how it is turning and accelerating. Spacecraft use star trackers to know which way they point, rather like some migrating birds that steer by the stars at night.")]};
 
+/* ---------------- run modes: design software / real environment / real use ---------------- */
+const ENVF={
+ wind:[B("ลม","Wind"),B("ทดสอบในอุโมงค์ลมและบนสนามที่มีลมขวาง ในโปรแกรมแรงเป็นค่าคงที่ แต่ลมจริงเปลี่ยนแรงและทิศทุกวินาที","Tested in wind tunnels and on tracks with crosswind. In software the load is a fixed value; real wind changes strength and direction every second.")],
+ rain:[B("ฝนและความชื้น","Rain and humidity"),B("ทดสอบในห้องพ่นน้ำและห้องความชื้น ความกันน้ำของอุปกรณ์ไฟฟ้าบอกเป็นระดับ IP ตาม IEC 60529 น้ำทำให้ลื่น ลัดวงจร และเร่งสนิม","Tested in spray and humidity chambers; electrical parts carry an IP rating under IEC 60529. Water makes surfaces slippery, shorts circuits and speeds up rust.")],
+ sun:[B("แสงแดดและอุณหภูมิ","Sunlight and temperature"),B("ทดสอบในตู้ร้อน-เย็นและตู้แสง UV ความร้อนทำให้โลหะยืดหด ยางและพลาสติกกรอบ แบตเตอรี่เสื่อมเร็ว และแสงจ้าทำให้ทั้งตาและกล้องพร่า","Tested in thermal and UV chambers. Heat makes metal grow and shrink, hardens rubber and plastic, ages batteries, and glare blinds both eyes and cameras.")],
+ pres:[B("ความดัน","Pressure"),B("ทดสอบในห้องปรับความดันหรือถังอัดน้ำ ยิ่งสูงอากาศยิ่งบาง เครื่องยนต์และคนได้ออกซิเจนน้อยลง ส่วนใต้น้ำความดันเพิ่มราว 1 บรรยากาศทุก 10 เมตร","Tested in altitude chambers or water pressure tanks. Higher up the air thins, starving engines and people of oxygen; under water pressure rises about 1 atmosphere every 10 m.")],
+ chem:[B("สารเคมีและการกัดกร่อน","Chemicals and corrosion"),B("ทดสอบด้วยการพ่นหมอกเกลือตาม ISO 9227 ไอเกลือทะเล เชื้อเพลิง น้ำมัน และน้ำยาต่างๆ ค่อยๆ กัดโลหะ ซีล และสายไฟ ซึ่งในโปรแกรมชิ้นส่วนใหม่เอี่ยมเสมอ","Tested by salt-spray under ISO 9227. Sea salt, fuel, oil and fluids slowly eat metal, seals and wiring, while in software every part stays brand new.")]};
+const ENVK=["wind","rain","sun","pres","chem"];
+/* per vehicle: the factors that matter most → [factor, text, part] */
+const ENV={
+ car:[["rain",B("น้ำขังบนถนนทำให้ยางลอยเหนือน้ำที่ความเร็วสูง ดอกยางที่สึกยิ่งเสี่ยง","Standing water lifts the tyres off the road at speed, and worn tread makes it worse."),"wheel"],["sun",B("ฝนหนัก แสงจ้า หรือเส้นถนนที่ซีด ทำให้กล้องและเรดาร์ตรวจจับพลาด","Heavy rain, glare or faded lane lines make the camera and radar miss things."),"adas"]],
+ moto:[["rain",B("ถนนเปียก เส้นทาสี และฝาท่อ ลดแรงเกาะของยางลงมาก ล้มได้แม้เอียงเพียงเล็กน้อย","Wet roads, painted lines and manhole covers cut tyre grip sharply; the bike can fall at a small lean."),"wheels"],["wind",B("ลมขวางและลมจากรถใหญ่ผลักรถเบาให้เบี่ยงออกจากเลน","Crosswind and the wash from large vehicles push a light bike out of its lane."),"fork"]],
+ bus:[["wind",B("ตัวถังสูงและด้านข้างกว้างรับลมขวางเต็มที่ บนสะพานหรือที่โล่งรถเสียการทรงตัวได้","The tall, flat side takes crosswind in full; on bridges and open ground the bus can lose stability."),"super"],["sun",B("ลงเขายาวในวันร้อน เบรกสะสมความร้อนจนจาง","On a long descent on a hot day the brakes soak up heat until they fade."),"airbrake"]],
+ train:[["rain",B("ใบไม้เปียกหรือฝนแรกบนรางทำให้ล้อเหล็กลื่น ระยะเบรกยาวขึ้นมาก","Wet leaves or the first rain on the rail make steel wheels slip, and braking distance grows a lot."),"wheelset"],["sun",B("รางเหล็กขยายตัวในวันร้อนจัดจนโก่ง และสายส่งไฟหย่อน","Rails expand on very hot days until they buckle, and the overhead wire sags."),"panto"]],
+ ship:[["chem",B("น้ำทะเลกัดเหล็กตลอดเวลา ต้องมีสีกันสนิม แท่งโลหะกันกร่อน และการเข้าอู่ตรวจตามรอบ","Seawater attacks steel all the time: coatings, sacrificial anodes and scheduled dry-docking keep it in check."),"hull"],["wind",B("คลื่นและลมทำให้ตัวเรือโก่งงอขึ้นลงซ้ำๆ และตู้สินค้าที่ซ้อนสูงรับลมเหมือนใบเรือ","Waves and wind bend the hull up and down again and again, and the stacked containers catch wind like a sail."),"holds"]],
+ sub:[["pres",B("ทุก 10 เมตรเพิ่มราว 1 บรรยากาศ ทรงกลมต้องผ่านการอัดความดันจริงก่อนให้คนนั่ง","About 1 more atmosphere every 10 m; the sphere is pressure-tested for real before anyone rides in it."),"hull"],["chem",B("น้ำเค็มนำไฟฟ้าและกัดกร่อน รั่วเข้ากระบอกแบตเตอรี่เพียงเล็กน้อยก็ลัดวงจรได้","Salt water conducts and corrodes; a small leak into a battery pod can short it."),"batt"]],
+ plane:[["pres",B("ที่ความสูงบิน อากาศข้างนอกบางเกินกว่าจะหายใจได้ ลำตัวจึงพองและหดทุกเที่ยวบิน ซึ่งทำให้โลหะล้า","At cruise height the outside air is too thin to breathe, so the fuselage swells and relaxes every flight, and that fatigues the metal."),"fuselage"],["rain",B("น้ำแข็งที่เกาะปีกเปลี่ยนรูปทรงปีก แรงยกลดลงและเครื่องร่วงหล่นที่ความเร็วสูงกว่าปกติ","Ice on the wing changes its shape: lift drops and the aircraft stalls at a higher speed than normal."),"wing"]],
+ heli:[["sun",B("อากาศร้อนและที่สูงทำให้อากาศบาง ใบพัดสร้างแรงยกได้น้อยลง บรรทุกได้ลดลง","Hot air and high ground thin the air: the rotor makes less lift and can carry less."),"blades"],["chem",B("ทรายและไอเกลือกัดขอบใบพัดและถูกดูดเข้าเครื่องยนต์","Sand and salt spray erode the blade edges and get drawn into the engines."),"engine"]],
+ drone:[["wind",B("ตัวเบามาก ลมกระโชกที่เร็วใกล้ความเร็วสูงสุดของโดรนพัดมันไปได้เลย","It is so light that a gust near its top speed simply carries it away."),"props"],["sun",B("อากาศเย็นทำให้แบตเตอรี่จ่ายไฟได้น้อยลงและหมดเร็วกว่าที่แอปแสดง","Cold makes the battery deliver less and run out sooner than the app shows."),"battery"]],
+ rocket:[["wind",B("ลมชั้นบนที่แรงผลักด้านข้างจรวดที่ยาวและบาง การปล่อยจึงถูกเลื่อนบ่อยเพราะลม","Strong high-altitude winds push sideways on a long, thin rocket, so launches are often postponed for wind."),"s1"],["sun",B("ออกซิเจนเหลวเย็นจัดทำให้โลหะหดและซีลแข็ง อุณหภูมิต่ำในวันปล่อยเคยเป็นต้นเหตุของอุบัติเหตุกระสวยอวกาศ Challenger","Liquid oxygen chills metal and stiffens seals. Low temperature on launch day lay behind the Challenger shuttle accident."),"engines"]]};
+/* real use: phases of one trip → [name, text] */
+const USE={
+ car:[[B("ขึ้นรถ","Getting in"),B("คนขับปรับที่นั่ง กระจก และคาดเข็มขัด ซึ่งเป็นจุดที่ระบบนิรภัยทั้งหมดเริ่มทำงานได้","The driver sets the seat and mirrors and fastens the belt, the point at which every restraint can do its job.")],[B("ออกตัวในเมือง","Pulling away in town"),B("ความเร็วต่ำ แต่มีคนเดินเท้า จักรยานยนต์ และทางแยกมากที่สุด","Low speed, but the most pedestrians, motorcycles and junctions.")],[B("วิ่งทางไกล","Cruising"),B("ความเร็วสูงสุด ระยะเบรกยาวที่สุด และความเหนื่อยล้าเริ่มสะสม","Highest speed, longest stopping distance, and fatigue starts to build.")],[B("เบรกและเข้าโค้ง","Braking and cornering"),B("แรงทั้งหมดผ่านหน้ายางสี่จุด ABS และ ESC ช่วยไม่ให้ล้อล็อกหรือรถหมุน","Every force goes through four tyre patches; ABS and ESC stop the wheels locking or the car spinning.")],[B("จอด","Parking"),B("ดับเครื่อง ล็อกรถ ระบบยังเฝ้าแบตเตอรี่และรอรับคำสั่งปลดล็อก","Engine off and locked; the electronics still watch the battery and wait for the unlock signal.")]],
+ moto:[[B("สวมหมวกและตรวจรถ","Helmet on, quick check"),B("หมวก ลมยาง โซ่ และเบรก คือสิ่งที่ผู้ขี่ตรวจเองได้ในหนึ่งนาที","Helmet, tyre pressure, chain and brakes: what a rider can check in a minute.")],[B("ออกตัว","Pulling away"),B("ปล่อยคลัตช์และเปิดคันเร่งให้พอดี รถทรงตัวได้เมื่อเริ่มวิ่ง","Clutch out and throttle on in balance; the bike holds itself up once it rolls.")],[B("เอียงเข้าโค้ง","Leaning into a corner"),B("ยิ่งเร็วยิ่งต้องเอียงมาก และแรงเกาะของยางเป็นตัวกำหนดว่าเอียงได้แค่ไหน","More speed needs more lean, and tyre grip decides how far it can go.")],[B("เบรกฉุกเฉิน","Emergency braking"),B("น้ำหนักถ่ายไปล้อหน้า ABS ช่วยไม่ให้ล้อล็อก","Weight moves to the front wheel; ABS keeps it from locking.")],[B("จอด","Parking"),B("ตั้งขาตั้งบนพื้นแข็ง ท่อไอเสียยังร้อนอยู่หลายนาที","Stand down on firm ground; the exhaust stays hot for minutes.")]],
+ bus:[[B("ตรวจรถก่อนออก","Pre-trip check"),B("คนขับตรวจลมเบรก ยาง ไฟ และทางออกฉุกเฉินก่อนรับผู้โดยสาร","The driver checks brake air, tyres, lights and emergency exits before boarding.")],[B("ผู้โดยสารขึ้นรถ","Boarding"),B("น้ำหนักและจุดศูนย์ถ่วงเปลี่ยนตามจำนวนคนและสัมภาระ","Weight and centre of gravity change with the number of people and bags.")],[B("วิ่งทางไกล","On the highway"),B("ชั่วโมงขับขี่ถูกจำกัดและบันทึก เพราะความเหนื่อยล้าคือความเสี่ยงหลัก","Driving hours are limited and recorded, because fatigue is the main risk.")],[B("ลงเขา","Descending a hill"),B("ใช้เกียร์ต่ำและรีทาร์เดอร์ เก็บเบรกล้อไว้สำหรับหยุดจริง","Low gear and the retarder, saving the wheel brakes for the real stop.")],[B("ถึงปลายทาง","Arriving"),B("จอดสนิท เปิดประตู แล้วตรวจรถอีกรอบก่อนเที่ยวถัดไป","Full stop, doors open, and another check before the next trip.")]],
+ train:[[B("เตรียมขบวน","Preparing the train"),B("ตรวจเบรก ประตู และระบบป้องกันขบวนรถก่อนออกจากโรงซ่อม","Brakes, doors and train protection are tested before leaving the depot.")],[B("รับผู้โดยสาร","Boarding at a station"),B("ประตูต้องปิดและล็อกครบทุกบานก่อนขบวนจะออกได้","Every door must be closed and locked before the train can move.")],[B("เร่งความเร็ว","Accelerating"),B("แหนบรับไฟดึงไฟฟ้าจากสายส่ง มอเตอร์ขับล้อ","The pantograph draws power from the wire and the motors drive the wheels.")],[B("วิ่งตามสัญญาณ","Running under signals"),B("ระบบอาณัติสัญญาณคุมระยะห่างระหว่างขบวน และเบรกเองถ้าคนขับฝ่าสัญญาณ","Signalling keeps trains apart and brakes automatically if a signal is passed.")],[B("เบรกเข้าสถานี","Braking into a station"),B("มอเตอร์กลับเป็นเครื่องกำเนิดไฟฟ้า คืนไฟให้ระบบ แล้วเบรกลมหยุดขบวน","The motors turn into generators and feed power back, then air brakes finish the stop.")]],
+ ship:[[B("บรรทุกตู้สินค้า","Loading containers"),B("แผนจัดวางตู้คำนวณน้ำหนักและการทรงตัว ถังอับเฉาปรับสมดุล","The stowage plan balances weight and stability, and ballast tanks trim the ship.")],[B("ออกจากท่า","Leaving port"),B("นำร่องท้องถิ่นขึ้นเรือ เรือลากจูงช่วยหันหัวเรือ","A local pilot boards and tugs help swing the bow.")],[B("ข้ามมหาสมุทร","Crossing the ocean"),B("เครื่องยนต์เดินต่อเนื่องหลายสัปดาห์ ลูกเรือยี่สิบกว่าคนผลัดเวรเฝ้าสะพานเดินเรือ","The engine runs for weeks without stopping while about twenty crew stand watches on the bridge.")],[B("เจอคลื่นลมแรง","Heavy weather"),B("ลดความเร็วและเปลี่ยนเส้นทาง เพื่อลดแรงที่ตัวเรือและตู้สินค้า","Speed is cut and the course changed to ease the loads on hull and cargo.")],[B("เข้าเทียบท่า","Arriving"),B("เรือใช้ระยะหยุดเป็นกิโลเมตร จึงต้องลดความเร็วล่วงหน้านาน","Stopping takes kilometres, so speed comes off long in advance.")]],
+ sub:[[B("เตรียมบนเรือแม่","Preparing on the mother ship"),B("ตรวจตามรายการ เติมออกซิเจน เปลี่ยนสารดูดซับ ติดน้ำหนักถ่วง","Checklists, fresh oxygen and scrubber, and the descent weights are fitted.")],[B("ปล่อยลงน้ำ","Launch"),B("เครนยกยานลงน้ำ นักประดาน้ำปลดสาย นักบินปิดฝา","A crane lowers the vehicle, swimmers release the lines, the pilot seals the hatch.")],[B("ดำลง","Descent"),B("จมลงด้วยน้ำหนักถ่วงราวสองชั่วโมง แสงแดดค่อยๆ หายไป","It sinks on its weights for about two hours as sunlight fades away.")],[B("ทำงานที่ก้นทะเล","Working on the bottom"),B("เปิดไฟ ขับด้วยใบพัด ใช้แขนกลเก็บตัวอย่าง มีเวลาไม่กี่ชั่วโมง","Lights on, thrusters driving, arms sampling: a few hours at most.")],[B("ทิ้งน้ำหนักและขึ้น","Drop weights and ascend"),B("ทิ้งน้ำหนักเหล็กแล้วลอยขึ้นเอง กลไกนี้ต้องทำงานได้แม้ไฟดับ","The steel weights are dropped and it floats up by itself; this must work even with no power.")],[B("เก็บขึ้นเรือ","Recovery"),B("ช่วงเสี่ยงที่สุดช่วงหนึ่งคือการเกี่ยวยานขึ้นจากผิวน้ำที่มีคลื่น","Hooking the vehicle out of a rough sea is one of the riskiest moments.")]],
+ plane:[[B("เตรียมเครื่องที่ประตู","Turnaround at the gate"),B("เติมเชื้อเพลิง ขนสัมภาระ ผู้โดยสารขึ้นเครื่อง นักบินเดินตรวจรอบเครื่อง","Fuel, bags and passengers go aboard while a pilot walks round the aircraft.")],[B("วิ่งขึ้น","Take-off"),B("แฟลปกางเพื่อเพิ่มแรงยก หลังความเร็วตัดสินใจ เครื่องต้องขึ้นต่อแม้เครื่องยนต์ดับหนึ่งตัว","Flaps out for extra lift; past decision speed the aircraft must go even with one engine failed.")],[B("ไต่และบินเดินทาง","Climb and cruise"),B("เก็บล้อและแฟลป ห้องโดยสารถูกอัดอากาศ ระบบบินอัตโนมัติคุมเส้นทาง","Gear and flaps up, cabin pressurised, autopilot holding the route.")],[B("ลดระดับและร่อนลง","Descent and approach"),B("กางแฟลปและล้อ ลดความเร็ว เป็นช่วงที่งานของนักบินหนักที่สุด","Flaps and gear down, speed coming off: the pilots' busiest phase.")],[B("ลงจอด","Landing"),B("เบรกล้อ แผ่นสปอยเลอร์ และเครื่องยนต์กลับแรงขับช่วยกันหยุดเครื่อง","Wheel brakes, spoilers and reverse thrust stop the aircraft together.")]],
+ heli:[[B("ตรวจและติดเครื่อง","Pre-flight and start"),B("ตรวจใบพัด ห้องเกียร์ และระดับน้ำมัน แล้วเร่งรอบใบพัด","Blades, gearbox and oil levels are checked, then the rotor is run up.")],[B("ยกตัวลอยนิ่ง","Lifting into the hover"),B("ใช้กำลังสูงสุดช่วงนี้ ใบพัดหางต้านแรงบิดของใบพัดหลัก","The most power is needed here, and the tail rotor holds against the main rotor's torque.")],[B("บินเดินทาง","Cruise"),B("เอียงจานใบพัดไปข้างหน้า ใบพัดแต่ละใบเปลี่ยนมุมทุกรอบที่หมุน","The rotor disc tilts forward, each blade changing angle on every turn.")],[B("ลงจอดในที่แคบ","Landing in a tight spot"),B("ฝุ่นหรือหิมะที่ใบพัดพัดขึ้นบังสายตา ลูกเรือช่วยดูหางและสิ่งกีดขวาง","Dust or snow blown up by the rotor hides the ground; the crew watch the tail and obstacles.")],[B("ถ้าเครื่องยนต์ดับ","If the engines stop"),B("นักบินลดมุมใบทันที ให้ลมที่ไหลขึ้นหมุนใบพัดต่อ แล้วร่อนลงจอด","The pilot lowers the blade angle at once so the rising air keeps the rotor turning for a gliding landing.")]],
+ drone:[[B("ตรวจก่อนบิน","Pre-flight"),B("ตรวจใบพัด แบตเตอรี่ สัญญาณ GPS และเขตห้ามบินในแอป","Props, battery, GPS lock and no-fly zones are checked in the app.")],[B("ขึ้นบิน","Take-off"),B("มอเตอร์สี่ตัวเร่งพร้อมกัน ตัวควบคุมการบินแก้การเอียงหลายร้อยครั้งต่อวินาที","Four motors spin up together and the flight controller corrects tilt hundreds of times a second.")],[B("บินทำงาน","On task"),B("กล้องบนกิมบอลถ่ายภาพ วิทยุส่งภาพกลับ คนบังคับต้องมองเห็นตัวโดรน","The gimbal camera records, the radio sends video back, and the pilot must keep the drone in sight.")],[B("แบตเตอรี่เหลือน้อย","Low battery"),B("ระบบเตือนและพาบินกลับจุดขึ้นเองเมื่อไฟเหลือถึงระดับที่ตั้งไว้","It warns, then flies itself back to the take-off point at the set level.")],[B("ลงจอด","Landing"),B("กล้องและเซนเซอร์มองพื้นช่วยลดระดับช้าๆ จนแตะพื้น","Downward camera and sensors bring it gently to the ground.")]],
+ rocket:[[B("บนแท่นปล่อย","On the pad"),B("เติมเชื้อเพลิงเย็นจัด ลูกเรือเดินข้ามสะพานเข้าแคปซูล ถ้าบรรทุกดาวเทียมจะปิดไว้ในฝาครอบตั้งแต่ก่อนตั้งจรวด","Super-cold propellant is loaded and the crew cross the arm into the capsule. A satellite payload is sealed inside a fairing before the rocket is raised.")],[B("จุดเครื่องและขึ้น","Ignition and lift-off"),B("คอมพิวเตอร์ตรวจเครื่องยนต์ทุกตัวก่อนปล่อยตัวยึด จรวดขึ้นช้าก่อนแล้วเร่งขึ้นเรื่อยๆ เมื่อเชื้อเพลิงเบาลง","Computers check every engine before the clamps release. The rocket rises slowly, then faster as propellant burns off.")],[B("ผ่านแรงอากาศสูงสุด","Through maximum air load"),B("ราวหนึ่งนาที แรงอากาศกดโครงสร้างมากที่สุด พ้นชั้นบรรยากาศหนาแล้วจึงสลัดหอหนีภัยทิ้ง","About a minute in, air loads on the structure peak. Once above the thick air, the escape tower is thrown off.")],[B("แยกท่อน","Stage separation"),B("ที่ความสูงหลายสิบกิโลเมตร ท่อนแรกดับเครื่องและหลุดออก ท่อนสองจุดเครื่องในสุญญากาศ","Tens of kilometres up, the first stage shuts down and drops away, and the second stage lights in vacuum.")],[B("เข้าวงโคจรและปล่อยสัมภาระ","Orbit and payload release"),B("ท่อนสองดับเครื่องเมื่อได้ความเร็ววงโคจร แคปซูลแยกตัวออก และดาวเทียมถูกดันออกไป","The second stage cuts off at orbital speed, the capsule separates and a satellite is pushed out.")],[B("ท่อนแรกกลับมาลงจอด","First stage flies back"),B("ครีบตะแกรงบังคับทิศ เครื่องยนต์จุดอีกครั้งเพื่อเบรก ขากางออก แล้วลงบนเรือหรือลานจอด","Grid fins steer, the engine relights to brake, the legs open and it lands on a ship or a pad.")],[B("แคปซูลกางร่มลงทะเล","Capsule splashdown"),B("โล่กันความร้อนรับความร้อนตอนกลับสู่บรรยากาศ ร่มชูชีพกางเป็นชุด แล้วแคปซูลลงทะเล เรือเข้าไปรับ","The heat shield takes re-entry heating, parachutes open in sequence and the capsule lands in the sea for a ship to recover.")]]};
+const USE_FAIL=[USE.rocket[0],USE.rocket[1],
+ [B("ระเบิดระหว่างบิน","Explosion in flight"),B("ถังหรือเครื่องยนต์เสียหาย จรวดแตกออก ระบบหนีภัยจุดจรวดเชื้อเพลิงแข็งดึงแคปซูลออกห่างภายในเสี้ยววินาที ถ้าจรวดออกนอกเส้นทาง ระบบยุติการบินจะทำลายมันเพื่อปกป้องคนบนพื้น","A tank or engine fails and the rocket breaks up. The escape system fires its solid motors and pulls the capsule clear in a fraction of a second. If the rocket strays, flight termination destroys it to protect people on the ground.")],
+ [B("แคปซูลกางร่มลงทะเล","Capsule comes down under parachutes"),B("หอหนีภัยถูกสลัดทิ้ง ร่มกาง ลูกเรือลงทะเลอย่างปลอดภัย ภารกิจล้มเหลวแต่คนรอด แล้วทีมสอบสวนเริ่มงาน","The tower is thrown off, the parachutes open and the crew land safely in the sea. The mission is lost but the people live, and the investigation begins.")]];
+/* rough cost history → [when, figure, note, source key or null] and the chain of makers and users */
+S_.brit=["Britannica: Model T","https://www.britannica.com/technology/Model-T"];
+S_.bnef=["BloombergNEF: battery pack prices 2025","https://about.bnef.com/insights/clean-energy/lithium-ion-battery-pack-prices-fall-to-108-per-kilowatt-hour"];
+S_.airbus18=["Aviation News: Airbus 2018 average list prices","https://aviationnews.eu/news/2018/01/airbus-aircraft-2018-average-list-prices/"];
+S_.evergreen=["MarineLink: Evergreen orders 11 container ships","https://www.marinelink.com/news/evergreen-places-b-order-lng-dualfuel-522462"];
+S_.dji13=["DJI: Phantom launch, January 2013","https://dji.com/newsroom/news/dji-launches-industry-best-easiest-to-fly-quadcopter-for-consumer-use"];
+S_.csis=["CSIS Aerospace: Space launch to low Earth orbit, how much does it cost?","https://aerospace.csis.org/data/space-launch-to-low-earth-orbit-how-much-does-it-cost/"];
+const COST={
+ car:[[B("1908","1908"),B("850 ดอลลาร์","$850"),B("ราคา Ford Model T ตอนเปิดตัว","Ford Model T at launch"),"brit"],[B("1925","1925"),B("ต่ำกว่า 300 ดอลลาร์","under $300"),B("รุ่นเดียวกันหลังใช้สายพานประกอบ ผลิตรวมกว่า 15 ล้านคัน","the same car after the moving assembly line; more than 15 million built"),"brit"],[B("2025","2025"),B("108 ดอลลาร์/kWh","$108/kWh"),B("ราคาเฉลี่ยชุดแบตเตอรี่ลิเทียมไอออน ชิ้นส่วนที่แพงที่สุดของรถไฟฟ้า ต่ำสุดเท่าที่เคยสำรวจ","average lithium-ion pack price, the costliest part of an electric car; the lowest on record"),"bnef"]],
+ moto:[[B("ปัจจุบัน","Today"),B("ราวหนึ่งในสิบของรถยนต์เล็ก","about a tenth of a small car"),B("ราคารถจักรยานยนต์ขนาดเล็กโดยประมาณ จึงเป็นยานพาหนะคันแรกของครัวเรือนจำนวนมาก","rough price of a small motorcycle, which is why it is many households' first vehicle"),null],[B("แนวโน้ม","Trend"),B("ถูกลงเพราะผลิตจำนวนมาก","cheaper through volume"),B("รุ่นยอดนิยมผลิตต่อเนื่องหลายสิบปีและใช้ชิ้นส่วนร่วมกันหลายรุ่น","popular models stay in production for decades and share parts across the range"),null]],
+ bus:[[B("ปัจจุบัน","Today"),B("หลายล้านบาทต่อคัน","millions of baht each"),B("ราคาโดยประมาณของรถโดยสารขนาดใหญ่ รถไฟฟ้าแพงกว่าตอนซื้อแต่ค่าพลังงานต่อกิโลเมตรต่ำกว่า","rough price of a full-size bus; electric ones cost more to buy and less per kilometre to run"),null],[B("ตลอดอายุ","Over its life"),B("ค่าเชื้อเพลิงและคนขับมากกว่าค่าตัวรถ","fuel and drivers outweigh the vehicle"),B("รถใช้งานสิบปีขึ้นไป ต้นทุนส่วนใหญ่จึงอยู่ที่การเดินรถ ไม่ใช่การซื้อ","a bus works for ten years or more, so most of the cost is running it, not buying it"),null]],
+ train:[[B("ปัจจุบัน","Today"),B("หลายสิบล้านบาทต่อตู้","tens of millions of baht per car"),B("ราคาโดยประมาณของตู้รถไฟฟ้า ส่วนรางและระบบอาณัติสัญญาณแพงกว่าตัวรถหลายเท่า","rough price of an electric train car; track and signalling cost several times more than the trains"),null],[B("ตลอดอายุ","Over its life"),B("ใช้งาน 30–40 ปี","30–40 years in service"),B("ค่าซ่อมบำรุงตลอดอายุมักพอๆ กับหรือมากกว่าราคาซื้อ","lifetime maintenance often matches or exceeds the purchase price"),null]],
+ ship:[[B("2025","2025"),B("265–295 ล้านดอลลาร์ต่อลำ","$265–295 million each"),B("ราคาสั่งต่อเรือตู้สินค้าขนาด 24,000 TEU จำนวน 11 ลำของ Evergreen","Evergreen's order for eleven 24,000 TEU container ships"),"evergreen"],[B("ต่อตู้","Per box"),B("หารด้วย 24,000 ตู้ และ 25 ปี","spread over 24,000 boxes and 25 years"),B("เรือยิ่งใหญ่ ต้นทุนต่อตู้ยิ่งต่ำ จึงเป็นเหตุผลที่เรือโตขึ้นเรื่อยๆ","the bigger the ship, the lower the cost per box, which is why ships keep growing"),null]],
+ sub:[[B("ปัจจุบัน","Today"),B("หลายสิบล้านดอลลาร์","tens of millions of dollars"),B("ต้นทุนโดยประมาณของยานสำรวจน้ำลึกมีคนนั่ง ผลิตทีละลำ ไม่มีการผลิตจำนวนมาก","rough cost of a crewed deep submersible, built one at a time with no mass production"),null],[B("ต่อการดำ","Per dive"),B("ค่าเรือแม่มากกว่าค่ายาน","the ship costs more than the sub"),B("ทุกการดำต้องมีเรือแม่และทีมงานหลายสิบคนอยู่กลางทะเล","every dive needs a mother ship and dozens of people at sea"),null]],
+ plane:[[B("2018","2018"),B("110.6 ล้านดอลลาร์","$110.6 million"),B("ราคาตั้งเฉลี่ยของ Airbus A320neo สายการบินที่สั่งจำนวนมากจ่ายจริงต่ำกว่านี้มาก","average list price of an Airbus A320neo; airlines ordering in bulk pay far less"),"airbus18"],[B("2018","2018"),B("445.6 ล้านดอลลาร์","$445.6 million"),B("ราคาตั้งเฉลี่ยของ A380 เครื่องบินโดยสารใหญ่ที่สุด ซึ่งเลิกผลิตไปแล้วเพราะขายได้น้อย","average list price of the A380, the largest airliner, since discontinued for lack of orders"),"airbus18"]],
+ heli:[[B("ปัจจุบัน","Today"),B("หลายล้านถึงหลายสิบล้านดอลลาร์","millions to tens of millions of dollars"),B("ราคาโดยประมาณ ตั้งแต่เครื่องเล็กเครื่องยนต์เดียวถึงเครื่องขนาดกลางสองเครื่องยนต์","rough price, from a light single to a medium twin"),null],[B("ต่อชั่วโมงบิน","Per flight hour"),B("แพงกว่าเครื่องบินขนาดเดียวกันหลายเท่า","several times a similar-size aeroplane"),B("ชิ้นส่วนหมุนจำนวนมากมีอายุใช้งานจำกัดและต้องเปลี่ยนตามชั่วโมงบิน","many rotating parts have fixed lives and are replaced by flight hours"),null]],
+ drone:[[B("2013","2013"),B("679 ดอลลาร์","$679"),B("ราคาเปิดตัวของ DJI Phantom รุ่นแรก ยังไม่มีกล้องในตัว","launch price of the first DJI Phantom, with no built-in camera"),"dji13"],[B("ปัจจุบัน","Today"),B("ราคาใกล้เดิม ความสามารถมากขึ้นมาก","similar money, far more capability"),B("โดรนราคาระดับเดียวกันมีกล้องกันสั่น หลบสิ่งกีดขวาง และบินได้นานขึ้น เพราะใช้ชิ้นส่วนร่วมกับโทรศัพท์มือถือ","drones at that price now carry a stabilised camera, avoid obstacles and fly longer, because they share parts with phones"),null]],
+ rocket:[[B("ยุคกระสวยอวกาศ","Shuttle era"),B("หลายหมื่นดอลลาร์ต่อกิโลกรัม","tens of thousands of dollars per kg"),B("ต้นทุนส่งของขึ้นวงโคจรต่ำโดยประมาณ (ดอลลาร์ปี 2021)","rough cost to low Earth orbit (2021 dollars)"),"csis"],[B("จรวดใช้ซ้ำ","Reusable rockets"),B("หลักพันดอลลาร์ต่อกิโลกรัม","a few thousand dollars per kg"),B("การนำท่อนแรกกลับมาใช้ซ้ำทำให้ต้นทุนลดลงมากกว่าสิบเท่า","flying the first stage again cut the cost more than tenfold"),"csis"]]};
+const CHAIN={
+ car:[[B("เหมืองแร่และโรงถลุงเหล็ก","Mines and steel mills"),B("ผู้ผลิตชิ้นส่วนหลายชั้น","Tiered parts suppliers"),B("โรงงานประกอบ","Assembly plant"),B("ตัวแทนจำหน่าย","Dealers")],[B("ผู้ซื้อและไฟแนนซ์","Buyers and lenders"),B("ประกันภัยและอู่ซ่อม","Insurers and workshops"),B("ตลาดรถมือสอง","Used-car market"),B("โรงรีไซเคิล","Recyclers")]],
+ moto:[[B("ผู้ผลิตชิ้นส่วนในภูมิภาค","Regional parts makers"),B("โรงงานประกอบ","Assembly plant"),B("ร้านตัวแทน","Dealers")],[B("ผู้ขี่ทั่วไป","Everyday riders"),B("ไรเดอร์ส่งของและวินมอเตอร์ไซค์","Delivery riders and motorcycle taxis"),B("ร้านซ่อมในชุมชน","Neighbourhood workshops"),B("ตลาดมือสอง","Used market")]],
+ bus:[[B("ผู้ผลิตแชสซีและเครื่องยนต์","Chassis and engine makers"),B("อู่ต่อตัวถัง","Body builders"),B("หน่วยงานตรวจและจดทะเบียน","Inspection and registration")],[B("ผู้ประกอบการเดินรถ","Bus operators"),B("คนขับและช่าง","Drivers and mechanics"),B("ผู้โดยสาร โรงเรียน และบริษัททัวร์","Passengers, schools and tour firms")]],
+ train:[[B("ผู้ผลิตเหล็กและอะลูมิเนียม","Steel and aluminium makers"),B("ผู้ผลิตโบกี้ มอเตอร์ และเบรก","Bogie, motor and brake makers"),B("ผู้ผลิตขบวนรถ","Train builder"),B("ผู้วางรางและอาณัติสัญญาณ","Track and signalling contractors")],[B("ผู้ให้บริการเดินรถ","Train operator"),B("เจ้าของโครงสร้างพื้นฐาน","Infrastructure owner"),B("ศูนย์ซ่อมบำรุง","Depot"),B("ผู้โดยสารและผู้ส่งสินค้า","Passengers and shippers")]],
+ ship:[[B("โรงงานเหล็ก","Steel mills"),B("ผู้ผลิตเครื่องยนต์เรือ","Marine engine makers"),B("อู่ต่อเรือ","Shipyard"),B("สมาคมจัดชั้นเรือ","Classification society")],[B("เจ้าของเรือและสายเรือ","Shipowners and lines"),B("ท่าเรือ","Ports"),B("ผู้ส่งออกและนำเข้า","Exporters and importers"),B("ผู้บริโภค","Consumers"),B("อู่ตัดเรือ","Ship recyclers")]],
+ sub:[[B("ผู้หลอมไทเทเนียม","Titanium forgers"),B("ผู้ผลิตโฟม ใบพัด และแบตเตอรี่","Foam, thruster and battery makers"),B("ผู้สร้างยาน","Builder"),B("สมาคมจัดชั้นเรือ","Classification society")],[B("สถาบันวิจัยและองค์กรสำรวจ","Research institutes and exploration groups"),B("เรือแม่และลูกเรือ","Mother ship and crew"),B("นักวิทยาศาสตร์","Scientists"),B("ผู้ชมสารคดีและนักเรียน","Documentary viewers and students")]],
+ plane:[[B("ผู้ผลิตอะลูมิเนียม ไทเทเนียม และคอมโพสิต","Aluminium, titanium and composite makers"),B("ผู้ผลิตเครื่องยนต์และระบบการบิน","Engine and avionics makers"),B("ผู้ผลิตชิ้นส่วนลำตัวในหลายประเทศ","Airframe sections from many countries"),B("สายการประกอบขั้นสุดท้าย","Final assembly line")],[B("บริษัทให้เช่าเครื่องบิน","Leasing companies"),B("สายการบิน","Airlines"),B("ศูนย์ซ่อมบำรุง","Maintenance bases"),B("สนามบินและผู้โดยสาร","Airports and passengers"),B("ลานจอดปลดระวางและแยกอะไหล่","Storage and part-out yards")]],
+ heli:[[B("ผู้ผลิตเครื่องยนต์เทอร์ไบน์","Turbine engine makers"),B("ผู้ผลิตใบพัดและห้องเกียร์","Blade and gearbox makers"),B("ผู้ผลิตเฮลิคอปเตอร์","Helicopter maker")],[B("หน่วยแพทย์ฉุกเฉินและกู้ภัย","Air ambulance and rescue"),B("แท่นขุดเจาะนอกชายฝั่ง","Offshore energy"),B("ตำรวจและดับไฟป่า","Police and firefighting"),B("ศูนย์ซ่อมบำรุง","Maintenance bases")]],
+ drone:[[B("ผู้ผลิตชิป เซนเซอร์ และแบตเตอรี่","Chip, sensor and battery makers"),B("โรงงานประกอบ","Assembly plant"),B("ร้านค้าออนไลน์","Online retail")],[B("ช่างภาพและผู้ผลิตสื่อ","Photographers and media"),B("เกษตรกรและนักสำรวจ","Farmers and surveyors"),B("หน่วยกู้ภัยและตรวจโครงสร้าง","Rescue and inspection teams"),B("ผู้ใช้เพื่อความสนุก","Hobby flyers")]],
+ rocket:[[B("ผู้ผลิตโลหะผสมและคาร์บอนไฟเบอร์","Alloy and carbon-fibre makers"),B("ผู้ผลิตเครื่องยนต์และอิเล็กทรอนิกส์","Engine and electronics makers"),B("โรงงานประกอบจรวด","Rocket factory"),B("ฐานปล่อย","Launch site")],[B("หน่วยงานอวกาศ","Space agencies"),B("ผู้ให้บริการดาวเทียม","Satellite operators"),B("นักบินอวกาศ","Astronauts"),B("ผู้ใช้ GPS อินเทอร์เน็ต และพยากรณ์อากาศ","Users of GPS, internet and weather forecasts")]]};
+
 
 /* ---------- viewer ---------- */
 const ORDER=["car","moto","bus","train","ship","sub","plane","heli","drone","rocket"];
-const st={veh:"car",mode:"3d",sel:null,k:0,run:false,xray:false};
-let G3=null,V=null,VS={},cam={th:.9,ph:1.15,r:10,tgt:new THREE.Vector3()},dirty=true,kT=null;
+const st={veh:"car",mode:"3d",sel:null,k:0,run:false,xray:false,rm:"cad",env:"wind",out:"ok",mt:0};
+let SUN=null,G3=null,V=null,VS={},cam={th:.9,ph:1.15,r:10,tgt:new THREE.Vector3()},dirty=true,kT=null;
 function has3D(){if(G3===false)return false;if(G3)return true;
  try{if(!window.THREE)throw 0;const c=document.createElement("canvas");if(!(c.getContext("webgl")||c.getContext("experimental-webgl")))throw 0;}catch(e){G3=false;$("gl").innerHTML=`<p class="no3d">${esc(tx(T.no3d))}</p>`;return false;}
  const r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setClearColor(0x000000,0);r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));r.outputEncoding=THREE.sRGBEncoding;r.toneMapping=THREE.ACESFilmicToneMapping;$("gl").appendChild(r.domElement);
- const sc=new THREE.Scene();sc.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,.95));const d=new THREE.DirectionalLight(0xfff4e6,1.25);d.position.set(.5,1,.7);sc.add(d);const d2=new THREE.DirectionalLight(0xdfe8ff,.35);d2.position.set(-.6,.3,-.8);sc.add(d2);
+ const sc=new THREE.Scene();sc.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,.95));const d=new THREE.DirectionalLight(0xfff4e6,1.25);SUN=d;d.position.set(.5,1,.7);sc.add(d);const d2=new THREE.DirectionalLight(0xdfe8ff,.35);d2.position.set(-.6,.3,-.8);sc.add(d2);
  G3={r,sc,pc:new THREE.PerspectiveCamera(40,16/9,.01,5000),oc:new THREE.OrthographicCamera(-1,1,1,-1,.01,10000),grid:null,ray:new THREE.Raycaster()};bind();return true;}
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
 function sizeGL(){if(!G3)return;const w=$("view").clientWidth||800,h=Math.round(st.mode==="2d"?Math.max(360,Math.min(640,w*.68)):Math.max(280,Math.min(540,w*.6)));G3.w=w;G3.h=h;G3.r.setSize(w,h,false);G3.r.domElement.style.height=h+"px";G3.pc.aspect=w/h;G3.pc.updateProjectionMatrix();$("ov").setAttribute("viewBox",`0 0 ${w} ${h}`);dirty=true;}
-function setVeh(k){st.veh=k;st.sel=null;st.k=0;$("ex").value=0;if(!VS[k])VS[k]=vehicle(k,DEFS[k]);V=VS[k];
+function setVeh(k){misStep(0,true);st.mt=0;st.veh=k;st.sel=null;st.k=0;$("ex").value=0;if(!VS[k])VS[k]=vehicle(k,DEFS[k]);V=VS[k];
  if(G3){[...G3.sc.children].forEach(o=>{if(o.userData.veh||o.userData.grid)G3.sc.remove(o);});V.root.userData.veh=1;G3.sc.add(V.root);
   const s=Math.max(V.size.x,V.size.z),gs=Math.pow(10,Math.ceil(Math.log10(s*1.2))),g=new THREE.GridHelper(gs,20,0x8a96a3,0xb5bec8);g.material.transparent=true;g.material.opacity=.5;g.position.set(V.ctr.x,V.box.min.y-.001*s,V.ctr.z);g.userData.grid=1;G3.sc.add(g);G3.grid=g;
   resetCam();}
@@ -773,7 +873,7 @@ function look(){const two=st.mode==="2d";V.parts.forEach(p=>{const on=!st.sel||s
   p.line.color.set(st.sel===p.id?0xffb347:0xe9f2fb);p.line.opacity=on?1:.22;p.fill.color.copy(lin(st.sel===p.id?0x6b4a1e:0x18426f));
   p.g.traverse(o=>{if(o.userData.edge)o.visible=two;else if(o.isMesh&&!o.userData.fx){o.material=two?p.fill:o.userData.m0;}if(o.userData.fx)o.visible=!two&&o.userData.on!==false;});});dirty=true;}
 function select(id){st.sel=st.sel===id?null:id;look();ui();if(st.mode==="3d"){if(st.sel){const p=V.parts.find(q=>q.id===st.sel),b=new THREE.Box3().setFromObject(p.g);b.getCenter(cam.tgt);}else cam.tgt.copy(V.ctr);}}
-function frame3(){const c=G3.pc,rr=cam.r*(1+st.k*1.25),tg=st.sel?cam.tgt:(V.ctrK||cam.tgt),sp_=new THREE.Vector3().setFromSphericalCoords(rr,cam.ph,cam.th);c.position.copy(tg).add(sp_);c.near=rr*.01;c.far=rr*30;c.lookAt(tg);c.updateProjectionMatrix();
+function frame3(){const c=G3.pc,rr=cam.r*(MIS.on?MIS.z:1+st.k*1.25),tg=MIS.on?MIS.tgt:st.sel?cam.tgt:(V.ctrK||cam.tgt),sp_=new THREE.Vector3().setFromSphericalCoords(rr,cam.ph,cam.th);c.position.copy(tg).add(sp_);c.near=rr*.01;c.far=rr*30;c.lookAt(tg);c.updateProjectionMatrix();
  G3.r.setScissorTest(false);G3.r.setViewport(0,0,G3.w,G3.h);G3.r.render(G3.sc,c);}
 /* 2D sheet: four orthographic views of the same model, hidden lines removed by a fill in the sheet colour */
 function frame2(){const w=G3.w,h=G3.h,r=G3.r,oc=G3.oc,box=new THREE.Box3().setFromObject(V.root),sz=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3()),D=sz.length()*2+10;
@@ -800,7 +900,8 @@ function overlay(views,box,sz,c){const w=G3.w,h=G3.h,f=n=>n>=100?n.toFixed(0):n>
  $("ov").innerHTML=s;}
 function tick(ts){requestAnimationFrame(tick);if(!G3||!V)return;const t=ts/1000;
  if(kT!==null){const d=kT-st.k;if(Math.abs(d)<.01){st.k=kT;kT=null;}else st.k+=d*.12;$("ex").value=Math.round(st.k*100);explode();}
- if(V.anim)V.anim(V.ref,st.run?t:0,st.run);if(st.run&&st.mode==="2d")dirty=false;
+ const dt=Math.min(.1,Math.max(0,t-lastT));lastT=t;if(st.run&&st.rm==="use"){st.mt+=dt;const i=phAt()[0];if(i!==phShown)rmPanel();}
+ if(V.anim)V.anim(V.ref,st.run?t:0,st.run);fxStep(t);misStep(t);if(st.run&&st.mode==="2d")dirty=false;
  if(st.mode==="2d")frame2();else frame3();}
 function bind(){const el=$("view"),pts=new Map();let pinch=0,moved=0,down=null;
  el.addEventListener("pointerdown",e=>{if(e.target.closest("button")||e.target.classList.contains("bal"))return;try{el.setPointerCapture(e.pointerId)}catch(_){}pts.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=0;down={x:e.clientX,y:e.clientY};});
@@ -815,11 +916,79 @@ function bind(){const el=$("view"),pts=new Map();let pinch=0,moved=0,down=null;
 function pickAt(e){const r=G3.r.domElement.getBoundingClientRect(),m=new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1));G3.ray.setFromCamera(m,G3.pc);
  const hit=G3.ray.intersectObjects(V.root.children,true).find(h=>h.object.isMesh&&h.object.userData.part&&h.object.visible&&!h.object.userData.fx);if(hit){const p=hit.object.userData.part;if(st.sel&&st.sel!==p.id){/* a dimmed part was hit first: still switch to it */}select(p.id);}else if(st.sel)select(st.sel);}
 
+/* ---------- run modes ---------- */
+let FXP=null,MX=null,lastT=0,phShown=-1,misWas=false;const MIS={on:false,tgt:new THREE.Vector3(),z:1};
+const R_D=[5,6,6,6,7,8,8],R_DF=[5,6,7,8];
+function phases(){return st.veh==="rocket"&&st.out==="fail"?USE_FAIL:USE[st.veh];}
+function phDur(){return st.veh==="rocket"?(st.out==="fail"?R_DF:R_D):phases().map(()=>4.5);}
+function phAt(){const d=phDur(),tot=d.reduce((a,b)=>a+b,0);let m=st.mt%tot,i=0;while(m>=d[i]){m-=d[i];i++;}return [i,m/d[i]];}
+/* weather particles for the real-environment mode */
+function fxStep(t){const on=G3&&st.run&&st.rm==="env"&&st.mode==="3d";
+ if(SUN){const s=on&&st.env==="sun";SUN.intensity=s?2.3:1.25;SUN.color.set(s?0xffd28a:0xfff4e6);}
+ if(V)V.root.rotation.z=on&&st.env==="wind"?Math.sin(t*1.7)*.012+Math.sin(t*4.1)*.004:0;
+ if(!on||st.env==="sun"){if(FXP&&FXP.parent)FXP.parent.remove(FXP);return;}
+ const N=420;if(!FXP){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(N*3),3));FXP=new THREE.Points(g,new THREE.PointsMaterial({size:1,transparent:true,opacity:.85,depthWrite:false,toneMapped:false}));FXP.userData.s=[...Array(N*3)].map(Math.random);FXP.frustumCulled=false;}
+ if(!FXP.parent)G3.sc.add(FXP);
+ const L=V.size.length()*.7,c=V.ctr,a=FXP.geometry.attributes.position,s=FXP.userData.s,k=st.env,w=v=>((v+1)%2+2)%2-1;
+ FXP.material.size=L*(k==="rain"?.016:.022);FXP.material.color.set({wind:0x7c8a99,rain:0x2a6fb5,pres:0xb3261e,chem:0xa8651a}[k]);
+ for(let i=0;i<N;i++){let x=s[i*3]*2-1,y=s[i*3+1]*2-1,z=s[i*3+2]*2-1;
+  if(k==="wind"){x=w(x+t*(.8+s[i*3+1]*.7));y+=Math.sin(t*2+i)*.02;}
+  else if(k==="rain"){y=w(y-t*1.7);x=w(x+t*.2);}
+  else if(k==="pres"){const n=Math.hypot(x,y,z)||1,r=.45+(1-(t*.3+s[i*3])%1)*.6;x=x/n*r;y=y/n*r;z=z/n*r;}
+  else{x=w(x+t*.07+Math.sin(t*.6+i)*.03);y=w(y+t*.03);}
+  a.setXYZ(i,c.x+x*L,c.y+y*L*(k==="pres"?1:.75),c.z+z*L);}
+ a.needsUpdate=true;}
+/* rocket mission scenery: pad, sea, landing ship, parachutes, satellite, fireball, stars */
+function mxMake(){if(MX)return;CUR={mats:[]};const g=new THREE.Group(),G=()=>{const q=new THREE.Group();g.add(q);return q;};
+ const pad=G();cy(pad,260,260,.4,0,.6,0,M(0x93a08c,.95,0),"y",48);cy(pad,16,16,.9,0,.6,0,M(0xb9bdc1,.9,0),"y",32);bx(pad,3.6,64,3.6,-8.6,33,0,M(C_.dk,.6,.4));
+ const arm=bx(pad,5.2,.8,1.4,-4.4,61.6,0,M(C_.gy,.5,.3));[0,1,2].forEach(i=>bx(pad,.3,80,.3,24*Math.cos(i*2.1+.5),40,24*Math.sin(i*2.1+.5),M(C_.st,.5,.5)));
+ const sea=G();cy(sea,600,600,.4,0,-.2,0,M(0x2a6fb5,.85,0),"y",48);const ship=new THREE.Group();sea.add(ship);bx(ship,46,3,28,0,-.55,0,M(C_.dk,.7,.3));const ring=new THREE.Mesh(new THREE.TorusGeometry(9,.25,6,40),M(C_.wh,.8,0));ring.rotation.x=Math.PI/2;ring.position.y=.98;ship.add(ring);
+ const chute=G();[0,1,2,3].forEach(i=>{const a=i*Math.PI/2+.4,m=new THREE.Mesh(new THREE.SphereGeometry(3.6,16,8,0,Math.PI*2,0,Math.PI/2),M(i%2?C_.or:C_.wh,.8,0,{side:THREE.DoubleSide}));m.position.set(Math.cos(a)*3.9,15,Math.sin(a)*3.9);chute.add(m);tb(chute,[Math.cos(a)*3.9,15.2,Math.sin(a)*3.9],[0,.4,0],.04,M(C_.wh,.8,0),4);});
+ const sat=G();bx(sat,1.3,1.3,1.3,0,0,0,M(0xd9b24a,.35,.6));[-1,1].forEach(q=>bx(sat,.06,1.1,3.2,0,0,q*2.3,M(0x1f4f8a,.3,.4)));cy(sat,.5,.1,.5,0,.9,0,M(C_.wh,.5,.2),"y",12);
+ const boom=[0xffb347,0xff7a1a,0xffe08a,0xd9451a,0xffb347,0x5a5a5a,0x3a3a3a].map((c,i)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(1,14,10),fxM(c,.9));m.userData.o=[Math.cos(i*2.4)*3,28+i*4.5,Math.sin(i*2.4)*3];g.add(m);return m;});
+ const s2f=new THREE.Mesh(new THREE.CylinderGeometry(1.3,.1,7,14),fxM(0xa9d6ff,.7));s2f.position.set(0,40.3,0);g.add(s2f);
+ const sg=new THREE.BufferGeometry(),sp_=new Float32Array(900);for(let i=0;i<300;i++){const u=Math.random()*2-1,a=Math.random()*6.283,r=Math.sqrt(1-u*u);sp_[i*3]=r*Math.cos(a);sp_[i*3+1]=u;sp_[i*3+2]=r*Math.sin(a);}sg.setAttribute("position",new THREE.BufferAttribute(sp_,3));
+ const stars=new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:2.2,sizeAttenuation:false,toneMapped:false,depthWrite:false}));stars.frustumCulled=false;g.add(stars);
+ const splash=new THREE.Mesh(new THREE.TorusGeometry(1,.18,6,32),fxM(0xffffff,.85));splash.rotation.x=Math.PI/2;g.add(splash);
+ MX={g,pad,arm,sea,ship,chute,sat,boom,s2f,stars,splash};}
+function misStep(t,force){const on=!force&&G3&&V&&st.run&&st.rm==="use"&&st.veh==="rocket"&&st.mode==="3d";
+ if(!on){if(misWas){misWas=false;MIS.on=false;if(MX&&MX.g.parent)MX.g.parent.remove(MX.g);const Vr=VS.rocket;if(Vr){Vr.parts.forEach(p=>{p.g.visible=true;p.g.rotation.set(0,0,0);p.g.position.set(0,0,0);});if(V===Vr)explode();}$("view").style.background="";}return;}
+ misWas=true;MIS.on=true;mxMake();if(!MX.g.parent)G3.sc.add(MX.g);if(G3.grid)G3.grid.visible=false;
+ const P={};V.parts.forEach(p=>{P[p.id]=p.g;p.g.position.set(0,0,0);p.g.rotation.set(0,0,0);p.g.visible=true;});
+ const R=V.ref,[i,f]=phAt(),fail=st.out==="fail",e=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);},S1=["s1","engines","inter","legs"],hide=a=>a.forEach(k=>P[k].visible=false);
+ const mix=(a,b,q)=>"#"+new THREE.Color(a).lerp(new THREE.Color(b),Math.max(0,Math.min(1,q))).getHexString();
+ let flame=0,fins=0,sky="#bfe0f5",tg=[0,36,0],z=1.3;
+ [MX.pad,MX.sea,MX.ship,MX.chute,MX.sat,MX.s2f,MX.stars,MX.splash].forEach(o=>o.visible=false);MX.boom.forEach(b=>b.visible=false);MX.arm.visible=true;
+ const down=()=>{hide(S1.concat(["s2","les","avionics"]));MX.sea.visible=MX.chute.visible=true;const q=Math.min(1,f/.88);MX.sea.position.y=58.2-260*Math.pow(1-q,1.5);MX.chute.position.set(0,64.3,0);MX.chute.rotation.z=q<1?Math.sin(t*1.3)*.05:0;MX.chute.scale.setScalar(q<1?1:Math.max(.05,1-(f-.88)*7));
+  if(q>=1){MX.splash.visible=true;MX.splash.position.set(0,58.4,0);const s=2+(f-.88)*70;MX.splash.scale.set(s,s,1);}sky="#9fd3f2";tg=[0,70,0];z=.62;};
+ if(i===0){MX.pad.visible=true;MX.pad.position.y=0;}
+ else if(i===1){MX.pad.visible=true;MX.arm.visible=false;MX.pad.position.y=-520*f*f;flame=1;sky=mix("#bfe0f5","#5b8fc7",f);}
+ else if(fail&&i===2){sky="#5b8fc7";const q=(f-.18)/.82;tg=[10,56+22*e(q),0];z=1.25;
+  if(f<.18)flame=1;else{hide(S1.concat(["s2","avionics"]));MX.boom.forEach((b,j)=>{b.visible=true;const o=b.userData.o,s=3+q*(18+j*3);b.position.set(o[0]*(1+q*3),o[1]-q*j*2,o[2]*(1+q*3));b.scale.setScalar(s);b.material.opacity=.9*(1-q*.75);});
+   P.capsule.position.set(34*q,72*e(q),0);P.les.position.copy(P.capsule.position);}}
+ else if(fail){down();}
+ else if(i===2){flame=1;sky=mix("#5b8fc7","#16233f",f);if(f>.45){const q=(f-.45)/.55;P.les.position.set(40*q*q,26*q,0);P.les.rotation.z=-q*.35;}}
+ else if(i===3){hide(["les","avionics"]);sky=mix("#16233f","#05070d",f);MX.stars.visible=f>.4;const q=e(f);S1.forEach(k=>{P[k].position.set(-5*q,-95*q,0);P[k].rotation.z=.1*q;});flame=f<.07?1:0;MX.s2f.visible=f>.3;tg=[0,36+18*q,0];z=1.3-.5*q;}
+ else if(i===4){hide(S1.concat(["les","avionics"]));sky="#05070d";MX.stars.visible=true;MX.s2f.visible=f<.15;P.capsule.position.y=16*e((f-.2)/.4);if(f>.55){MX.sat.visible=true;const q=(f-.55)/.45;MX.sat.position.set(3+16*q,51,0);MX.sat.rotation.y=t*.6;}tg=[0,64,0];z=.8;}
+ else if(i===5){hide(["s2","capsule","les","avionics"]);MX.sea.visible=MX.ship.visible=true;const q=Math.min(1,f/.92);MX.sea.position.y=-300*Math.pow(1-q,1.6);S1.forEach(k=>P[k].rotation.z=.08*(1-e(q*1.4)));flame=f>.5&&q<1?2:0;fins=1;sky="#9fd3f2";tg=[0,24,0];z=1.05;}
+ else down();
+ R.noz.forEach(([G,fl],j)=>{fl.visible=flame===1||flame===2&&j===0;G.rotation.z=0;});R.fins.forEach(F=>F.rotation.z=fins?-1.45:0);
+ MIS.tgt.set(tg[0],tg[1],tg[2]);MIS.z=z;MX.stars.position.copy(MIS.tgt);MX.stars.scale.setScalar(cam.r*z*18);
+ const el=$("view");if(el.dataset.bg!==sky){el.dataset.bg=sky;}el.style.background=sky;}
+function rmPanel(){const el=$("rmp");el.hidden=!st.run;if(!st.run){phShown=-1;return;}const two=st.mode==="2d",D=DEFS[st.veh];let h="";
+ if(st.rm==="cad")h=`<p>${esc(tx(T.cadTxt))}</p>`;
+ else if(st.rm==="env"){h=`<div class="chips">${ENVK.map(k=>`<button type="button" class="chip" id="env-${k}" data-env="${k}" aria-pressed="${st.env===k}">${esc(tx(ENVF[k][0]))}</button>`).join("")}</div><p>${esc(tx(ENVF[st.env][1]))}</p><span class="lbl">${esc(tx(T.envCrit))} ${esc(tx(D.n))}</span><ul class="lims">${ENV[st.veh].map(([k,t,pid])=>{const p=V&&V.parts.find(q=>q.id===pid);return `<li><button type="button" data-lim="${pid}" data-envk="${k}"><b>${esc(tx(ENVF[k][0]))}${p?" → "+esc(tx(p.n)):""}</b><span>${esc(tx(t))}</span></button></li>`;}).join("")}</ul>${two?`<p class="note">${esc(tx(T.need3d))}</p>`:""}`;}
+ else{const ph=phases(),i=phAt()[0];phShown=i;
+  if(st.veh==="rocket")h+=`<div class="chips"><span class="lbl" style="margin:0;align-self:center">${esc(tx(T.lOut))}</span><button type="button" class="chip" id="out-ok" data-out="ok" aria-pressed="${st.out==="ok"}">${esc(tx(T.outOk))}</button><button type="button" class="chip" id="out-fail" data-out="fail" aria-pressed="${st.out==="fail"}">${esc(tx(T.outFail))}</button></div>`;
+  h+=`<ol class="phs">${ph.map((p,j)=>`<li><button type="button" data-ph="${j}" aria-current="${j===i}"><i>${j+1}</i>${esc(tx(p[0]))}</button></li>`).join("")}</ol><p class="pht"><b>${i+1}. ${esc(tx(ph[i][0]))}</b>${esc(tx(ph[i][1]))}</p>`;
+  if(st.veh==="rocket")h+=`<p class="note">${esc(tx(two?T.need3d:T.misNote))}</p>`;}
+ el.innerHTML=h;}
+
 /* ---------- panels ---------- */
 function ui(){const D=DEFS[st.veh];
  $("vehs").innerHTML=ORDER.map(k=>`<button type="button" id="veh-${k}" data-veh="${k}" aria-pressed="${k===st.veh}">${esc(tx(DEFS[k].n))}</button>`).join("");
  $("mode-3d").setAttribute("aria-pressed",st.mode==="3d");$("mode-2d").setAttribute("aria-pressed",st.mode==="2d");
- $("run").textContent=tx(st.run?T.runOn:T.run);$("run").setAttribute("aria-pressed",st.run);$("xray").setAttribute("aria-pressed",st.xray);$("xray").hidden=st.mode==="2d";
+ ["cad","env","use"].forEach(k=>$("rm-"+k).setAttribute("aria-pressed",st.run&&st.rm===k));$("view").dataset.sky=st.run&&st.rm==="env"&&st.mode==="3d"?st.env:"";rmPanel();$("run").textContent=tx(st.run?T.runOn:T.run);$("run").setAttribute("aria-pressed",st.run);$("xray").setAttribute("aria-pressed",st.xray);$("xray").hidden=st.mode==="2d";
  $("view").classList.toggle("sheet",st.mode==="2d");$("ov").style.display=st.mode==="2d"?"":"none";$("orb").hidden=st.mode==="2d";$("hint").hidden=st.mode==="2d";$("tag").hidden=st.mode==="2d";
  $("capt").textContent=tx(st.mode==="2d"?T.cap2:T.cap3);$("tag").textContent=tx(D.n);
  const ps=V?V.parts:[];
@@ -831,6 +1000,8 @@ function ui(){const D=DEFS[st.veh];
  $("make").textContent=tx(D.make);$("keep").textContent=tx(D.keep);
  {const Y=SYS[st.veh];$("h-sys").textContent=tx(T.hSys)+": "+tx(D.n);$("sys").innerHTML=[[T.lFuel,Y[0],Y[1]],[T.lCpu,Y[2],Y[3]]].map(([l,t,pid])=>`<div><span class="lbl">${esc(tx(l))}</span><p>${esc(tx(t))}</p><button type="button" data-lim="${pid}">${esc(tx(T.showPart))}</button></div>`).join("");
   {const Bi=BIO[st.veh];$("h-bio").textContent=tx(T.hBio)+": "+tx(D.n);$("bioA").textContent=tx(Bi[0]);$("bio").innerHTML=[[T.bSame,1,"var(--ok)"],[T.bDiff,2,"var(--warn)"],[T.bSee,3,"var(--accent)"]].map(([l,i,c])=>`<div class="ln" style="--lc:${c}"><small>${esc(tx(l))}</small><p>${esc(tx(Bi[i]))}</p></div>`).join("");}
+  {$("h-cost").textContent=tx(T.hCost)+": "+tx(D.n);$("cost").innerHTML=COST[st.veh].map(([w,v,t,sr])=>`<div class="stat"><span class="k">${esc(tx(w))}</span><b style="font-size:24px">${esc(tx(v))}</b><p>${esc(tx(t))}</p>${sr?`<a href="${S_[sr][1]}" target="_blank" rel="noopener">${esc(tx(T.srcLbl))}: ${esc(S_[sr][0].split(":")[0])}</a>`:`<span class="ap">${esc(tx(T.approx))}</span>`}</div>`).join("");
+   const ch=CHAIN[st.veh],li=a=>a.map(x=>`<li><span>${esc(tx(x))}</span></li>`).join("");$("ch-make").innerHTML=li(ch[0]);$("ch-use").innerHTML=li(ch[1]);}
   $("h-stat").textContent=tx(T.hStat)+": "+tx(D.n);$("stats").innerHTML=STATS[st.veh].map(([k,v,t,sr])=>`<div class="stat ${k}"><span class="k">${esc(tx(k==="w"?T.kW:T.kD))}</span><b>${esc(tx(v))}</b><p>${esc(tx(t))}</p><a href="${S_[sr][1]}" target="_blank" rel="noopener">${esc(tx(T.srcLbl))}: ${esc(S_[sr][0].split(":")[0])}</a></div>`).join("");}
  {const P=PEOPLE[st.veh];$("h-ppl").textContent=tx(T.hPpl)+": "+tx(D.n);$("who").innerHTML=P.who.map(w=>`<li>${esc(tx(w))}</li>`).join("");
   $("lens").innerHTML=[["phys",T.lnPhys,"var(--accent)"],["mat",T.lnMat,"var(--muted)"],["econ",T.lnEcon,"var(--ok)"],["psy",T.lnPsy,"var(--warn)"]].map(([k,l,c])=>`<div class="ln" style="--lc:${c}"><small>${esc(tx(l))}</small><p>${esc(tx(P[k]))}</p></div>`).join("");$("crew").textContent=tx(P.crew);}
@@ -843,11 +1014,15 @@ function render(){document.documentElement.lang=lang;document.title=tx(T.title);
 document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
  if(b.dataset.veh){setVeh(b.dataset.veh);ui();try{history.replaceState(null,"","#"+b.dataset.veh)}catch(_){}}
  else if(b.dataset.mode){st.mode=b.dataset.mode;sizeGL();explode();look();ui();}
- else if(b.id==="run"){st.run=!st.run;ui();}
+ else if(b.id==="run"){st.run=!st.run;st.mt=0;ui();}
+ else if(b.dataset.rm){st.rm=b.dataset.rm;st.run=true;st.mt=0;if(st.sel)select(st.sel);ui();}
+ else if(b.dataset.env){st.env=b.dataset.env;ui();}
+ else if(b.dataset.out){st.out=b.dataset.out;st.mt=0;ui();}
+ else if(b.dataset.ph){const d=phDur();st.mt=d.slice(0,+b.dataset.ph).reduce((a,c)=>a+c,0)+.01;rmPanel();}
  else if(b.id==="xray"){st.xray=!st.xray;look();ui();}
  else if(b.id==="asm"){kT=0;}else if(b.id==="exp"){kT=1;}
  else if(b.dataset.part!==undefined&&b.closest("#parts")){if(b.dataset.part==="")(st.sel&&select(st.sel));else select(b.dataset.part);}
- else if(b.dataset.lim){if(st.sel!==b.dataset.lim)select(b.dataset.lim);$("view").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});}});
+ else if(b.dataset.lim){if(b.dataset.envk)st.env=b.dataset.envk;if(st.sel!==b.dataset.lim)select(b.dataset.lim);$("view").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});}});
 document.addEventListener("input",e=>{if(e.target.id==="ex"){kT=null;st.k=+e.target.value/100;explode();}});
 window.addEventListener("resize",sizeGL);
 {const h=location.hash.slice(1);if(DEFS[h])st.veh=h;}
