@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;background:#0f1214;color:#e6e8e6;font-family:'IBM Plex Sans',Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#4fc9ba;text-decoration:none}
+a:hover{color:#8ee3d8}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#2a3136;border-radius:4px}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;background:#0f1214">
+
+  <!-- Top bar -->
+  <header style="display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px;padding:12px 20px;border-bottom:1px solid #232a2f;background:#121619">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:22px;height:22px;border-radius:5px;background:#2fb5a6"></div>
+      <div style="font-weight:600;font-size:15px;letter-spacing:.01em">Dockyard OS</div>
+      <div style="font-size:12px;color:#8b949a">Fleet Orchestrator</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px">
+      <span style="padding:4px 8px;border:1px solid #2a3136;border-radius:4px;color:#b7bec2;white-space:nowrap">site DC-04 · Inbound</span>
+      <span style="padding:4px 8px;border:1px solid #2a3136;border-radius:4px;color:#b7bec2;white-space:nowrap">ROS 2 Jazzy</span>
+      <span style="padding:4px 8px;border:1px solid #2a3136;border-radius:4px;color:#b7bec2;white-space:nowrap">DDS domain 12 · Cyclone</span>
+      <span style="padding:4px 8px;border:1px solid #2a3136;border-radius:4px;color:#b7bec2;white-space:nowrap">{{ nodeCount }} nodes · {{ topicCount }} topics</span>
+    </div>
+    <div style="flex:1"></div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#b7bec2">{{ clock }}</div>
+    <button onClick="{{ toggleEstop }}" style="font:600 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;padding:8px 14px;border-radius:6px;border:1px solid #e0564a;background:{{ estopBg }};color:{{ estopFg }};cursor:pointer;white-space:nowrap" style-hover="background:#e0564a;color:#fff">{{ estopLabel }}</button>
+  </header>
+
+  <sc-if value="{{ estop }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:10px 20px;background:#3a1714;border-bottom:1px solid #e0564a;color:#ffd9d4;font-size:13px;display:flex;gap:12px;align-items:center">
+      <strong>Fleet-wide emergency stop active.</strong>
+      <span style="color:#f0b3ab">/fleet/estop latched · all motion controllers holding · resume requires operator release</span>
+    </div>
+  </sc-if>
+
+  <main style="flex:1;display:flex;flex-wrap:wrap;gap:12px;padding:12px;align-items:stretch">
+
+    <!-- Fleet -->
+    <aside style="flex:1 1 240px;max-width:100%;min-width:0;display:flex;flex-direction:column;gap:12px">
+      <section style="background:#161a1d;border:1px solid #232a2f;border-radius:8px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #232a2f">
+          <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Fleet</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b949a;white-space:nowrap">{{ activeCount }}/{{ robotCount }} active</div>
+        </div>
+        <div style="display:flex;flex-direction:column;padding:6px">
+          <sc-for list="{{ robots }}" as="r" hint-placeholder-count="6">
+            <div onClick="{{ r.select }}" style="display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:6px;cursor:pointer;background:{{ r.bg }};border:1px solid {{ r.border }}" style-hover="background:#1d2226">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="width:8px;height:8px;border-radius:50%;background:{{ r.dot }};flex:none"></span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500">{{ r.id }}</span>
+                <span style="font-size:11px;color:#8b949a">{{ r.type }}</span>
+                <span style="flex:1"></span>
+                <span style="font-size:11px;color:{{ r.dot }}">{{ r.state }}</span>
+              </div>
+              <div style="font-size:12px;color:#9aa3a8;padding-left:16px">{{ r.zone }}</div>
+              <div style="display:flex;align-items:center;gap:8px;padding-left:16px">
+                <div style="flex:1;height:4px;border-radius:2px;background:#232a2f;overflow:hidden"><div style="height:100%;width:{{ r.batteryPct }};background:{{ r.batteryColor }}"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9aa3a8;width:36px;text-align:right">{{ r.batteryLabel }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="background:#161a1d;border:1px solid #232a2f;border-radius:8px">
+        <div style="padding:12px 14px;border-bottom:1px solid #232a2f;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Mission queue</div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:12px 14px">
+          <sc-for list="{{ missions }}" as="m" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;gap:8px;font-size:12px">
+                <span style="font-family:'IBM Plex Mono',monospace;color:#8b949a">{{ m.robot }}</span>
+                <span style="flex:1;min-width:0">{{ m.name }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;color:#9aa3a8">{{ m.pctLabel }}</span>
+              </div>
+              <div style="height:3px;border-radius:2px;background:#232a2f;overflow:hidden"><div style="height:100%;width:{{ m.pct }};background:{{ m.color }}"></div></div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Center: twin + sensors -->
+    <div style="flex:3 1 560px;min-width:0;display:flex;flex-direction:column;gap:12px">
+      <section style="background:#161a1d;border:1px solid #232a2f;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #232a2f">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500">{{ sel.id }}</span>
+          <span style="font-size:12px;color:#9aa3a8">{{ sel.model }}</span>
+          <span style="font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid {{ sel.dot }};color:{{ sel.dot }}">{{ sel.state }}</span>
+          <span style="flex:1"></span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b949a;white-space:nowrap">ns /{{ sel.ns }} · digital twin · tf synced</span>
+        </div>
+        <sc-if value="{{ showTwin }}" hint-placeholder-val="{{ true }}">
+          <div style="position:relative;height:340px;background:#eeebe5">
+            <iframe src="{{ twinSrc }}" title="Digital twin" style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+          </div>
+        </sc-if>
+        <div style="display:flex;flex-wrap:wrap;gap:1px;background:#232a2f;border-top:1px solid #232a2f">
+          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+            <div style="flex:1 1 120px;background:#161a1d;padding:10px 14px;display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:11px;color:#8b949a">{{ k.label }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:16px">{{ k.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <div style="display:flex;flex-wrap:wrap;gap:12px">
+        <section style="flex:1 1 320px;min-width:0;background:#161a1d;border:1px solid #232a2f;border-radius:8px;overflow:hidden">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 14px;border-bottom:1px solid #232a2f">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Vision</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b949a;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ visionTopic }}</span>
+            <span style="flex:1"></span>
+            <div style="display:flex;gap:2px;padding:2px;border:1px solid #2a3136;border-radius:6px">
+              <sc-for list="{{ visionModes }}" as="v" hint-placeholder-count="3">
+                <button onClick="{{ v.pick }}" style="font:11px 'IBM Plex Sans',sans-serif;padding:3px 8px;border:0;border-radius:4px;cursor:pointer;background:{{ v.bg }};color:{{ v.fg }}">{{ v.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <canvas ref="{{ visionRef }}" style="display:block;width:100%;height:260px;background:#0b0f12"></canvas>
+        </section>
+        <section style="flex:1 1 280px;min-width:0;background:#161a1d;border:1px solid #232a2f;border-radius:8px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #232a2f">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2;white-space:nowrap">LiDAR · safety fields</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b949a;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ lidarTopic }}</span>
+          </div>
+          <canvas ref="{{ lidarRef }}" style="display:block;width:100%;height:260px;background:#0b0f12"></canvas>
+        </section>
+      </div>
+
+      <section style="background:#161a1d;border:1px solid #232a2f;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #232a2f">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">/rosout</span>
+          <span style="flex:1"></span>
+          <div style="display:flex;gap:2px;padding:2px;border:1px solid #2a3136;border-radius:6px">
+            <sc-for list="{{ logFilters }}" as="f" hint-placeholder-count="3">
+              <button onClick="{{ f.pick }}" style="font:11px 'IBM Plex Sans',sans-serif;padding:3px 8px;border:0;border-radius:4px;cursor:pointer;background:{{ f.bg }};color:{{ f.fg }}">{{ f.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="height:180px;overflow:auto;padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7">
+          <sc-for list="{{ logs }}" as="l" hint-placeholder-count="6">
+            <div style="display:flex;gap:12px;white-space:nowrap">
+              <span style="color:#6f787d">{{ l.t }}</span>
+              <span style="width:40px;color:{{ l.color }}">{{ l.lvl }}</span>
+              <span style="width:180px;color:#9aa3a8;overflow:hidden;text-overflow:ellipsis">{{ l.node }}</span>
+              <span style="color:#d6dad8">{{ l.msg }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+
+    <!-- Right: telemetry + topics + nodes -->
+    <aside style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:12px">
+      <section style="background:#161a1d;border:1px solid #232a2f;border-radius:8px">
+        <div style="display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #232a2f">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Telemetry</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b949a">last 30 s</span>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;border-bottom:1px solid #1e2428">
+              <div style="display:flex;align-items:baseline;gap:8px">
+                <span style="font-size:12px;color:#9aa3a8;flex:1">{{ m.label }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:15px">{{ m.value }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b949a;width:34px">{{ m.unit }}</span>
+              </div>
+              <svg viewBox="0 0 100 24" preserveAspectRatio="none" style="width:100%;height:28px;display:block">
+                <polyline points="{{ m.points }}" fill="none" stroke="{{ m.color }}" stroke-width="1.5" vector-effect="non-scaling-stroke"></polyline>
+              </svg>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="background:#161a1d;border:1px solid #232a2f;border-radius:8px;overflow:hidden">
+        <div style="display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #232a2f">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Topics</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b949a">{{ bandwidth }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;font-family:'IBM Plex Mono',monospace;font-size:11px">
+          <sc-for list="{{ topics }}" as="t" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 56px;gap:2px 8px;padding:7px 14px;border-bottom:1px solid #1e2428">
+              <span style="color:#e6e8e6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.name }}</span>
+              <span style="text-align:right;color:{{ t.hzColor }}">{{ t.hz }}</span>
+              <span style="color:#7f888d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.type }}</span>
+              <span style="text-align:right;color:#7f888d">{{ t.bw }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="background:#161a1d;border:1px solid #232a2f;border-radius:8px">
+        <div style="padding:12px 14px;border-bottom:1px solid #232a2f;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Nodes</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;padding:12px 14px">
+          <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="6">
+            <span style="display:flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid #2a3136;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c8cdcf">
+              <span style="width:6px;height:6px;border-radius:50%;background:{{ n.color }}"></span>{{ n.name }}
+            </span>
+          </sc-for>
+        </div>
+      </section>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showTwin&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const C = { teal: '#2fb5a6', amber: '#e0a43a', red: '#e0564a', green: '#4cc38a', muted: '#8b949a', blue: '#5aa8e6' };
+const ROBOTS = [
+  { id: 'UNL-01', type: 'Unloader', model: 'Container unloading robot · vacuum arm', state: 'Unloading', zone: 'Dock 3 · MSKU 482193 (20 ft)', battery: 78, ns: 'unl_01', health: 'ok' },
+  { id: 'UNL-02', type: 'Unloader', model: 'Container unloading robot · vacuum arm', state: 'Charging', zone: 'Charger bay B', battery: 34, ns: 'unl_02', health: 'idle' },
+  { id: 'FMR-01', type: 'Forklift', model: 'Forklift mobile robot · 1.5 t stacker', state: 'Put-away', zone: 'Aisle 12 → Rack L4-07', battery: 61, ns: 'fmr_01', health: 'ok' },
+  { id: 'FMR-02', type: 'Forklift', model: 'Forklift mobile robot · 1.5 t stacker', state: 'Lifting', zone: 'Aisle 07 · fork 3.8 m', battery: 88, ns: 'fmr_02', health: 'ok' },
+  { id: 'FMR-03', type: 'Forklift', model: 'Forklift mobile robot · 1.5 t stacker', state: 'Blocked', zone: 'Cross-aisle C · person in field', battery: 52, ns: 'fmr_03', health: 'warn' },
+  { id: 'TEL-01', type: 'Conveyor', model: 'Telescopic conveyor · 4-stage', state: 'Extended', zone: 'Dock 3 · 4.1 m', battery: null, ns: 'tel_01', health: 'ok' },
+];
+const METRICS = {
+  Unloader: [['Vacuum pressure', 'kPa', -62, 5, 0, C.teal], ['Gripper load', 'kg', 13, 7, 1, C.amber], ['J2 shoulder torque', 'N·m', 310, 55, 0, C.blue], ['Perception GPU', '%', 72, 9, 0, C.green]],
+  Forklift: [['Fork height', 'm', 2.6, 1.6, 2, C.teal], ['Fork load', 'kg', 820, 40, 0, C.amber], ['Ground speed', 'm/s', 0.8, 0.45, 2, C.blue], ['Nav2 CPU', '%', 41, 8, 0, C.green]],
+  Conveyor: [['Belt speed', 'm/s', 0.9, 0.05, 2, C.teal], ['Motor current', 'A', 6.2, 1.1, 1, C.amber], ['Extension', 'm', 4.1, 0.15, 2, C.blue], ['Cases / min', '', 10, 2.5, 0, C.green]],
+};
+const TOPICS = {
+  Unloader: [['/camera/mast_rgb/image_raw', 'sensor_msgs/Image', 30, 27.6], ['/camera/mast_depth/points', 'sensor_msgs/PointCloud2', 15, 18.2], ['/perception/cartons', 'vision_msgs/Detection3DArray', 10, 0.04], ['/arm/joint_states', 'sensor_msgs/JointState', 250, 0.11], ['/gripper/vacuum', 'std_msgs/Float32', 100, 0.01], ['/scan_front', 'sensor_msgs/LaserScan', 25, 0.29], ['/battery_state', 'sensor_msgs/BatteryState', 1, 0.001], ['/tf', 'tf2_msgs/TFMessage', 100, 0.09]],
+  Forklift: [['/lidar_3d/points', 'sensor_msgs/PointCloud2', 10, 12.4], ['/scan_safety', 'sensor_msgs/LaserScan', 40, 0.46], ['/camera/fork/image_raw', 'sensor_msgs/Image', 15, 9.3], ['/pallet_detector/pose', 'geometry_msgs/PoseStamped', 10, 0.01], ['/fork/height', 'std_msgs/Float32', 50, 0.01], ['/odom', 'nav_msgs/Odometry', 50, 0.04], ['/cmd_vel', 'geometry_msgs/Twist', 20, 0.01], ['/tf', 'tf2_msgs/TFMessage', 100, 0.09]],
+  Conveyor: [['/belt/speed', 'std_msgs/Float32', 20, 0.01], ['/belt/photo_eye', 'std_msgs/Bool', 50, 0.01], ['/stage/extension', 'std_msgs/Float32', 20, 0.01], ['/camera/nose/image_raw', 'sensor_msgs/Image', 15, 6.1], ['/diagnostics', 'diagnostic_msgs/DiagnosticArray', 1, 0.003]],
+};
+const NODES = {
+  Unloader: ['perception_node', 'carton_segmenter', 'moveit_planner', 'arm_controller', 'gripper_driver', 'base_omni_ctrl', 'safety_monitor', 'fleet_bridge'],
+  Forklift: ['nav2_bt_navigator', 'controller_server', 'amcl', 'pallet_detector', 'fork_controller', 'safety_scanner', 'fleet_bridge'],
+  Conveyor: ['plc_bridge', 'belt_controller', 'photo_eye_node', 'fleet_bridge'],
+};
+const LOG_T = [
+  ['INFO', 'unl_01/perception_node', () => `cartons detected: ${18 + (Math.random() * 6 | 0)}  mean conf 0.9${(Math.random() * 9) | 0}`],
+  ['INFO', 'unl_01/moveit_planner', () => `trajectory solved in ${(8 + Math.random() * 14).toFixed(1)} ms · 7 dof`],
+  ['INFO', 'unl_01/gripper_driver', () => `seal OK · ${(-58 - Math.random() * 8).toFixed(1)} kPa · zones 1-12 engaged`],
+  ['INFO', 'fmr_01/nav2_bt_navigator', () => `goal rack L4-07 · remaining ${(Math.random() * 30).toFixed(1)} m`],
+  ['INFO', 'fmr_02/fork_controller', () => `fork height ${(2 + Math.random() * 3).toFixed(2)} m · tilt 0.3°`],
+  ['WARN', 'fmr_03/safety_scanner', () => `protective field breach · obstacle ${(0.8 + Math.random()).toFixed(2)} m · speed limited 0.0 m/s`],
+  ['INFO', 'tel_01/photo_eye_node', () => `case passed · gap ${(0.3 + Math.random() * 0.4).toFixed(2)} m`],
+  ['WARN', 'unl_01/carton_segmenter', () => `damaged carton suspected · id ${1000 + (Math.random() * 999 | 0)} · multi-cup fallback`],
+  ['INFO', 'fleet_manager', () => `task allocator · ${3 + (Math.random() * 3 | 0)} jobs queued · traffic map v${812 + (Math.random() * 4 | 0)}`],
+  ['ERROR', 'unl_02/battery_monitor', () => `cell 14 temp 41.2 °C above soft limit — charge current reduced`],
+];
+const hash = n => { const x = Math.sin(n * 127.1) * 43758.5453; return x - Math.floor(x); };
+
+class Component extends DCLogic {
+  state = { sel: 'UNL-01', t: 0, vmode: 'det', logf: 'all', estop: false, logs: [] };
+  visionRef = React.createRef();
+  lidarRef = React.createRef();
+
+  componentDidMount() {
+    this.t0 = performance.now();
+    const seed = [];
+    for (let i = 0; i < 14; i++) seed.push(this.makeLog(Date.now() - (14 - i) * 1700));
+    this.setState({ logs: seed });
+    this.iv = setInterval(() => {
+      const logs = this.state.logs.slice(-60);
+      if (Math.random() < 0.55) logs.push(this.makeLog(Date.now()));
+      this.setState({ t: (performance.now() - this.t0) / 1000, logs });
+    }, 500);
+    const loop = () => { this.draw(); this.raf = requestAnimationFrame(loop); };
+    loop();
+  }
+  componentWillUnmount() { clearInterval(this.iv); cancelAnimationFrame(this.raf); }
+
+  makeLog(ts) {
+    let tpl = LOG_T[(Math.random() * LOG_T.length) | 0];
+    if (tpl[0] === 'ERROR' && Math.random() < 0.7) tpl = LOG_T[0];
+    if (this.state && this.state.estop) tpl = ['WARN', 'fleet_manager', () => 'estop latched · heartbeat OK · awaiting operator release'];
+    const d = new Date(ts);
+    return { t: d.toTimeString().slice(0, 8) + '.' + String(d.getMilliseconds()).padStart(3, '0'), lvl: tpl[0], node: tpl[1], msg: tpl[2]() };
+  }
+  robot() { return ROBOTS.find(r => r.id === this.state.sel); }
+  val(m, i, t) {
+    const [, , base, amp] = m;
+    return base + amp * (0.6 * Math.sin(t * 0.35 + i * 1.7) + 0.3 * Math.sin(t * 1.3 + i) + 0.1 * (hash(Math.floor(t * 4) + i * 99) * 2 - 1));
+  }
+
+  /* ---------- canvases ---------- */
+  fit(cv) {
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return [g, w, h];
+  }
+  draw() {
+    const t = (performance.now() - this.t0) / 1000, r = this.robot();
+    if (this.visionRef.current) this.drawVision(t, r);
+    if (this.lidarRef.current) this.drawLidar(t, r);
+  }
+  drawVision(t, r) {
+    const [g, w, h] = this.fit(this.visionRef.current), mode = this.state.vmode, frozen = this.state.estop;
+    g.fillStyle = '#0b0f12'; g.fillRect(0, 0, w, h);
+    const mono = "10px 'IBM Plex Mono', monospace";
+    if (r.type === 'Unloader') {
+      const cols = 5, rows = 5, pad = 18, cw = (w - pad * 2) / cols, ch = (h - pad * 2 - 14) / rows;
+      const removed = Math.floor((frozen ? this.frozenT || t : t) / 4.8) % (cols * rows);
+      if (!frozen) this.frozenT = t;
+      for (let i = 0; i < cols * rows; i++) {
+        if (i < removed) continue;
+        const c = i % cols, row = Math.floor(i / cols);
+        const jx = (hash(i) - 0.5) * 6, jy = (hash(i + 50) - 0.5) * 3;
+        const x = pad + c * cw + jx + 2, y = pad + 14 + row * ch + jy + 2, bw = cw - 4, bh = ch - 4;
+        const depth = 0.3 + hash(i + 7) * 0.7;
+        if (mode === 'depth') g.fillStyle = `hsl(${180 + depth * 140}, 55%, ${22 + depth * 22}%)`;
+        else g.fillStyle = `hsl(30, ${28 + hash(i + 3) * 14}%, ${30 + hash(i + 9) * 12}%)`;
+        g.fillRect(x, y, bw, bh);
+        if (mode !== 'depth') { g.fillStyle = 'rgba(240,236,226,.75)'; g.fillRect(x + bw * 0.12, y + bh * 0.2, bw * 0.28, bh * 0.22); }
+        if (mode !== 'rgb') {
+          const target = i === removed;
+          g.strokeStyle = target ? '#e0a43a' : 'rgba(47,181,166,.9)'; g.lineWidth = target ? 2 : 1;
+          g.strokeRect(x + 1, y + 1, bw - 2, bh - 2);
+          g.font = mono; g.fillStyle = target ? '#e0a43a' : '#7fe0d4';
+          g.fillText((target ? 'PICK ' : '') + (0.9 + hash(i + 11) * 0.09).toFixed(2), x + 4, y + bh - 5);
+          if (target) {
+            const cx = x + bw / 2, cy = y + bh / 2;
+            g.beginPath(); g.moveTo(cx - 10, cy); g.lineTo(cx + 10, cy); g.moveTo(cx, cy - 10); g.lineTo(cx, cy + 10); g.stroke();
+            g.beginPath(); g.arc(cx, cy, 6 + Math.sin(t * 6) * 2, 0, Math.PI * 2); g.stroke();
+          }
+        }
+      }
+      if (!frozen) { const sy = pad + 14 + ((t * 80) % (h - pad * 2)); g.fillStyle = 'rgba(47,181,166,.08)'; g.fillRect(0, sy, w, 2); }
+    } else if (r.type === 'Forklift') {
+      // pallet pocket view from fork camera
+      const cx = w / 2, cy = h / 2 + 10 + Math.sin(t * 0.8) * (frozen ? 0 : 4);
+      const pw = w * 0.62, ph = h * 0.26;
+      g.fillStyle = mode === 'depth' ? 'hsl(250,45%,30%)' : 'hsl(32,40%,36%)';
+      g.fillRect(cx - pw / 2, cy - ph / 2, pw, ph);
+      g.fillStyle = mode === 'depth' ? 'hsl(200,50%,14%)' : '#0b0f12';
+      for (const s of [-1, 1]) g.fillRect(cx + s * pw * 0.25 - pw * 0.11, cy - ph * 0.15, pw * 0.22, ph * 0.5);
+      g.fillStyle = mode === 'depth' ? 'hsl(230,45%,22%)' : 'hsl(30,20%,22%)';
+      g.fillRect(cx - pw / 2 - 20, cy - ph / 2 - h * 0.34, pw + 40, h * 0.32);
+      if (mode !== 'rgb') {
+        g.strokeStyle = '#e0a43a'; g.lineWidth = 2; g.strokeRect(cx - pw / 2, cy - ph / 2, pw, ph);
+        g.strokeStyle = '#2fb5a6'; g.lineWidth = 1;
+        for (const s of [-1, 1]) g.strokeRect(cx + s * pw * 0.25 - pw * 0.11, cy - ph * 0.15, pw * 0.22, ph * 0.5);
+        g.font = mono; g.fillStyle = '#e0a43a';
+        g.fillText(`EUR pallet 0.97 · yaw ${(Math.sin(t * 0.5) * 1.2).toFixed(1)}° · dz ${(1.2 + Math.sin(t * 0.3) * 0.3).toFixed(2)} m`, cx - pw / 2, cy + ph / 2 + 16);
+        g.strokeStyle = 'rgba(224,164,58,.6)'; g.setLineDash([4, 4]);
+        g.beginPath(); g.moveTo(cx, 20); g.lineTo(cx, h - 10); g.stroke(); g.setLineDash([]);
+      }
+    } else {
+      g.font = mono; g.fillStyle = '#8b949a'; g.fillText('nose camera · case flow', 18, 30);
+      for (let i = 0; i < 6; i++) {
+        const x = ((t * 60 + i * 110) % (w + 100)) - 80;
+        g.fillStyle = 'hsl(30,35%,36%)'; g.fillRect(x, h / 2 - 30, 70, 60);
+        if (mode !== 'rgb') { g.strokeStyle = '#2fb5a6'; g.strokeRect(x, h / 2 - 30, 70, 60); }
+      }
+      g.fillStyle = '#232427'; g.fillRect(0, h / 2 + 32, w, 6);
+    }
+    g.font = mono; g.fillStyle = 'rgba(230,232,230,.85)';
+    g.fillText(`${r.ns} · ${mode.toUpperCase()} · ${frozen ? 'HOLD' : '30 fps'} · ${new Date().toTimeString().slice(0, 8)}`, 18, 14);
+    if (frozen) { g.fillStyle = 'rgba(224,86,74,.9)'; g.fillText('E-STOP', w - 62, 14); }
+  }
+  drawLidar(t, r) {
+    const [g, w, h] = this.fit(this.lidarRef.current), cx = w / 2, cy = h * 0.6, s = Math.min(w, h) / 9;
+    g.fillStyle = '#0b0f12'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#1f262b'; g.lineWidth = 1; g.font = "10px 'IBM Plex Mono', monospace"; g.fillStyle = '#5f686d';
+    for (const m of [1, 2, 4]) { g.beginPath(); g.arc(cx, cy, m * s, 0, Math.PI * 2); g.stroke(); g.fillText(m + ' m', cx + m * s + 3, cy - 3); }
+    const blocked = r.health === 'warn';
+    // safety fields (forward = up)
+    g.fillStyle = 'rgba(224,164,58,.10)'; g.strokeStyle = 'rgba(224,164,58,.6)';
+    g.beginPath(); g.rect(cx - 0.75 * s, cy - 2.6 * s, 1.5 * s, 2.6 * s); g.fill(); g.stroke();
+    g.fillStyle = blocked ? 'rgba(224,86,74,.28)' : 'rgba(224,86,74,.10)'; g.strokeStyle = 'rgba(224,86,74,.8)';
+    g.beginPath(); g.rect(cx - 0.6 * s, cy - 1.3 * s, 1.2 * s, 1.3 * s); g.fill(); g.stroke();
+    // environment
+    const halfW = r.type === 'Unloader' ? 1.17 : 1.6, end = r.type === 'Unloader' ? 2.4 - (t / 20 % 1.6) : null;
+    const person = blocked ? { x: 0.25 + Math.sin(t) * 0.15, y: 1.0 } : { x: -0.9 + Math.sin(t * 0.4) * 0.3, y: 3.2 };
+    const sweep = (t * 2.5) % (Math.PI * 2);
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 240) {
+      const dx = Math.sin(a), dy = Math.cos(a); // dy forward
+      let d = 6;
+      if (Math.abs(dx) > 1e-3) d = Math.min(d, halfW / Math.abs(dx));
+      if (end && dy > 1e-3) d = Math.min(d, end / dy);
+      if (r.type === 'Forklift') for (let k = -6; k <= 6; k++) {
+        const px = Math.sign(dx || 1) * (halfW - 0.05), py = k * 0.9, ox = px, oy = py;
+        const proj = ox * dx + oy * dy; if (proj > 0) { const dd = Math.hypot(ox - proj * dx, oy - proj * dy); if (dd < 0.06) d = Math.min(d, proj); }
+      }
+      const pp = person.x * dx + person.y * dy;
+      if (pp > 0 && Math.hypot(person.x - pp * dx, person.y - pp * dy) < 0.22) d = Math.min(d, pp - 0.1);
+      if (d >= 6) continue;
+      d += (hash(a * 1000 + Math.floor(t * 10)) - 0.5) * 0.04;
+      const age = ((sweep - a) + Math.PI * 4) % (Math.PI * 2);
+      const near = (person.x * dx + person.y * dy) > 0 && d < Math.hypot(person.x, person.y) + 0.2 && d > Math.hypot(person.x, person.y) - 0.4;
+      g.fillStyle = near ? (blocked ? '#e0564a' : '#e0a43a') : `rgba(79,201,186,${0.35 + 0.65 * (1 - age / (Math.PI * 2))})`;
+      g.fillRect(cx + dx * d * s - 1, cy - dy * d * s - 1, 2, 2);
+    }
+    if (!this.state.estop) { g.strokeStyle = 'rgba(79,201,186,.35)'; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.sin(sweep) * 6 * s, cy - Math.cos(sweep) * 6 * s); g.stroke(); }
+    // robot footprint
+    const fw = r.type === 'Unloader' ? 1.0 : 0.9, fl = r.type === 'Unloader' ? 1.25 : 2.1;
+    g.fillStyle = '#2a3136'; g.strokeStyle = '#2fb5a6'; g.fillRect(cx - fw / 2 * s, cy - fl / 2 * s, fw * s, fl * s); g.strokeRect(cx - fw / 2 * s, cy - fl / 2 * s, fw * s, fl * s);
+    g.fillStyle = blocked ? '#e0564a' : '#9aa3a8';
+    g.fillText(blocked ? 'PROTECTIVE FIELD · STOP' : `nearest ${(Math.hypot(person.x, person.y) - 0.2).toFixed(2)} m`, 12, h - 12);
+  }
+
+  renderVals() {
+    const { t, sel, vmode, logf, estop } = this.state, r = this.robot();
+    const dotOf = x => estop ? C.red : x.health === 'warn' ? C.amber : x.health === 'idle' ? C.blue : C.green;
+    const robots = ROBOTS.map(x => ({
+      ...x, dot: dotOf(x), state: estop ? 'E-STOP' : x.state,
+      bg: x.id === sel ? '#1f2629' : 'transparent', border: x.id === sel ? '#2fb5a6' : 'transparent',
+      batteryPct: (x.battery ?? 100) + '%', batteryLabel: x.battery == null ? 'mains' : Math.round(x.battery - (x.state === 'Charging' ? -t / 60 : t / 120)) + '%',
+      batteryColor: x.battery == null ? '#4f5a60' : x.battery < 40 ? C.amber : C.teal,
+      select: () => this.setState({ sel: x.id }),
+    }));
+    const metrics = METRICS[r.type].map((m, i) => {
+      const pts = []; for (let k = 0; k <= 60; k++) pts.push(this.val(m, i, t - 30 + k * 0.5));
+      const lo = Math.min(...pts), hi = Math.max(...pts), span = hi - lo || 1;
+      const v = estop ? (i === 0 && r.type === 'Unloader' ? m[2] : 0) : pts[60];
+      return { label: m[0], unit: m[1], color: m[5], value: v.toFixed(m[4]), points: pts.map((p, k) => `${(k / 60 * 100).toFixed(1)},${(22 - (p - lo) / span * 20).toFixed(1)}`).join(' ') };
+    });
+    let totalBw = 0;
+    const topics = TOPICS[r.type].map(([name, type, hz, bw], i) => {
+      const live = estop && /cmd_vel|joint/.test(name) ? 0 : hz * (1 + (hash(Math.floor(t * 2) + i * 13) - 0.5) * 0.06);
+      totalBw += bw;
+      return { name: '/' + r.ns + name, type, hz: live < 2 ? live.toFixed(2) + ' Hz' : live.toFixed(1) + ' Hz', bw: bw >= 1 ? bw.toFixed(1) + ' MB/s' : (bw * 1000).toFixed(0) + ' KB/s', hzColor: live === 0 ? C.red : '#c8cdcf' };
+    });
+    const nodes = NODES[r.type].map(n => ({ name: n, color: estop && /controller|ctrl/.test(n) ? C.red : (r.health === 'warn' && /safety/.test(n)) ? C.amber : C.green }));
+    const cycle = Math.floor(t / 4.8);
+    const kpiMap = {
+      Unloader: [['Cases unloaded', String(37 + cycle)], ['Rate', `${estop ? 0 : 742 + Math.round(Math.sin(t / 5) * 30)} /hr`], ['Pick success', '99.4%'], ['Container fill', `${Math.max(0, 63 - cycle)}%`]],
+      Forklift: [['Pallets moved', String(112 + Math.floor(t / 40))], ['Fork height', metrics[0].value + ' m'], ['Payload', metrics[1].value + ' kg'], ['Localization', 'σ 0.012 m']],
+      Conveyor: [['Belt speed', metrics[0].value + ' m/s'], ['Extension', metrics[2].value + ' m'], ['Throughput', `${estop ? 0 : 12} cases/min`], ['Jams 24h', '0']],
+    };
+    const missions = [
+      { robot: 'UNL-01', name: 'Unload MSKU 482193 · 100 cases', p: Math.min(100, 37 + cycle) },
+      { robot: 'FMR-01', name: 'Put-away pallet → L4-07', p: 64 + (t / 3 % 30) },
+      { robot: 'FMR-02', name: 'Replenish pick face A-22', p: 28 + (t / 4 % 40) },
+      { robot: 'FMR-03', name: 'Stage outbound · Door 9', p: 41 },
+      { robot: 'UNL-02', name: 'Queued · TGHU 771054 (40 ft)', p: 0 },
+    ].map(m => ({ ...m, pct: m.p + '%', pctLabel: Math.round(m.p) + '%', color: estop ? C.red : m.robot === 'FMR-03' ? C.amber : C.teal }));
+    const lvlColor = { INFO: '#7f888d', WARN: C.amber, ERROR: C.red };
+    const logs = this.state.logs.filter(l => logf === 'all' || (logf === 'warn' ? l.lvl !== 'INFO' : l.node.startsWith(r.ns))).slice(-40).reverse().map(l => ({ ...l, color: lvlColor[l.lvl] }));
+    const seg = (cur, key, opts) => opts.map(([v, label]) => ({ label, bg: cur === v ? '#2a3136' : 'transparent', fg: cur === v ? '#e6e8e6' : '#8b949a', pick: () => this.setState({ [key]: v }) }));
+    const twinSrc = r.type === 'Forklift' ? 'FMR Forklift Robot.html?embed' : 'Unloading Robot Simulation.html?embed';
+    return {
+      robots, sel: { ...r, dot: dotOf(r), state: estop ? 'E-STOP' : r.state },
+      robotCount: ROBOTS.length, activeCount: estop ? 0 : ROBOTS.filter(x => x.health !== 'idle').length,
+      nodeCount: 47, topicCount: 212,
+      clock: new Date().toLocaleTimeString([], { hour12: false }) + ' local',
+      estop, estopLabel: estop ? 'RELEASE E-STOP' : 'E-STOP ALL', estopBg: estop ? '#e0564a' : 'transparent', estopFg: estop ? '#fff' : '#ffb3aa',
+      toggleEstop: () => this.setState(s => ({ estop: !s.estop })),
+      showTwin: this.props.showTwin ?? true, twinSrc,
+      kpis: kpiMap[r.type].map(([label, value]) => ({ label, value })),
+      metrics, topics, nodes, missions, logs,
+      bandwidth: totalBw.toFixed(1) + ' MB/s',
+      visionTopic: r.type === 'Unloader' ? '/' + r.ns + '/perception/cartons' : r.type === 'Forklift' ? '/' + r.ns + '/pallet_detector' : '/' + r.ns + '/camera/nose',
+      lidarTopic: '/' + r.ns + (r.type === 'Forklift' ? '/scan_safety' : '/scan_front'),
+      visionModes: seg(vmode, 'vmode', [['det', 'Detections'], ['rgb', 'RGB'], ['depth', 'Depth']]),
+      logFilters: seg(logf, 'logf', [['all', 'All'], ['warn', 'Warn+'], ['robot', 'This robot']]),
+      visionRef: this.visionRef, lidarRef: this.lidarRef,
+    };
+  }
+}
+</script>
+</body>
+</html>

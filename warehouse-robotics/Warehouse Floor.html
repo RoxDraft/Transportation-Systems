@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Warehouse Floor · Digital Twin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<style>
+  html,body{margin:0;height:100%;background:#eeebe5;font-family:Helvetica,Arial,sans-serif;color:#2a2826;overflow:hidden}
+  three-d-stage:not(:defined){visibility:hidden}
+  .hud{position:fixed;left:16px;top:14px;z-index:3;width:300px;max-height:calc(100vh - 28px);overflow:auto;display:flex;flex-direction:column;gap:10px;background:rgba(250,248,244,.92);border:1px solid #d8d3c9;border-radius:10px;padding:14px}
+  .hud b{font-size:14px}
+  .sub{font-size:11.5px;color:#5d5953;line-height:1.45}
+  .rob{display:grid;grid-template-columns:10px 64px 1fr;gap:4px 8px;align-items:center;font-size:12px}
+  .dot{width:8px;height:8px;border-radius:50%}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:11px}
+  .muted{color:#6b665f}
+  .row{display:flex;flex-wrap:wrap;gap:6px}
+  button{font:12px Helvetica,Arial,sans-serif;padding:6px 10px;border:1px solid #c9c4ba;background:#faf8f4;border-radius:6px;cursor:pointer;color:#2a2826;white-space:nowrap}
+  button:hover{background:#fff;border-color:#9e988d}
+  button[aria-pressed="true"]{background:#2a2826;color:#faf8f4;border-color:#2a2826}
+  .gauge{height:8px;border-radius:4px;background:#e2ddd3;position:relative;overflow:hidden}
+  .gauge i{position:absolute;inset:0 auto 0 0;background:#1f9e93;transition:width .12s}
+  .gauge s{position:absolute;top:-2px;bottom:-2px;width:2px;background:#2a2826}
+  .pad{display:grid;grid-template-columns:repeat(3,40px);gap:4px;justify-content:start}
+  .pad button{padding:8px 0;user-select:none}
+  .lbl{position:fixed;z-index:2;pointer-events:none;transform:translate(-50%,-100%);font-size:11px;background:#2a2826;color:#faf8f4;padding:3px 7px;border-radius:4px;white-space:nowrap;opacity:0;transition:opacity .3s}
+  .lbl.on{opacity:1}
+  .lbl em{font-style:normal;color:#9fe3da}
+  .pip{position:fixed;right:16px;top:14px;z-index:3;background:#151719;border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px;width:312px}
+  .pip .bar{display:flex;align-items:center;gap:4px;font:11px ui-monospace,Menlo,monospace;color:#9aa3a8}
+  .pip button{padding:3px 8px;font-size:11px;background:#22272b;color:#c8cdcf;border-color:#2f363b}
+  .pip button[aria-pressed="true"]{background:#e6e8e6;color:#151719}
+  .pip canvas{display:block;width:300px;height:170px;border-radius:4px}
+  hr{border:0;border-top:1px solid #e0dbd1;margin:0}
+</style>
+</head>
+<body>
+<div class="hud">
+  <b>Warehouse Floor · Digital Twin</b>
+  <div class="sub">Inbound: UNL-01 unloads the container. The palletizer builds pallets for FMR-01 to put away and diverts cases to a decant lane, where HMN-01 picks them up and decants them into yellow totes for VAC-01. STW-01 stows items into a mobile pod. Full pods drive to the Click &amp; Collect port, where orders are picked into lockers for curbside customers.</div>
+  <div class="rob"><span class="dot" id="d0"></span><b class="mono">VAC-01</b><span id="s0" class="mono muted"></span>
+    <span class="dot" id="d1"></span><b class="mono">STW-01</b><span id="s1" class="mono muted"></span>
+    <span class="dot" id="d2"></span><b class="mono">HMN-01</b><span id="s2" class="mono muted"></span>
+    <span class="dot" id="d3"></span><b class="mono">UNL-01</b><span id="s3" class="mono muted"></span>
+    <span class="dot" id="d4"></span><b class="mono">FMR-01</b><span id="s4" class="mono muted"></span>
+    <span class="dot" id="d5"></span><b class="mono">C&amp;C-01</b><span id="s5" class="mono muted"></span></div>
+  <hr>
+  <div class="mono" style="display:flex;justify-content:space-between"><span>grip force · <span id="it">—</span></span><span id="fN">0.0 N</span></div>
+  <div class="gauge"><i id="fg" style="width:0"></i><s id="ft" style="left:0"></s></div>
+  <div class="mono muted" id="fs">waiting for item</div>
+  <hr>
+  <div class="mono" style="display:grid;grid-template-columns:1fr auto;gap:2px 10px">
+    <span class="muted">inducted</span><span id="c0">0</span>
+    <span class="muted">stowed</span><span id="c1">0</span>
+    <span class="muted">totes swapped</span><span id="c2">0</span>
+    <span class="muted">pods completed</span><span id="c3">0</span>
+    <span class="muted">drop incidents resolved</span><span id="c4">0</span>
+    <span class="muted">cases unloaded → pallet</span><span id="c5">0</span>
+    <span class="muted">pallets put away</span><span id="c6">0</span>
+    <span class="muted">cases decanted → totes</span><span id="c7">0</span>
+    <span class="muted">orders waiting in lockers</span><span id="c8">0</span>
+    <span class="muted">orders collected</span><span id="c9">0</span>
+  </div>
+  <hr>
+  <div class="row" style="align-items:center"><span class="sub">HMN-01 base</span><button id="tBip" aria-pressed="true">Bipedal</button><button id="tWhl">Wheeled</button></div>
+  <div class="mono" style="display:flex;justify-content:space-between;gap:8px"><span>stability · <span id="stT">—</span></span><span id="stV"></span></div>
+  <div class="gauge"><i id="stG" style="width:0"></i></div>
+  <div class="mono muted" id="stS" style="line-height:1.4"></div>
+  <hr>
+  <div class="row"><button id="bDrop">Inject drop</button><button id="bCov">Camera coverage</button></div>
+  <div class="mono muted" style="font-size:10px">event log · traceable to camera clips</div>
+  <div id="log" class="mono" style="display:flex;flex-direction:column;gap:3px;font-size:10.5px;line-height:1.35"></div>
+  <hr>
+  <div class="row" id="views"><button data-v="overview" aria-pressed="true">Overview</button><button data-v="dock">Dock</button><button data-v="arm">Suction arm</button><button data-v="rack">Racking</button><button data-v="cell">Pick &amp; Stow</button><button data-v="cc">Click &amp; Collect</button></div>
+  <div class="row"><button id="bAuto" aria-pressed="true">Autonomous</button><button id="bMan">Drive humanoid</button><button id="bExp">Exploded modules</button></div>
+  <div id="exp" class="row" style="display:none"><button data-r="vac">VAC-01</button><button data-r="stw" aria-pressed="true">STW-01</button><button data-r="hmn">HMN-01</button><button data-r="unl">UNL-01</button><button data-r="fmr">FMR-01</button></div>
+  <div class="row"><button data-s="1" aria-pressed="true">1×</button><button data-s="2">2×</button><button data-s="4">4×</button><button id="bPause">Pause</button></div>
+  <div id="manual" style="display:none;flex-direction:column;gap:6px">
+    <div class="sub">Hold W/A/S/D or the pad. Walk HMN-01 into a ring to see the other robots slow (amber) or hold (red).</div>
+    <div class="pad"><span></span><button data-k="w">▲</button><span></span><button data-k="a">◀</button><button data-k="s">▼</button><button data-k="d">▶</button></div>
+  </div>
+</div>
+<div id="labels"></div>
+<div class="pip"><div class="bar"><span style="flex:1">cam</span><button data-c="0">C1</button><button data-c="1" aria-pressed="true">C2</button><button data-c="2">C3</button><button data-c="3">C4</button><button data-c="4">C5</button><button data-c="5">ARM</button></div>
+<div style="position:relative;width:300px;height:170px"><canvas id="pip3d"></canvas><canvas id="pip2d" width="600" height="340" style="position:absolute;inset:0"></canvas></div></div>
+<three-d-stage name="warehouse-floor"></three-d-stage>
+<script src="three-d-stage.js"></script>
+<script type="module">
+const stage = document.querySelector('three-d-stage');
+const { THREE } = await stage.ready;
+const $ = id => document.getElementById(id);
+
+const mat = (name, color, rough, metal = 0, extra = {}) => new THREE.MeshStandardMaterial({ name, color, roughness: rough, metalness: metal, ...extra });
+const M = {
+  dark: mat('graphite', 0x34373c, 0.5, 0.2), shell: mat('shell_light', 0xdedcd7, 0.45, 0.05),
+  teal: mat('accent_teal', 0x1f9e93, 0.4, 0.1), steel: mat('joint_steel', 0x8b9096, 0.35, 0.4),
+  rubber: mat('rubber', 0x1b1c1e, 0.85), glass: mat('sensor_glass', 0x0e1216, 0.15, 0.2),
+  alu: mat('aluminium_profile', 0xb9bdc1, 0.4, 0.35), floor: mat('floor_concrete', 0xd9d5cc, 0.95),
+  fabric: mat('pod_fabric', 0xd9c79a, 0.95), band: mat('pod_band', 0x8a7a55, 0.9), podFrame: mat('pod_frame', 0x4f5a64, 0.5, 0.3),
+  tote: mat('tote_yellow', 0xe8b923, 0.6), conv: mat('conveyor_frame', 0xc9cbc6, 0.45, 0.2), belt: mat('belt', 0x232427, 0.9),
+  rowTag: mat('robot_row_tag', 0x1f9e93, 0.5), humanTag: mat('human_row_tag', 0xe0a43a, 0.5),
+  sensor: mat('force_sensor', 0x2f7cf6, 0.4, 0, { emissive: 0x2f7cf6, emissiveIntensity: 0.0 }),
+};
+const zoneMat = n => mat(n, 0x4cc38a, 1, 0, { transparent: true, opacity: 0.22, depthWrite: false });
+const ITEM = [
+  { name: 'snack bag', force: 3, d: [0.18, 0.063, 0.14], m: mat('item_snack', 0xd9534f, 0.5), shape: 'bag' },
+  { name: 'textbook', force: 12, d: [0.16, 0.045, 0.12], m: mat('item_book', 0x3d5a80, 0.7), shape: 'box' },
+  { name: 'bottle', force: 6, d: [0.16, 0.07, 0.07], m: mat('item_bottle', 0x6ab0de, 0.25), shape: 'cyl' },
+  { name: 'carton', force: 5, d: [0.14, 0.1, 0.12], m: mat('item_carton', 0xc79c6a, 0.9), shape: 'box' },
+];
+
+function box(name, m, w, h, d, x, y, z, p) { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.name = name; o.position.set(x, y, z); p.add(o); return o; }
+function cyl(name, m, r, len, x, y, z, axis, p, seg = 32) {
+  const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, seg), m); o.name = name; o.position.set(x, y, z);
+  if (axis === 'z') o.rotation.x = Math.PI / 2; if (axis === 'x') o.rotation.z = Math.PI / 2; p.add(o); return o;
+}
+const grp = (name, p, x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.name = name; g.position.set(x, y, z); p.add(g); return g; };
+const world = new THREE.Group(); world.name = 'pick_stow_cell';
+box('floor', M.floor, 14.4, 0.02, 7.8, 3.2, -0.01, -0.8, world);
+
+/* modules registry for exploded view */
+const modules = [];
+let curRobot = 'vac';
+const mod = (obj, off, label, spec) => { modules.push({ obj, base: obj.position.clone(), off: new THREE.Vector3(...off), label, spec, robot: curRobot }); return obj; };
+
+/* ================= Storage pod ================= */
+const POD_X = 0.2, POD_Z = -0.45, ROW_H = 0.36, COLW = 0.33;
+function buildPod(name, x) {
+  const pod = grp(name, world, x, 0, POD_Z - 0.3);
+box('pod_drive_unit', M.dark, 0.9, 0.12, 0.7, 0, 0.06, 0, pod);
+box('pod_back', M.fabric, 1.0, 2.2, 0.01, 0, 0.15 + 1.08, -0.3, pod);
+for (const s of [-1, 1]) box('pod_side', M.podFrame, 0.02, 2.2, 0.6, s * 0.5, 0.15 + 1.08, 0, pod);
+for (let r = 0; r <= 6; r++) box('pod_shelf_' + r, M.podFrame, 1.0, 0.012, 0.6, 0, 0.15 + r * ROW_H, 0, pod);
+for (let r = 0; r < 6; r++) {
+  for (let c = 1; c < 3; c++) box('bin_divider', M.fabric, 0.006, ROW_H, 0.6, -0.5 + c * COLW, 0.15 + r * ROW_H + ROW_H / 2, 0, pod);
+  box('bin_band_' + r, M.band, 1.0, 0.03, 0.006, 0, 0.15 + r * ROW_H + 0.2, 0.3, pod);
+  box('row_tag_' + r, (r <= 1 || r >= 4) ? M.rowTag : M.humanTag, 0.02, ROW_H - 0.04, 0.006, -0.49, 0.15 + r * ROW_H + ROW_H / 2, 0.303, pod);
+}
+
+  return pod;
+}
+let pod = buildPod('storage_pod_A', POD_X);
+let portPod = buildPod('storage_pod_B', -5.4);
+const ROBOT_ROWS = [5, 0, 4, 1];
+const bins = []; for (const r of ROBOT_ROWS) for (let c = 0; c < 3; c++) bins.push({ r, c, n: 0 });
+const binX = c => POD_X - COLW + c * COLW;
+
+/* ================= Induction conveyor ================= */
+const CV_Y = 0.9, CV_END = 0.9, CV_START = 2.15;
+const convG = grp('induction_conveyor', world);
+box('conveyor_frame', M.conv, 1.6, 0.1, 0.36, 1.55, CV_Y - 0.06, 0, convG);
+box('conveyor_belt', M.belt, 1.6, 0.01, 0.3, 1.55, CV_Y - 0.005, 0, convG);
+for (const x of [0.85, 2.25]) for (const z of [-0.14, 0.14]) box('conveyor_leg', M.steel, 0.04, CV_Y - 0.1, 0.04, x, (CV_Y - 0.1) / 2, z, convG);
+
+/* ================= VAC-01 vacuum arm ================= */
+const VX = 2.6, VZ = 0.35, VSH = 0.75, VL1 = 0.55, VL2 = 0.5, VGL = 0.2;
+const vac = grp('VAC-01_vacuum_arm', world, VX, 0, VZ);
+const vBase = mod(grp('vac_base', vac), [0, -0.0, 0], 'Base · J1 slewing ring', 'cross-roller bearing');
+cyl('vac_pedestal', M.dark, 0.17, 0.55, 0, 0.275, 0, 'y', vBase, 40);
+cyl('vac_flange', M.steel, 0.22, 0.03, 0, 0.015, 0, 'y', vBase, 40);
+const vTurn = grp('vac_turntable', vac, 0, 0.55, 0);
+const vJ2 = mod(grp('vac_shoulder_module', vTurn), [0, 0.25, 0], 'Shoulder · J1/J2 servo + brake', 'motor current signature');
+cyl('vac_turn_disc', M.steel, 0.16, 0.06, 0, 0.03, 0, 'y', vJ2, 40);
+box('vac_shoulder_housing', M.shell, 0.22, 0.2, 0.24, 0, 0.12, 0, vJ2);
+const vSh = grp('vac_shoulder', vTurn, 0, VSH - 0.55, 0);
+cyl('vac_j2_motor', M.teal, 0.09, 0.26, 0, 0, 0, 'z', vSh, 40);
+const vUp = mod(grp('vac_upper_arm', vSh), [0, 0.14, 0], 'Upper arm · J3', 'harmonic drive 100:1');
+box('vac_upper_link', M.shell, VL1, 0.1, 0.11, VL1 / 2, 0, 0, vUp);
+const vEl = grp('vac_elbow', vSh, VL1, 0, 0);
+const vFore = mod(grp('vac_forearm', vEl), [0.15, 0.08, 0], 'Forearm', 'carbon tube');
+cyl('vac_j3_motor', M.steel, 0.07, 0.18, 0, 0, 0, 'z', vFore, 32);
+box('vac_fore_link', M.shell, VL2, 0.08, 0.09, VL2 / 2, 0, 0, vFore);
+const vWr = grp('vac_wrist', vEl, VL2, 0, 0);
+const vGrip = mod(grp('vac_gripper', vWr), [0.18, 0, 0], 'Vacuum gripper · 6-zone valves', 'leak-rate per cup');
+cyl('vac_wrist_motor', M.dark, 0.055, 0.14, 0, 0, 0, 'z', vGrip, 32);
+box('vac_tool_neck', M.dark, 0.1, 0.06, 0.06, 0.07, 0, 0, vGrip);
+box('vac_manifold', M.teal, 0.04, 0.12, 0.12, 0.14, 0, 0, vGrip);
+for (let i = 0; i < 4; i++) cyl('vac_bellows_cup_' + i, M.rubber, 0.022, 0.04, 0.18, (i % 2 ? 0.03 : -0.03), (i < 2 ? 0.03 : -0.03), 'x', vGrip, 20);
+const vPump = mod(grp('vac_pump_unit', vac, 0.42, 0, -0.25), [0.35, 0, -0.2], 'Vacuum blower', 'flow decay trend');
+box('vac_pump_body', M.dark, 0.3, 0.4, 0.3, 0, 0.2, 0, vPump);
+cyl('vac_pump_fan', M.steel, 0.1, 0.02, 0, 0.2, 0.151, 'z', vPump, 32);
+const vCam = mod(grp('vac_overhead_camera', world, VX + 0.5, 0, 1.0), [0.3, 0.3, 0], 'Overhead 3D camera', 'extrinsic drift check');
+cyl('vac_cam_pole', M.alu, 0.025, 1.85, 0, 0.925, 0, 'y', vCam, 16);
+box('vac_cam_arm', M.alu, 0.5, 0.04, 0.04, -0.25, 1.83, 0, vCam);
+box('vac_cam_head', M.dark, 0.14, 0.06, 0.1, -0.5, 1.8, 0, vCam);
+box('vac_cam_lens', M.glass, 0.1, 0.004, 0.05, -0.5, 1.769, 0, vCam);
+// tote stand
+const STAND = new THREE.Vector3(VX, 0.7, 1.0);
+box('tote_stand_top', M.steel, 0.6, 0.03, 0.45, VX, 0.685, 1.0, world);
+for (const sx of [-1, 1]) for (const sz of [-1, 1]) box('tote_stand_leg', M.steel, 0.03, 0.67, 0.03, VX + sx * 0.27, 0.335, 1.0 + sz * 0.2, world);
+
+/* ================= Totes & items ================= */
+const TW = 0.5, TH = 0.22, TD = 0.36;
+let itemN = 0;
+function makeItem(t) {
+  const T = ITEM[t], g = new THREE.Group(); g.name = 'item_' + (itemN++) + '_' + T.name.replace(' ', '_');
+  let m;
+  if (T.shape === 'bag') { m = new THREE.Mesh(new THREE.SphereGeometry(0.5, 24, 12), T.m); m.scale.set(...T.d); }
+  else if (T.shape === 'cyl') { m = new THREE.Mesh(new THREE.CylinderGeometry(T.d[1] / 2, T.d[1] / 2, T.d[0], 24), T.m); m.rotation.z = Math.PI / 2; }
+  else m = new THREE.Mesh(new THREE.BoxGeometry(...T.d), T.m);
+  m.name = g.name + '_mesh'; m.castShadow = true; g.add(m); g.userData = { t, h: T.d[1], sku: 'SKU-' + (10000 + Math.random() * 89999 | 0) }; return g;
+}
+function makeTote(name) {
+  const g = new THREE.Group(); g.name = name;
+  box(name + '_floor', M.tote, TW, 0.012, TD, 0, 0.006, 0, g);
+  for (const s of [-1, 1]) { box(name + '_side', M.tote, 0.012, TH, TD, s * TW / 2, TH / 2, 0, g); box(name + '_end', M.tote, TW, TH, 0.012, 0, TH / 2, s * TD / 2, g); }
+  g.userData.items = []; return g;
+}
+function fillTote(tote) {
+  for (let i = 0; i < 6; i++) {
+    const it = makeItem((Math.random() * 4) | 0);
+    it.position.set(-0.15 + (i % 3) * 0.15, 0.012 + it.userData.h / 2, i < 3 ? -0.08 : 0.08);
+    it.rotation.y = (Math.random() - 0.5) * 0.5; tote.add(it); tote.userData.items.push(it);
+  }
+}
+let standTote = makeTote('tote_0'); fillTote(standTote); standTote.position.copy(STAND); world.add(standTote);
+const EMPTY_RACK = new THREE.Vector3(-2.6, 0.7, 0.6), FULL_RACK = new THREE.Vector3(-2.6, 0.7, 1.8);
+for (const [p, n] of [[EMPTY_RACK, 'empty_tote_rack'], [FULL_RACK, 'full_tote_rack']]) {
+  const r = grp(n, world, p.x, 0, p.z);
+  box(n + '_bed', M.conv, 0.5, 0.04, 0.65, 0, 0.68, 0, r);
+  for (let i = 0; i < 6; i++) cyl(n + '_roller', M.steel, 0.018, 0.48, 0, 0.705, -0.27 + i * 0.108, 'x', r, 12);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(n + '_leg', M.steel, 0.03, 0.66, 0.03, sx * 0.22, 0.33, sz * 0.29, r);
+}
+let fullTote = makeTote('tote_1'); fillTote(fullTote); fullTote.position.copy(FULL_RACK); fullTote.rotation.y = -Math.PI / 2; world.add(fullTote);
+let rackEmpty = null, toteN = 2;
+
+/* ================= STW-01 haptic stow gantry ================= */
+curRobot = 'stw';
+const stw = grp('STW-01_stow_gantry', world);
+const sFrame = mod(grp('stw_frame', stw), [0, 0, 0.35], 'Frame · aluminium profile', 'deflection by fiducials');
+for (const x of [-0.75, 1.15]) { box('stw_post', M.alu, 0.08, 2.65, 0.08, x, 1.325, 0.3, sFrame); box('stw_foot', M.dark, 0.2, 0.03, 0.4, x, 0.015, 0.3, sFrame); }
+box('stw_top_beam', M.alu, 1.98, 0.08, 0.08, 0.2, 2.65, 0.3, sFrame);
+box('stw_cabinet', M.dark, 0.35, 0.6, 0.25, 1.45, 0.3, 0.35, sFrame);
+box('stw_cabinet_led', M.teal, 0.2, 0.02, 0.004, 1.45, 0.52, 0.477, sFrame);
+const sCam = mod(grp('stw_pod_camera', stw), [0, 0.3, 0.2], 'Pod-face camera bar', 'bin occupancy + fabric band');
+box('stw_cam_bar', M.dark, 1.2, 0.05, 0.08, 0.2, 2.55, 0.25, sCam);
+for (let i = 0; i < 3; i++) box('stw_cam_lens', M.glass, 0.08, 0.03, 0.004, -0.2 + i * 0.4, 2.55, 0.208, sCam);
+const sY = grp('stw_y_axis', stw);
+const sYm = mod(grp('stw_y_module', sY), [0, 0, 0.3], 'Y axis · belt drive', 'belt stretch → position error');
+box('stw_cross_beam', M.shell, 1.9, 0.08, 0.1, 0.2, 0, 0.3, sYm);
+for (const x of [-0.75, 1.15]) box('stw_y_carriage', M.teal, 0.12, 0.14, 0.12, x, 0, 0.3, sYm);
+const sX = grp('stw_x_carriage', sY);
+const sXm = mod(grp('stw_x_module', sX), [0, 0.2, 0.25], 'X carriage · linear guide', 'vibration RMS');
+box('stw_x_block', M.dark, 0.16, 0.14, 0.1, 0, 0, 0.3, sXm);
+box('stw_outer_sleeve', M.shell, 0.1, 0.08, 0.35, 0, 0, 0.12, sXm);
+const sZ = grp('stw_z_arm', sX);
+const sZm = mod(grp('stw_z_module', sZ), [0, 0.12, 0.25], 'Z telescopic arm', 'ball-screw backlash');
+box('stw_inner_sleeve', M.steel, 0.07, 0.055, 0.45, 0, 0, 0.12, sZm);
+box('stw_ee_mount', M.dark, 0.08, 0.2, 0.06, 0, -0.1, -0.06, sZm);
+const sEE = mod(grp('stw_end_effector', sZ, 0, -0.25, 0), [0, -0.05, 0.45], 'Belted paddles', 'belt slip ratio');
+box('stw_ee_top', M.dark, 0.3, 0.04, 0.26, 0, 0.1, 0, sEE);
+const paddles = [], sensors = [], rollers = [];
+for (const s of [-1, 1]) {
+  const p = grp('stw_paddle_' + (s > 0 ? 'R' : 'L'), sEE, s * 0.08, 0, 0);
+  box('stw_paddle_plate', M.shell, 0.012, 0.15, 0.26, s * 0.006, 0, 0, p);
+  box('stw_paddle_belt', M.belt, 0.006, 0.12, 0.24, -s * 0.003, 0, 0, p);
+  for (const z of [-0.12, 0.12]) rollers.push(cyl('stw_belt_roller', M.steel, 0.012, 0.13, -s * 0.004, 0, z, 'y', p, 12));
+  sensors.push(box('stw_tactile_pad', M.sensor, 0.008, 0.06, 0.12, s * 0.016, 0.0, 0.0, p));
+  paddles.push([p, s]);
+}
+const sFT = mod(grp('stw_ft_sensor', sEE), [0, 0.18, 0], 'Force / tactile · 6-axis F/T', 'zero-offset drift');
+cyl('stw_ft_disc', M.sensor, 0.045, 0.03, 0, 0.135, 0, 'y', sFT, 32);
+
+/* ================= HMN-01 humanoid ================= */
+curRobot = 'hmn';
+const hmn = grp('HMN-01_humanoid', world, 1.4, 0, 2.3);
+const pelvis = grp('hmn_pelvis', hmn, 0, 0.89, 0);
+const pelvisMod = mod(grp('hmn_pelvis_module', pelvis), [0, 0, 0], 'Pelvis · hip yaw actuators', '');
+box('hmn_pelvis_block', M.dark, 0.3, 0.12, 0.18, 0, 0, 0, pelvisMod);
+const torso = grp('hmn_torso', pelvis, 0, 0.06, 0);
+const torsoMod = mod(grp('hmn_torso_module', torso), [0, 0.12, 0], 'Torso · compute + IMU', 'thermal / ECC log');
+box('hmn_chest', M.shell, 0.36, 0.42, 0.22, 0, 0.27, 0, torsoMod);
+box('hmn_chest_band', M.teal, 0.362, 0.03, 0.222, 0, 0.36, 0, torsoMod);
+box('hmn_waist', M.dark, 0.24, 0.1, 0.16, 0, 0.04, 0, torsoMod);
+const batt = mod(grp('hmn_battery', torso), [0, 0.1, -0.35], 'Battery · hot-swap 1.0 kWh', 'cell impedance');
+box('hmn_battery_pack', M.dark, 0.28, 0.3, 0.09, 0, 0.27, -0.155, batt);
+const head = mod(grp('hmn_head', torso, 0, 0.55, 0), [0, 0.3, 0], 'Sensor head · stereo + lidar', 'calibration target check');
+box('hmn_neck', M.dark, 0.07, 0.06, 0.07, 0, -0.03, 0, head);
+box('hmn_head_shell', M.shell, 0.2, 0.15, 0.17, 0, 0.07, 0, head);
+box('hmn_visor', M.glass, 0.17, 0.06, 0.004, 0, 0.08, 0.087, head);
+cyl('hmn_lidar', M.dark, 0.04, 0.04, 0, 0.165, 0, 'y', head, 24);
+const arms = [];
+for (const s of [-1, 1]) {
+  const sh = mod(grp('hmn_arm_' + (s > 0 ? 'L' : 'R'), torso, s * 0.22, 0.44, 0), [s * 0.3, 0, 0], 'Arm ' + (s > 0 ? 'L' : 'R') + ' · 4-dof', 'backlash per joint');
+  cyl('hmn_shoulder_motor', M.dark, 0.05, 0.09, s * 0.02, 0, 0, 'x', sh, 24);
+  box('hmn_upper_arm', M.shell, 0.07, 0.28, 0.08, 0, -0.15, 0, sh);
+  const el = grp('hmn_elbow', sh, 0, -0.3, 0);
+  cyl('hmn_elbow_joint', M.steel, 0.035, 0.08, 0, 0, 0, 'x', el, 20);
+  box('hmn_forearm', M.shell, 0.06, 0.26, 0.07, 0, -0.14, 0, el);
+  box('hmn_hand_paddle', M.dark, 0.03, 0.08, 0.12, -s * 0.01, -0.3, 0.02, el);
+  arms.push({ sh, el, s });
+}
+const legs = [];
+for (const s of [-1, 1]) {
+  const hip = mod(grp('hmn_leg_' + (s > 0 ? 'L' : 'R'), pelvis, s * 0.1, -0.05, 0), [s * 0.22, -0.05, 0], 'Leg ' + (s > 0 ? 'L' : 'R') + ' · hip/knee/ankle', 'knee gear fatigue');
+  cyl('hmn_hip_motor', M.dark, 0.06, 0.1, 0, 0, 0, 'x', hip, 24);
+  box('hmn_thigh', M.shell, 0.1, 0.38, 0.11, 0, -0.2, 0, hip);
+  const kn = grp('hmn_knee', hip, 0, -0.42, 0);
+  cyl('hmn_knee_motor', M.teal, 0.05, 0.11, 0, 0, 0, 'x', kn, 24);
+  box('hmn_shin', M.shell, 0.08, 0.38, 0.09, 0, -0.2, 0, kn);
+  const an = grp('hmn_ankle', kn, 0, -0.42, 0);
+  box('hmn_foot', M.dark, 0.1, 0.05, 0.24, 0, -0.025, 0.04, an);
+  box('hmn_foot_ft', M.sensor, 0.08, 0.006, 0.08, 0, -0.051, 0.04, an);
+  legs.push({ hip, kn, an, s });
+}
+
+/* ================= Safety zones ================= */
+const zVacWarn = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.7, 64), zoneMat('zone_vac_warn')); zVacWarn.rotation.x = -Math.PI / 2; zVacWarn.position.set(VX, 0.003, VZ); zVacWarn.name = 'zone_vac_warn'; world.add(zVacWarn);
+const zVacStop = new THREE.Mesh(new THREE.CircleGeometry(0.9, 64), zoneMat('zone_vac_stop')); zVacStop.rotation.x = -Math.PI / 2; zVacStop.position.set(VX, 0.004, VZ); zVacStop.name = 'zone_vac_stop'; world.add(zVacStop);
+const GZ = { x0: -0.85, x1: 1.25, z0: -0.5, z1: 0.45 };
+const zStw = new THREE.Mesh(new THREE.PlaneGeometry(GZ.x1 - GZ.x0 + 2.2, GZ.z1 + 1.1 - GZ.z0), zoneMat('zone_stw_warn'));
+zStw.rotation.x = -Math.PI / 2; zStw.position.set((GZ.x0 + GZ.x1) / 2, 0.002, (GZ.z0 + GZ.z1 + 1.1) / 2); zStw.name = 'zone_stw'; world.add(zStw);
+
+/* ================= Runners ================= */
+const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
+const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+class Runner {
+  constructor(J, apply, plan, opt = {}) { this.vmax = opt.vmax || 0; this.task = opt.task; if (this.task) this.P = this.task.P0.clone(); this.J = J; this.apply = apply; this.plan = plan; this.q = []; this.cur = null; apply(J); }
+  step(dt) {
+    let b = dt, guard = 0;
+    while (b > 0 && guard++ < 50) {
+      if (!this.cur) { if (!this.q.length) this.plan(this.q); if (!this.q.length) return; this.cur = this.q.shift(); this.cur.t = 0;
+        if (this.cur.to || this.cur.toP) { this.cur.from = { ...this.J }; if (this.cur.to) { this.cur.tgt = this.cur.to(); if ('yaw' in this.cur.tgt) this.cur.tgt.yaw = this.J.yaw + wrap(this.cur.tgt.yaw - this.J.yaw); }
+          if (this.cur.toP) { const A = this.task.cyl(this.P), B = this.task.cyl(this.cur.toP()); B.th = A.th + wrap(B.th - A.th); this.cur.ca = A; this.cur.cb = B;
+            const ds = Math.hypot(B.r - A.r, B.y - A.y) + Math.abs(B.th - A.th) * Math.max(A.r, B.r); this.cur.dur = Math.max(this.cur.dur, 1.875 * ds / this.task.v); }
+          if (this.vmax) { let m = 0; for (const k in this.cur.tgt) m = Math.max(m, Math.abs(this.cur.tgt[k] - this.cur.from[k])); this.cur.dur = Math.max(this.cur.dur, 1.875 * m / this.vmax); } } }
+      const c = this.cur;
+      if (c.call) { c.call(); this.cur = null; continue; }
+      if (c.until) { if (c.until()) { this.cur = null; continue; } return; }
+      const use = Math.min(b, c.dur - c.t); c.t += use; b -= use; const k = ease(Math.min(1, c.t / c.dur));
+      if (c.tgt) { for (const key in c.tgt) this.J[key] = c.from[key] + (c.tgt[key] - c.from[key]) * k; this.apply(this.J); }
+      if (c.ca) { const C = {}; for (const key in c.ca) C[key] = c.ca[key] + (c.cb[key] - c.ca[key]) * k; this.P = this.task.uncyl(C); this.J = this.task.ik(this.P); this.apply(this.J); }
+      if (c.tick) c.tick(k);
+      if (c.t >= c.dur - 1e-9) this.cur = null;
+    }
+  }
+}
+const cnt = { ind: 0, stow: 0, tote: 0, pod: 0 };
+const conv = [];
+
+/* --- VAC-01 --- */
+function ikV(p) {
+  const wx = p.x, wy = p.y + VGL, wz = p.z, dx = wx - VX, dz = wz - VZ;
+  const yaw = Math.atan2(-dz, dx), r = Math.hypot(dx, dz), y = wy - VSH, d = Math.min(Math.hypot(r, y), VL1 + VL2 - 0.002);
+  const q1 = Math.atan2(y, r) + Math.acos(THREE.MathUtils.clamp((VL1 * VL1 + d * d - VL2 * VL2) / (2 * VL1 * d), -1, 1));
+  const q2 = -(Math.PI - Math.acos(THREE.MathUtils.clamp((VL1 * VL1 + VL2 * VL2 - d * d) / (2 * VL1 * VL2), -1, 1)));
+  return { yaw, q1, q2, wp: -Math.PI / 2 - (q1 + q2) };
+}
+const VAC_HOME = new THREE.Vector3(VX - 0.1, 1.25, VZ + 0.35);
+const vacHome = () => ikV(VAC_HOME);
+let vacHeld = null, vacState = 'idle';
+const vac_r = new Runner(vacHome(), J => { vTurn.rotation.y = J.yaw; vSh.rotation.z = J.q1; vEl.rotation.z = J.q2; vWr.rotation.z = J.wp; }, q => {
+  const tote = standTote;
+  if (!tote || !tote.userData.items.length || tote.parent !== world || tote.position.distanceTo(STAND) > 0.01) { vacState = tote && tote.parent === world ? 'tote empty · waiting swap' : 'waiting for tote'; q.push({ toP: () => VAC_HOME.clone(), dur: 0.8 }, { until: () => standTote && standTote.parent === world && standTote.userData.items.length && standTote.position.distanceTo(STAND) < 0.01 }); return; }
+  const it = tote.userData.items[tote.userData.items.length - 1];
+  const top = () => { const p = it.getWorldPosition(new THREE.Vector3()); p.y += it.userData.h / 2; return p; };
+  const place = () => new THREE.Vector3(CV_START, CV_Y + it.userData.h, 0);
+  q.push(
+    { call: () => vacState = 'perceive · ' + ITEM[it.userData.t].name },
+    { toP: () => (top().add(new THREE.Vector3(0, 0.15, 0))), dur: 0.8 },
+    { toP: () => (top()), dur: 0.55 },
+    { dur: 0.12 },
+    { call: () => { vacState = 'vacuum seal'; tote.userData.items.pop(); vacHeld = it; vGrip.attach(it); M.teal.emissive.setHex(0x0a3a35); } },
+    { dur: 0.15 },
+    { toP: () => (top().add(new THREE.Vector3(0, 0.25, 0))), dur: 0.6 },
+    { until: () => !conv.length || conv[conv.length - 1].position.x < CV_START - 0.26 },
+    { call: () => vacState = 'induct' },
+    { toP: () => (place().add(new THREE.Vector3(0, 0.15, 0))), dur: 0.7 },
+    { toP: () => (place()), dur: 0.45 },
+    { dur: 0.1 },
+    { call: () => { world.attach(it); it.rotation.set(0, 0, 0); it.position.set(CV_START, CV_Y + it.userData.h / 2, 0); conv.push(it); vacHeld = null; cnt.ind++; M.teal.emissive.setHex(0); } },
+    { dur: 0.12 },
+    { toP: () => (place().add(new THREE.Vector3(0, 0.2, 0))), dur: 0.5 },
+  );
+}, { task: { P0: VAC_HOME, v: 0.8, cyl: p => ({ r: Math.hypot(p.x - VX, p.z - VZ), th: Math.atan2(-(p.z - VZ), p.x - VX), y: p.y }), uncyl: C => new THREE.Vector3(VX + C.r * Math.cos(C.th), C.y, VZ - C.r * Math.sin(C.th)), ik: p => ikV(p) } });
+
+/* --- STW-01 --- */
+let grip = { item: null, force: 0, target: 0, msg: 'waiting for item' };
+const stw_r = new Runner({ x: 0.9, y: 1.3, z: 0, gap: 0.12 }, J => {
+  sY.position.y = J.y + 0.25; sX.position.x = J.x; sZ.position.z = J.z;
+  for (const [p, s] of paddles) p.position.x = s * J.gap;
+}, q => {
+  const it = conv[0];
+  if (!it || it.position.x > CV_END + 0.001) { q.push({ to: () => ({ x: CV_END, y: CV_Y + 0.35, z: 0 }), dur: 0.6 }, { until: () => conv[0] && conv[0].position.x <= CV_END + 0.001 }); return; }
+  const own = it.userData.bin && it.userData.bin.n < 2 ? it.userData.bin : null;
+  const bin = own || bins.find(b => b.n < 2 - (b.hold || 0));
+  if (bin) it.userData.bin = bin;
+  if (!bin) { q.push({ call: () => { grip.msg = 'pod full · requesting pod swap'; podSwapReq = true; } }, { to: () => ({ x: 0.2, y: 1.6, z: 0 }), dur: 0.8 }, { until: () => !podSwapReq }); return; }
+  const T = ITEM[it.userData.t], hy = CV_Y + T.d[1] / 2, w = T.d[0] / 2;
+  const by = 0.15 + bin.r * ROW_H + 0.015 + T.d[1] / 2, bx = binX(bin.c) + (bin.n ? 0.07 : -0.07);
+  q.push(
+    { to: () => ({ x: CV_END, y: hy + 0.2, z: 0, gap: 0.12 }), dur: 0.5 },
+    { to: () => ({ y: hy }), dur: 0.35 },
+    { call: () => { grip = { item: T, force: 0, target: T.force, msg: 'closing · feel contact' }; } },
+    { to: () => ({ gap: w + 0.012 }), dur: 0.35, tick: k => { grip.force = T.force * 0.6 * k; } },
+    { call: () => { conv.shift(); sEE.attach(it); grip.msg = 'force feedback · regulating'; } },
+    { dur: 0.35, tick: k => { grip.force = T.force * (0.6 + 0.4 * k); } },
+    { to: () => ({ y: by + 0.06 }), dur: 0.7, tick: k => {
+      if (k > 0.3 && k < 0.5 && T.force >= 10 && !grip.slip) { grip.slip = true; grip.msg = 'micro-slip detected → +25 %'; }
+      grip.force = T.force * (grip.slip ? 1.25 : 1) * (1 + 0.04 * Math.sin(k * 30)); } },
+    { to: () => ({ x: bx, y: by }), dur: 0.7, tick: k => { grip.msg = (it.userData.inc ? 're-stow to planned bin · ' : grip.slip ? 'slip corrected · ' : '') + 'stow → row ' + (bin.r + 1);
+      if (k > 0.45 && stw_r.J.x < 0.65 && !it.userData.inc && (dropReq || cnt.stow >= autoDropAt)) triggerDrop(it, bin); } },
+    { to: () => ({ z: -0.62 }), dur: 0.6 },
+    { dur: 0.45, tick: k => { it.position.z = -0.16 * k; for (const r of rollers) r.rotation.y += 0.4; grip.msg = 'belts drive item in'; grip.force = T.force * (1 - k); } },
+    { to: () => ({ gap: w + 0.04 }), dur: 0.2 },
+    { call: () => { pod.attach(it); it.userData.bin = bin; bin.n++; cnt.stow++; if (it.userData.inc) closeIncident(it, bin); grip.force = 0; grip.slip = false; grip.msg = 'stowed · bin ' + (bin.r + 1) + String.fromCharCode(65 + bin.c); } },
+    { to: () => ({ z: 0, gap: 0.12 }), dur: 0.55 },
+  );
+});
+function resetPod() {
+  for (const c of [...pod.children]) if (c.name.startsWith('item_')) pod.remove(c);
+  for (const b of bins) b.n = 0; cnt.pod++; pod.position.x = POD_X;
+}
+
+/* --- HMN-01 --- */
+const H = { x: 1.4, z: 2.3, h: Math.PI, phase: 0, crouch: 0, armT: 0, moving: 0, carry: null, hand: null, speedF: 1, v: 0, acc: 0, wheeled: false, wheelRot: 0 };
+const STANDBY = [1.4, 2.3];
+let hState = 'standby', simT = 0;
+const hq = []; let hcur = null;
+const walk = (x, z, label) => ({ walk: [x, z], label });
+cnt.inc = 0;
+
+// wheeled base variant (statically stable)
+const wBase = mod(grp('hmn_wheel_base', hmn), [0, 0, -0.45], 'Wheeled base · swerve drive', 'tyre wear · steering backlash');
+box('hmnw_chassis', M.dark, 0.5, 0.16, 0.6, 0, 0.16, 0, wBase);
+box('hmnw_low_battery', M.teal, 0.4, 0.05, 0.5, 0, 0.265, 0, wBase);
+for (const s of [-1, 1]) box('hmnw_bumper', M.rubber, 0.52, 0.06, 0.03, 0, 0.11, s * 0.31, wBase);
+box('hmnw_scanner', M.glass, 0.2, 0.035, 0.004, 0, 0.2, 0.302, wBase);
+const wheels = [];
+for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+  const w = grp('hmnw_wheel', wBase, sx * 0.21, 0.08, sz * 0.21);
+  cyl('hmnw_tyre', M.rubber, 0.08, 0.06, 0, 0, 0, 'x', w, 32);
+  cyl('hmnw_hub', M.steel, 0.045, 0.065, 0, 0, 0, 'x', w, 20);
+  box('hmnw_spoke', M.steel, 0.066, 0.12, 0.02, 0, 0, 0, w);
+  wheels.push(w);
+}
+const column = cyl('hmnw_lift_column', M.steel, 0.055, 1, 0, 0.6, 0, 'y', wBase, 24);
+wBase.visible = false;
+function setType(wh) {
+  H.wheeled = wh; wBase.visible = wh; for (const L of legs) L.hip.visible = !wh;
+  $('tBip').setAttribute('aria-pressed', !wh); $('tWhl').setAttribute('aria-pressed', wh);
+  log(`HMN-01 reconfigured · ${wh ? 'wheeled base (statically stable)' : 'bipedal (dynamically balanced)'}`);
+}
+function stability() {
+  const mL = H.carry ? 8 : H.hand ? 1.5 : 0, mR = 60, hR = H.wheeled ? 0.6 : 0.95, d0 = H.wheeled ? 0.29 : 0.11;
+  const xc = mL * 0.42 / (mR + mL), hc = (mR * hR + mL * 0.97) / (mR + mL);
+  const aTip = 9.81 * Math.max(0.005, d0 - xc) / hc;
+  return { aTip, aLim: H.wheeled ? 0.4 * aTip : 0.9, vMax: H.wheeled ? 1.2 : 0.7, xc, hc, d0 };
+}
+function drive(desired, b) {
+  const S = stability(), dv = THREE.MathUtils.clamp(desired - H.v, -S.aLim * b, S.aLim * b);
+  H.v += dv; H.acc = b > 0 ? dv / b : 0; return H.v * b;
+}
+const swapReady = () => standTote && standTote.parent === world && !standTote.userData.items.length && !vacHeld;
+function planH() {
+  if (incidents.length) {
+    const inc = incidents.shift(), it = inc.item, p = it.position.clone();
+    hq.push(
+      { label: `${inc.id} · retrieve ${it.userData.sku}`, walk: [p.x, p.z + 0.55] }, { face: Math.PI }, { crouch: 1.6 },
+      { call: () => { arms[1].el.attach(it); it.position.set(0, -0.36, 0.06); it.rotation.set(0, 0, 0); H.hand = it; if (inc.marker) inc.marker.visible = false; log(`${inc.id} HMN-01 picked item up from floor`, 'a'); } },
+      { crouch: 0 },
+      { label: `${inc.id} · re-induct`, walk: [1.55, 0.62] }, { face: Math.PI }, { crouch: 0.7 },
+      { call: () => { world.attach(it); it.rotation.set(0, 0, 0); it.position.set(1.55, CV_Y + it.userData.h / 2, 0); conv.push(it); conv.sort((a, b) => a.position.x - b.position.x); H.hand = null; log(`${inc.id} re-inducted · barcode rescanned ✓ · routed to planned bin`, 'a'); } },
+      { crouch: 0 }, { label: 'standby', walk: STANDBY }, { face: Math.PI },
+    );
+    return;
+  }
+  if (swapReady() && fullTote) {
+    hq.push(
+      { label: 'walk → tote stand', walk: [2.6, 1.42] }, { face: Math.PI }, { crouch: 1 },
+      { call: () => { H.carry = standTote; pelvis.attach(standTote); standTote.position.set(0, 0.085, 0.42); standTote.rotation.set(0, 0, 0); standTote = null; } }, { crouch: 0 },
+      { label: 'return empty tote', walk: [0.2, 1.4] }, walk(-2.18, 0.6), { face: -Math.PI / 2 }, { crouch: 1 },
+      { call: () => { const t = H.carry; world.attach(t); t.position.copy(EMPTY_RACK); t.rotation.set(0, -Math.PI / 2, 0); if (rackEmpty) world.remove(rackEmpty); rackEmpty = t; H.carry = null; } }, { crouch: 0 },
+      { label: 'fetch full tote', walk: [-2.18, 1.8] }, { face: -Math.PI / 2 }, { crouch: 1 },
+      { call: () => { H.carry = fullTote; pelvis.attach(fullTote); fullTote.position.set(0, 0.085, 0.42); fullTote.rotation.set(0, 0, 0); fullTote = null; } }, { crouch: 0 },
+      { label: 'deliver to stand', walk: [0.2, 1.4] }, walk(2.6, 1.42), { face: Math.PI }, { crouch: 1 },
+      { call: () => { const t = H.carry; world.attach(t); t.position.copy(STAND); t.rotation.set(0, 0, 0); standTote = t; H.carry = null; cnt.tote++; log('HMN-01 tote swap complete · VAC-01 resumes'); } }, { crouch: 0 },
+      { label: 'standby', walk: STANDBY }, { face: Math.PI },
+    );
+  } else if (decantReady()) { planDecant(); } else { hState = 'standby · monitoring'; hq.push({ until: () => incidents.length || (swapReady() && fullTote) || decantReady() }); }
+}
+function stepH(dt, manual) {
+  const S = stability();
+  if (manual) {
+    hState = 'manual teleop';
+    const move = (keys.w ? 1 : 0) - (keys.s ? 0.6 : 0), turn = (keys.a ? 1 : 0) - (keys.d ? 1 : 0);
+    H.h += turn * 1.8 * dt;
+    const sp = drive(move * S.vMax * H.speedF, dt);
+    H.x = THREE.MathUtils.clamp(H.x + Math.sin(H.h) * sp, -3.3, 3.5); H.z = THREE.MathUtils.clamp(H.z + Math.cos(H.h) * sp, -1.6, 2.8);
+    H.moving = THREE.MathUtils.lerp(H.moving, Math.min(1, Math.abs(H.v) / 0.5 + Math.abs(turn) * 0.5), 0.2);
+    H.phase += Math.abs(sp) * 6.3 + Math.abs(turn) * dt; H.wheelRot += sp / 0.08;
+    H.crouch = Math.max(0, H.crouch - dt * 2);
+  } else {
+    let b = dt, g = 0, drove = false;
+    while (b > 0 && g++ < 20) {
+      if (!hcur) { if (!hq.length) planH(); hcur = hq.shift(); if (!hcur) break; if (hcur.label) hState = hcur.label; hcur.t = 0; }
+      const c = hcur;
+      if (c.call) { c.call(); hcur = null; continue; }
+      if (c.until) { if (c.until()) { hcur = null; continue; } H.moving *= 0.9; break; }
+      if (c.anim) { const use = Math.min(b, c.anim - (c.t || 0)); c.t = (c.t || 0) + use; b -= use; c.tick(Math.min(1, c.t / c.anim)); if (c.t >= c.anim - 1e-9) { hcur = null; continue; } H.moving *= 0.9; break; }
+      if (c.walk) {
+        const [tx, tz] = c.walk, dx = tx - H.x, dz = tz - H.z, dist = Math.hypot(dx, dz);
+        if (dist < 0.03) { hcur = null; continue; }
+        const diff = wrap(Math.atan2(dx, dz) - H.h);
+        H.h += THREE.MathUtils.clamp(diff, -2.5 * b, 2.5 * b);
+        const desired = Math.abs(diff) < 0.35 ? Math.min(S.vMax * H.speedF, Math.sqrt(2 * S.aLim * dist)) : 0;
+        const sp = Math.min(dist, Math.max(0, drive(desired, b))); drove = true;
+        H.x += Math.sin(H.h) * sp; H.z += Math.cos(H.h) * sp; H.phase += sp * 6.3 + (sp ? 0 : 0.6 * b); H.wheelRot += sp / 0.08;
+        H.moving = THREE.MathUtils.lerp(H.moving, desired ? 1 : 0.4, 0.1); break;
+      }
+      if (c.face !== undefined) {
+        const diff = wrap(c.face - H.h); H.h += THREE.MathUtils.clamp(diff, -2 * b, 2 * b); H.phase += 0.8 * b;
+        if (Math.abs(diff) < 0.01) { H.h = c.face; hcur = null; continue; } break;
+      }
+      if (c.crouch !== undefined) {
+        H.moving = THREE.MathUtils.lerp(H.moving, 0, 0.3);
+        const d = c.crouch - H.crouch, s = 1.6 * b;
+        if (Math.abs(d) <= s) { H.crouch = c.crouch; hcur = null; b -= Math.abs(d) / 1.6; continue; }
+        H.crouch += Math.sign(d) * s; break;
+      }
+    }
+    if (!drove) drive(0, dt);
+  }
+  poseH();
+}
+function poseH() {
+  hmn.position.set(H.x, 0, H.z); hmn.rotation.y = H.h;
+  const c = H.crouch, sw = H.wheeled ? 0 : Math.sin(H.phase) * 0.38 * H.moving;
+  H.armT = THREE.MathUtils.lerp(H.armT, (H.carry || H.hand || c > 0.05) ? 1 : 0, 0.12);
+  if (!H.wheeled) for (const L of legs) {
+    const ph = L.s > 0 ? sw : -sw, lift = Math.max(0, Math.sin(H.phase + (L.s > 0 ? 0 : Math.PI))) * 0.6 * H.moving;
+    L.hip.rotation.x = -0.6 * c - ph; L.kn.rotation.x = 1.2 * c + lift; L.an.rotation.x = -(L.hip.rotation.x + L.kn.rotation.x);
+  }
+  const py = H.wheeled ? 0.89 - 0.22 * c : 0.84 * Math.cos(0.6 * c) + 0.05 - Math.abs(Math.cos(H.phase)) * 0.015 * H.moving;
+  pelvis.position.y = py;
+  torso.rotation.x = (H.wheeled ? 0.3 : 0.22) * c;
+  column.scale.y = Math.max(0.05, py - 0.28); column.position.y = 0.28 + column.scale.y / 2;
+  for (const w of wheels) w.rotation.x = H.wheelRot;
+  const reach = c > 1.05;
+  for (const A of arms) {
+    const swing = (A.s > 0 ? -sw : sw) * 0.6, shT = reach ? -0.5 : -1.15, elT = reach ? -0.1 : -0.45;
+    A.sh.rotation.x = shT * H.armT + swing * (1 - H.armT); A.el.rotation.x = elT * H.armT - 0.15;
+    A.sh.rotation.z = A.s * 0.08 * H.armT;
+  }
+  if (H.carry) H.carry.position.y = 0.085;
+}
+
+/* --- Drop incidents --- */
+const incidents = [], falling = []; let incN = 0, dropReq = false, autoDropAt = 4, activeInc = null;
+const markerMat = mat('incident_marker', 0xe0564a, 0.5, 0, { emissive: 0xe0564a, emissiveIntensity: 0.7 });
+function triggerDrop(it, bin) {
+  dropReq = false; autoDropAt = cnt.stow + 12;
+  world.attach(it);
+  const inc = { id: 'INC-' + String(++incN).padStart(3, '0'), item: it, t0: simT, bin };
+  it.userData.inc = inc; bin.hold = (bin.hold || 0) + 1;
+  it.userData.v = new THREE.Vector3((Math.random() - 0.6) * 0.3, 0.3, 0.55 + Math.random() * 0.3);
+  it.userData.spin = new THREE.Vector3(3 + Math.random() * 4, Math.random() * 3, 2 + Math.random() * 4);
+  falling.push(inc); activeInc = inc; setPip(1);
+  grip.force = 0; grip.slip = false; grip.msg = 'LOAD LOST · tactile 0 N → halt';
+  stw_r.q.length = 0; stw_r.cur = null;
+  stw_r.q.push(
+    { dur: 1.4, tick: () => grip.msg = `holding · ${inc.id} raised to fleet manager` },
+    { to: () => ({ z: 0, gap: 0.12 }), dur: 0.4 },
+    { call: () => { grip.item = null; grip.msg = 'resuming with next item'; } });
+  log(`${inc.id} STW-01 load lost · ${it.userData.sku} (${ITEM[it.userData.t].name}) · tactile 0 N`, 'r');
+}
+function stepFalling(dt) {
+  for (let i = falling.length - 1; i >= 0; i--) {
+    const inc = falling[i], it = inc.item, v = it.userData.v, sp = it.userData.spin, fy = it.userData.h / 2;
+    v.y -= 9.81 * dt; it.position.addScaledVector(v, dt);
+    it.rotation.x += sp.x * dt; it.rotation.y += sp.y * dt; it.rotation.z += sp.z * dt;
+    if (it.position.y < fy) {
+      it.position.y = fy; v.y = -v.y * 0.3; v.x *= 0.5; v.z *= 0.5; sp.multiplyScalar(0.4);
+      if (Math.abs(v.y) < 0.4) {
+        it.rotation.set(0, it.rotation.y, 0); falling.splice(i, 1);
+        const m = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.2, 40), markerMat); m.name = 'incident_marker_' + inc.id;
+        m.rotation.x = -Math.PI / 2; m.position.set(it.position.x, 0.006, it.position.z); world.add(m); inc.marker = m;
+        incidents.push(inc);
+        log(`${inc.id} cam C2 localised item on floor (${it.position.x.toFixed(2)}, ${it.position.z.toFixed(2)} m) · clip ${inc.id}_C2 saved −10 s…+30 s`, 'a');
+        log(`${inc.id} fleet manager → priority retrieval task for HMN-01`, 'a');
+      }
+    }
+  }
+  for (const inc of incidents) if (inc.marker) inc.marker.scale.setScalar(1 + 0.15 * Math.sin(simT * 6));
+}
+function closeIncident(it, bin) {
+  const inc = it.userData.inc; if (!inc || inc.closed) return; inc.closed = true;
+  bin.hold = Math.max(0, (bin.hold || 0) - 1); cnt.inc++;
+  if (inc.marker) world.remove(inc.marker);
+  log(`${inc.id} closed · ${it.userData.sku} in planned bin ${bin.r + 1}${String.fromCharCode(65 + bin.c)} · pod cam verified ✓ · ${(simT - inc.t0).toFixed(0)} s`, 'g');
+  if (activeInc === inc) activeInc = null;
+}
+
+/* --- Event log --- */
+const logs = [];
+const fmtT = t => `${String(Math.floor(t / 60)).padStart(2, '0')}:${(t % 60).toFixed(1).padStart(4, '0')}`;
+const LC = { r: '#b8322a', a: '#9a6200', g: '#1b7f5a', '': '#5d5953' };
+function log(msg, c = '') {
+  logs.unshift({ t: simT, msg, c }); if (logs.length > 7) logs.length = 7;
+  $('log').innerHTML = logs.map(l => `<div style="color:${LC[l.c]}"><span style="color:#8a857c">${fmtT(l.t)}</span> ${l.msg}</div>`).join('');
+}
+
+/* --- Overhead traceability cameras --- */
+const camRig = grp('overhead_camera_rig', world);
+box('truss_beam', M.alu, 7.2, 0.08, 0.08, 0.1, 3.45, 1.0, camRig);
+for (const x of [-3.45, 3.65]) box('truss_post', M.alu, 0.08, 3.45, 0.08, x, 1.725, 1.0, camRig);
+const CAMS = [['C1', [2.5, 3.38, 1.0], [2.4, 0, 0.55]], ['C2', [0.35, 3.38, 1.0], [0.35, 0, 0.25]], ['C3', [-2.2, 3.38, 1.0], [-2.35, 0, 1.2]]].map(([id, p, t]) => {
+  box('cam_housing_' + id, M.dark, 0.12, 0.08, 0.16, p[0], p[1] - 0.02, p[2], camRig);
+  box('cam_lens_' + id, M.glass, 0.06, 0.004, 0.06, p[0], p[1] - 0.062, p[2], camRig);
+  const cam = new THREE.PerspectiveCamera(64, 300 / 170, 0.1, 3.6); cam.name = 'overhead_' + id;
+  cam.position.set(...p); cam.lookAt(new THREE.Vector3(...t)); world.add(cam); cam.updateMatrixWorld();
+  const helper = new THREE.CameraHelper(cam); helper.name = 'coverage_' + id; helper.visible = false; world.add(helper);
+  return { id, cam, helper };
+});
+const pipR = new THREE.WebGLRenderer({ canvas: $('pip3d'), antialias: true });
+pipR.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); pipR.setSize(300, 170, false); pipR.setClearColor(0xe9e6df);
+const p2 = $('pip2d').getContext('2d'); let pipIdx = 1;
+const pv = new THREE.Vector3();
+function setPip(i) { pipIdx = i; document.querySelectorAll('[data-c]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.c === i)); }
+function drawPip() {
+  const C = CAMS[pipIdx], W = 300, Hh = 170, g = p2;
+  if (stage._scene) pipR.render(stage._scene, C.cam);
+  g.setTransform(2, 0, 0, 2, 0, 0); g.clearRect(0, 0, W, Hh);
+  g.font = '10px ui-monospace, Menlo, monospace';
+  g.fillStyle = 'rgba(20,22,24,.75)'; g.fillRect(0, 0, W, 16);
+  g.fillStyle = Math.floor(simT * 2) % 2 ? '#e0564a' : '#6b2520'; g.beginPath(); g.arc(8, 8, 3, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#e6e8e6'; g.fillText(`REC ${C.id} · ${fmtT(simT)} · 30 s ring buffer`, 16, 11.5);
+  const tag = (obj, label, col, sz) => {
+    obj.getWorldPosition(pv); pv.project(C.cam); if (pv.z > 1) return;
+    const x = (pv.x * 0.5 + 0.5) * W, y = (-pv.y * 0.5 + 0.5) * Hh; if (x < 0 || x > W || y < 16 || y > Hh) return;
+    g.strokeStyle = col; g.lineWidth = 1.5; g.strokeRect(x - sz / 2, y - sz / 2, sz, sz); g.fillStyle = col; g.fillText(label, x - sz / 2, y - sz / 2 - 3);
+  };
+  tag(pelvis, 'HMN-01', '#2f7cf6', 34); tag(fmrTag, 'FMR-01', '#e8692a', 44); tag(dock.robot, 'UNL-01', '#138076', 44); if (car) tag(car.g, car.o.id, '#7a4cc3', 56);
+  if (vacHeld) tag(vacHeld, vacHeld.userData.sku, '#138076', 16);
+  for (const inc of new Set([...falling, ...incidents, ...(activeInc ? [activeInc] : [])])) tag(inc.item, inc.id + ' ' + inc.item.userData.sku, '#e0564a', 20);
+  if (activeInc) { g.fillStyle = 'rgba(224,86,74,.92)'; g.fillRect(0, Hh - 16, W, 16); g.fillStyle = '#fff'; g.fillText(`${activeInc.id} · tracking ${activeInc.item.userData.sku} · clip linked to WMS`, 6, Hh - 5); }
+}
+function hud2() {
+  const S = stability(), util = Math.abs(H.acc) / S.aTip;
+  $('stT').textContent = H.wheeled ? 'wheeled · static' : 'bipedal · dynamic';
+  $('stV').textContent = `${Math.abs(H.acc).toFixed(2)} / ${S.aTip.toFixed(2)} m/s²`;
+  $('stG').style.width = Math.min(100, util * 100) + '%';
+  $('stG').style.background = util > 1 ? '#e0564a' : util > 0.6 ? '#e0a43a' : '#1f9e93';
+  $('stS').textContent = H.wheeled
+    ? `tip limit g·d/h = ${S.aTip.toFixed(1)} m/s² · accel capped at 40 %${H.carry ? ' · tote shifts CoM +' + (S.xc * 100).toFixed(1) + ' cm' : ''}`
+    : `feet give ±${(S.d0 * 100).toFixed(0)} cm support · above ${S.aTip.toFixed(2)} m/s² only active balance keeps it up`;
+  $('c4').textContent = cnt.inc;
+}
+
+/* ================= Safety interlock ================= */
+const Z = { vac: 1, stw: 1 };
+const zc = { g: 0x4cc38a, a: 0xe0a43a, r: 0xe0564a };
+function safety() {
+  const dv = Math.hypot(H.x - VX, H.z - VZ);
+  const atStand = Math.hypot(H.x - 2.6, H.z - 1.42) < 0.15;
+  Z.vac = dv < 0.9 ? 0 : dv < 1.7 ? (atStand ? 0.5 : 0.4) : 1;
+  const dx = Math.max(GZ.x0 - H.x, 0, H.x - GZ.x1), dz = Math.max(GZ.z0 - H.z, 0, H.z - GZ.z1), dg = Math.hypot(dx, dz);
+  Z.stw = dg < 0.3 ? 0 : dg < 1.1 ? 0.4 : 1;
+  zVacStop.material.color.setHex(Z.vac === 0 ? zc.r : zc.g); zVacStop.material.opacity = Z.vac === 0 ? 0.4 : 0.12;
+  zVacWarn.material.color.setHex(Z.vac < 1 ? (Z.vac ? zc.a : zc.r) : zc.g); zVacWarn.material.opacity = Z.vac < 1 ? 0.32 : 0.14;
+  zStw.material.color.setHex(Z.stw < 1 ? (Z.stw ? zc.a : zc.r) : zc.g); zStw.material.opacity = Z.stw < 1 ? 0.3 : 0.12;
+  H.speedF = (Z.vac < 1 || Z.stw < 1) ? 0.6 : 1;
+}
+
+/* ================= Conveyor ================= */
+function stepConv(dt) {
+  for (let i = 0; i < conv.length; i++) {
+    const lim = i === 0 ? CV_END : conv[i - 1].position.x + 0.24;
+    conv[i].position.x = Math.max(lim, conv[i].position.x - 0.35 * dt);
+  }
+}
+
+/* ================= Exploded view + labels ================= */
+let explode = 0, explodeOn = false;
+const lblRoot = $('labels');
+for (const m of modules) { const d = document.createElement('div'); d.className = 'lbl'; d.innerHTML = m.label + (m.spec ? ` · <em>${m.spec}</em>` : ''); lblRoot.appendChild(d); m.el = d; }
+const v3 = new THREE.Vector3();
+function updateExplode(dt) {
+  explode = THREE.MathUtils.clamp(explode + (explodeOn ? 1 : -1) * dt * 1.6, 0, 1);
+  const k = ease(explode);
+  for (const m of modules) m.obj.position.copy(m.base).addScaledVector(m.off, m.robot === expRobot ? k : 0);
+  if (camGoal) {
+    const a = Math.min(1, dt * 3.5);
+    stage._camera.position.lerp(camGoal.p, a); stage._controls.target.lerp(camGoal.t, a);
+    if (stage._camera.position.distanceTo(camGoal.p) < 0.01) camGoal = null;
+  }
+  const cam = stage._camera, rect = stage.getBoundingClientRect();
+  for (const m of modules) {
+    const on = explode > 0.6 && m.label && m.robot === expRobot && m.obj.visible;
+    m.el.classList.toggle('on', !!on);
+    if (!on) continue;
+    if (m.anc) m.obj.localToWorld(v3.copy(m.anc)); else { m.obj.getWorldPosition(v3); v3.y += 0.12; } v3.project(cam);
+    const hudR = document.querySelector('.hud').getBoundingClientRect().right + 8;
+    m.el.style.left = Math.min(Math.max(rect.left + (v3.x * 0.5 + 0.5) * rect.width, hudR + m.el.offsetWidth / 2), rect.right - m.el.offsetWidth / 2 - 8) + 'px';
+    m.el.style.top = (rect.top + (-v3.y * 0.5 + 0.5) * rect.height) + 'px';
+  }
+}
+
+let expRobot = 'stw', camGoal = null, camSaved = null;
+function focus(r) {
+  expRobot = r; syncOccluders();
+  document.querySelectorAll('[data-r]').forEach(b => b.setAttribute('aria-pressed', b.dataset.r === r));
+  const t = r === 'vac' ? new THREE.Vector3(2.75, 1.0, 0.45) : r === 'stw' ? new THREE.Vector3(0.25, 1.35, 0.1) : r === 'unl' ? dock.robot.getWorldPosition(new THREE.Vector3()).setY(1.55) : r === 'fmr' ? fmr.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0.3, 0, 0.6)).setY(1.6) : new THREE.Vector3(H.x, 1.0, H.z);
+  const off = r === 'stw' ? new THREE.Vector3(1.4, 1.2, 4.4) : r === 'unl' ? new THREE.Vector3(2.6, 1.8, 5.2) : r === 'fmr' ? new THREE.Vector3(-2.6, 1.9, 3.6) : new THREE.Vector3(1.9, 1.1, 3.4);
+  const left = new THREE.Vector3(-off.z, 0, off.x).normalize().multiplyScalar(r === 'stw' ? 1.1 : r === 'unl' || r === 'fmr' ? 1.5 : 0.85);
+  t.add(left);
+  camGoal = { p: t.clone().add(off), t };
+}
+/* ================= HUD ================= */
+const dotC = f => f === 0 ? '#e0564a' : f < 1 ? '#e0a43a' : '#4cc38a';
+function hud() {
+  $('s0').textContent = (Z.vac === 0 ? 'HOLD · person in zone' : Z.vac < 1 ? 'slowed ' + Math.round(Z.vac * 100) + '% · ' : '') + (Z.vac === 0 ? '' : vacState);
+  $('s1').textContent = (Z.stw === 0 ? 'HOLD · person in zone' : Z.stw < 1 ? 'slowed 40% · ' : '') + (Z.stw === 0 ? '' : grip.msg);
+  $('s2').textContent = hState + (H.speedF < 1 ? ' · 0.42 m/s near robots' : '');
+  $('d0').style.background = dotC(Z.vac); $('d1').style.background = dotC(Z.stw); $('d2').style.background = mode === 'manual' ? '#2f7cf6' : '#4cc38a';
+  $('it').textContent = grip.item ? `${grip.item.name} · target ${grip.item.force} N` : '—';
+  $('fN').textContent = grip.force.toFixed(1) + ' N';
+  $('fg').style.width = Math.min(100, grip.force / 16 * 100) + '%';
+  $('fg').style.background = grip.slip ? '#e0a43a' : '#1f9e93';
+  $('ft').style.left = grip.item ? (grip.item.force / 16 * 100) + '%' : '0';
+  $('fs').textContent = grip.msg;
+  $('c0').textContent = cnt.ind; $('c1').textContent = cnt.stow; $('c2').textContent = cnt.tote; $('c3').textContent = cnt.pod;
+  M.sensor.emissiveIntensity = Math.min(1.5, grip.force / 8);
+}
+
+function buildDock(THREE, hooks) {
+const mat = (name, color, rough, metal = 0, extra = {}) =>
+  new THREE.MeshStandardMaterial({ name, color, roughness: rough, metalness: metal, ...extra });
+const M = {
+  body:   mat('robot_graphite', 0x34373c, 0.5, 0.2),
+  shell:  mat('robot_light', 0xdcdad5, 0.45, 0.05),
+  accent: mat('accent_teal', 0x1f9e93, 0.4, 0.1),
+  joint:  mat('joint_steel', 0x8b9096, 0.35, 0.4),
+  rubber: mat('rubber_black', 0x1b1c1e, 0.85),
+  glass:  mat('sensor_glass', 0x0e1216, 0.15, 0.2),
+  led:    mat('status_led', 0x3fe0a0, 0.3, 0, { emissive: 0x23c886, emissiveIntensity: 1.2 }),
+  cup:    mat('suction_cup', 0x2b2d30, 0.7),
+  wall:   mat('container_steel', 0x6d8296, 0.55, 0.25),
+  rail:   mat('container_frame', 0x4f6072, 0.5, 0.3),
+  floor:  mat('container_floor', 0x7c5f43, 0.85),
+  conv:   mat('conveyor_frame', 0xc9cbc6, 0.45, 0.2),
+  belt:   mat('conveyor_belt', 0x232427, 0.9),
+  label:  mat('shipping_label', 0xf4f2ec, 0.6),
+  tape:   mat('carton_tape', 0xd7c39e, 0.6),
+};
+const cartonMats = [mat('carton_a', 0xb98b58, 0.9), mat('carton_b', 0xa77c4e, 0.9), mat('carton_c', 0xc79c6a, 0.9)];
+
+function box(name, m, w, h, d, x, y, z, parent) {
+  const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+  o.name = name; o.position.set(x, y, z); parent.add(o); return o;
+}
+function cyl(name, m, r, len, x, y, z, axis, parent, seg = 40) {
+  const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, seg), m);
+  o.name = name; o.position.set(x, y, z);
+  if (axis === 'z') o.rotation.x = Math.PI / 2;
+  if (axis === 'x') o.rotation.z = Math.PI / 2;
+  parent.add(o); return o;
+}
+function roundedPrism(name, m, w, d, h, r, x, y, z, parent, bevel = 0.02) {
+  const s = new THREE.Shape(), hw = w / 2 - bevel, hd = d / 2 - bevel;
+  s.moveTo(-hw + r, -hd); s.lineTo(hw - r, -hd); s.quadraticCurveTo(hw, -hd, hw, -hd + r);
+  s.lineTo(hw, hd - r); s.quadraticCurveTo(hw, hd, hw - r, hd); s.lineTo(-hw + r, hd);
+  s.quadraticCurveTo(-hw, hd, -hw, hd - r); s.lineTo(-hw, -hd + r); s.quadraticCurveTo(-hw, -hd, -hw + r, -hd);
+  const g = new THREE.ExtrudeGeometry(s, { depth: h - bevel * 2, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 4, curveSegments: 12 });
+  g.rotateX(-Math.PI / 2); g.translate(0, bevel, 0);
+  const o = new THREE.Mesh(g, m); o.name = name; o.position.set(x, y, z); parent.add(o); return o;
+}
+
+const world = new THREE.Group(); world.name = 'unloading_scene';
+
+/* ================= Container (20 ft, interior 5.9 × 2.35 × 2.39) ================= */
+const CL = 5.9, CW = 2.35, CH = 2.39, HZ = CW / 2;
+const cont = new THREE.Group(); cont.name = 'shipping_container'; world.add(cont);
+box('floor_deck', M.floor, CL, 0.12, CW, CL / 2, -0.06, 0, cont);
+for (let i = 1; i < 12; i++) box('floor_seam_' + i, M.rail, CL, 0.002, 0.008, CL / 2, 0.001, -HZ + i * CW / 12, cont);
+box('bottom_rail_near', M.rail, CL + 0.1, 0.16, 0.1, CL / 2, -0.04, HZ + 0.05, cont);
+box('bottom_rail_far', M.rail, CL + 0.1, 0.16, 0.1, CL / 2, -0.04, -HZ - 0.05, cont);
+// far side wall (corrugated)
+box('side_wall', M.wall, CL, CH, 0.02, CL / 2, CH / 2, -HZ - 0.01, cont);
+for (let x = 0.15, i = 0; x < CL; x += 0.28, i++) box('side_rib_' + i, M.wall, 0.13, CH, 0.035, x, CH / 2, -HZ - 0.035, cont);
+// end wall
+box('end_wall', M.wall, 0.02, CH, CW, CL + 0.01, CH / 2, 0, cont);
+for (let z = -HZ + 0.15, i = 0; z < HZ; z += 0.28, i++) box('end_rib_' + i, M.wall, 0.035, CH, 0.13, CL + 0.035, CH / 2, z, cont);
+// frame: corner posts, top rails, door header
+for (const [x, z, n] of [[0, HZ, 'door_near'], [0, -HZ, 'door_far'], [CL, HZ, 'end_near'], [CL, -HZ, 'end_far']])
+  box('corner_post_' + n, M.rail, 0.12, CH + 0.12, 0.12, x + (x ? 0.04 : -0.04), (CH + 0.12) / 2 - 0.06, z + Math.sign(z) * 0.04, cont);
+box('top_rail_near', M.rail, CL + 0.2, 0.1, 0.08, CL / 2, CH + 0.05, HZ + 0.04, cont);
+box('top_rail_far', M.rail, CL + 0.2, 0.1, 0.08, CL / 2, CH + 0.05, -HZ - 0.04, cont);
+box('door_header', M.rail, 0.12, 0.14, CW + 0.2, -0.04, CH + 0.07, 0, cont);
+box('end_header', M.rail, 0.12, 0.14, CW + 0.2, CL + 0.04, CH + 0.07, 0, cont);
+box('dock_plate', M.joint, 0.5, 0.02, 1.6, -0.25, -0.01, 0, cont);
+
+/* ================= Cartons (floor-loaded wall) ================= */
+const BD = 0.45, BH = 0.4, BWd = 0.47;               // carton x / y / z
+const ROWS = 4, COLS = 5, LAYERS = 5;
+const cartons = [];
+const cartonGroup = new THREE.Group(); cartonGroup.name = 'cartons'; world.add(cartonGroup);
+function makeCarton(i) {
+  const g = new THREE.Group(); g.name = 'carton_' + i;
+  const j = 0.96 + Math.random() * 0.04;
+  const c = box('carton_body_' + i, cartonMats[i % 3], BD * j, BH * j, BWd * j, 0, 0, 0, g);
+  box('carton_tape_' + i, M.tape, BD * j, 0.003, 0.06, 0, BH * j / 2 + 0.0015, 0, g);
+  box('carton_label_' + i, M.label, 0.003, 0.09, 0.13, -BD * j / 2 - 0.0015, 0.05, (i % 2 ? 0.1 : -0.1), g);
+  return g;
+}
+const rowFront = r => CL - BD * (ROWS - r) - 0.005;   // r = 0 is front (nearest door)
+for (let r = 0, i = 0; r < ROWS; r++) for (let l = 0; l < LAYERS; l++) for (let c = 0; c < COLS; c++, i++) {
+  const g = makeCarton(i);
+  const home = new THREE.Vector3(rowFront(r) + BD / 2, BH / 2 + l * BH + 0.002, -HZ + 0.02 + BWd / 2 + c * BWd);
+  g.position.copy(home); g.rotation.y = (Math.random() - 0.5) * 0.03;
+  cartonGroup.add(g);
+  cartons.push({ g, home, r, l, c, state: 'stack' });
+}
+
+/* ================= Telescopic conveyor ================= */
+const BELT_Y = 0.78;
+const conv = new THREE.Group(); conv.name = 'telescopic_conveyor'; world.add(conv);
+box('conveyor_base_unit', M.conv, 3.0, 0.62, 0.9, -1.9, 0.43, 0, conv);
+box('conveyor_base_belt', M.belt, 3.0, 0.01, 0.66, -1.9, BELT_Y - 0.03, 0, conv);
+for (const x of [-3.2, -0.6]) for (const z of [-0.35, 0.35]) box('conveyor_foot', M.rail, 0.1, 0.12, 0.1, x, 0.06, z, conv);
+const ext1 = box('conveyor_stage_1', M.conv, 1, 0.12, 0.8, 0, BELT_Y - 0.1, 0, conv);
+const ext2 = box('conveyor_stage_2', M.conv, 1, 0.1, 0.72, 0, BELT_Y - 0.05, 0, conv);
+const extBelt = box('conveyor_stage_belt', M.belt, 1, 0.01, 0.62, 0, BELT_Y - 0.001, 0, conv);
+const nose = new THREE.Group(); nose.name = 'conveyor_nose'; conv.add(nose);
+box('nose_housing', M.accent, 0.12, 0.16, 0.76, 0, BELT_Y - 0.08, 0, nose);
+cyl('nose_roller', M.joint, 0.03, 0.66, -0.06, BELT_Y - 0.02, 0, 'z', nose, 24);
+box('nose_light', M.led, 0.01, 0.02, 0.5, 0.061, BELT_Y - 0.08, 0, nose);
+
+/* ================= Robot ================= */
+const robot = new THREE.Group(); robot.name = 'unloading_robot'; world.add(robot);
+const BL = 1.25, BWb = 1.0, BASE_Y = 0.07, BASE_H = 0.42, BASE_TOP = BASE_Y + BASE_H;
+roundedPrism('base_chassis', M.body, BL, BWb, BASE_H, 0.08, 0, BASE_Y, 0, robot);
+roundedPrism('base_top_cover', M.shell, BL - 0.08, BWb - 0.08, 0.03, 0.06, 0, BASE_TOP - 0.005, 0, robot, 0.01);
+for (const s of [-1, 1]) {
+  const t = s > 0 ? 'near' : 'far';
+  box('side_band_' + t, M.accent, BL - 0.3, 0.06, 0.004, 0, BASE_Y + 0.29, s * (BWb / 2 + 0.001), robot);
+  box('side_battery_door_' + t, M.shell, 0.5, 0.18, 0.004, -0.15, BASE_Y + 0.15, s * (BWb / 2 + 0.002), robot);
+  box('side_led_' + t, M.led, BL - 0.3, 0.012, 0.004, 0, BASE_Y + 0.36, s * (BWb / 2 + 0.002), robot);
+}
+for (const s of [-1, 1]) {
+  box('end_bumper_' + (s > 0 ? 'front' : 'rear'), M.rubber, 0.05, 0.12, BWb - 0.12, s * (BL / 2 + 0.01), BASE_Y + 0.08, 0, robot);
+  box('end_scanner_' + (s > 0 ? 'front' : 'rear'), M.glass, 0.004, 0.05, 0.4, s * (BL / 2 + 0.002), BASE_Y + 0.26, 0, robot);
+}
+// omni wheels with roller rings
+for (const [x, z, n] of [[0.42, 0.36, 'fn'], [0.42, -0.36, 'ff'], [-0.42, 0.36, 'rn'], [-0.42, -0.36, 'rf']]) {
+  cyl('omni_wheel_' + n, M.rubber, 0.09, 0.09, x, 0.09, z + Math.sign(z) * 0.06, 'z', robot, 48);
+  cyl('omni_hub_' + n, M.joint, 0.05, 0.1, x, 0.09, z + Math.sign(z) * 0.06, 'z', robot, 24);
+}
+// perception mast — rear near corner (arm sweeps via the far side, never crosses it)
+const MX = -0.5, MZ = 0.38;
+cyl('mast_column', M.body, 0.045, 1.55, MX, BASE_TOP + 0.775, MZ, 'y', robot, 24);
+const head = new THREE.Group(); head.name = 'perception_head'; head.position.set(MX, BASE_TOP + 1.62, MZ); robot.add(head);
+box('perception_housing', M.shell, 0.2, 0.16, 0.2, 0, 0, 0, head);
+for (let k = 0; k < 4; k++) {
+  const a = k * Math.PI / 2, w = box('camera_window_' + k, M.glass, 0.004, 0.08, 0.13, 0, 0, 0, head);
+  w.position.set(Math.cos(a) * 0.101, 0.01, Math.sin(a) * 0.101); w.rotation.y = -a;
+}
+cyl('perception_cap', M.accent, 0.08, 0.03, 0, 0.095, 0, 'y', head, 32);
+cyl('perception_beacon', M.led, 0.03, 0.04, 0, 0.13, 0, 'y', head, 24);
+const midCam = new THREE.Group(); midCam.name = 'mid_camera_ring'; midCam.position.set(MX, BASE_TOP + 0.75, MZ); robot.add(midCam);
+cyl('mid_camera_body', M.shell, 0.075, 0.1, 0, 0, 0, 'y', midCam, 32);
+cyl('mid_camera_lens_band', M.glass, 0.077, 0.035, 0, 0, 0, 'y', midCam, 32);
+
+// turntable + arm
+const AX = 0.08, L1 = 1.05, L2 = 1.05, GRIP = 0.34;
+const TT_Y = BASE_TOP + 0.05;
+cyl('turntable_ring', M.joint, 0.4, 0.05, AX, BASE_TOP + 0.025, 0, 'y', robot, 64);
+const turntable = new THREE.Group(); turntable.name = 'turntable'; turntable.position.set(AX, TT_Y, 0); robot.add(turntable);
+cyl('turntable_disc', M.body, 0.36, 0.06, 0, 0.03, 0, 'y', turntable, 64);
+box('shoulder_pedestal', M.body, 0.38, 0.26, 0.42, 0, 0.19, 0, turntable);
+const SH_L = 0.42, SHY = TT_Y + SH_L;
+for (const s of [-1, 1]) box('shoulder_yoke_' + (s > 0 ? 'near' : 'far'), M.shell, 0.3, 0.3, 0.06, 0, SH_L - 0.04, s * 0.18, turntable);
+const shoulder = new THREE.Group(); shoulder.name = 'shoulder'; shoulder.position.set(0, SH_L, 0); turntable.add(shoulder);
+cyl('shoulder_actuator', M.joint, 0.13, 0.42, 0, 0, 0, 'z', shoulder, 48);
+cyl('shoulder_cap', M.accent, 0.1, 0.43, 0, 0, 0, 'z', shoulder, 48);
+box('upper_arm', M.shell, L1, 0.17, 0.18, L1 / 2, 0, 0, shoulder);
+box('upper_arm_spine', M.body, L1 - 0.2, 0.05, 0.185, L1 / 2, 0.065, 0, shoulder);
+const elbow = new THREE.Group(); elbow.name = 'elbow'; elbow.position.set(L1, 0, 0); shoulder.add(elbow);
+cyl('elbow_actuator', M.joint, 0.11, 0.3, 0, 0, 0, 'z', elbow, 48);
+box('forearm', M.shell, L2, 0.13, 0.14, L2 / 2, 0, -0.0, elbow);
+box('forearm_spine', M.body, L2 - 0.2, 0.04, 0.145, L2 / 2, -0.05, 0, elbow);
+const wristP = new THREE.Group(); wristP.name = 'wrist_pitch'; wristP.position.set(L2, 0, 0); elbow.add(wristP);
+cyl('wrist_pitch_actuator', M.joint, 0.085, 0.22, 0, 0, 0, 'z', wristP, 40);
+const wristY = new THREE.Group(); wristY.name = 'wrist_yaw'; wristP.add(wristY);
+cyl('wrist_yaw_actuator', M.body, 0.075, 0.2, 0, -0.02, 0, 'y', wristY, 40);
+const gripper = new THREE.Group(); gripper.name = 'vacuum_gripper'; wristY.add(gripper);
+box('gripper_neck', M.body, GRIP - 0.12, 0.1, 0.12, 0.05 + (GRIP - 0.12) / 2, 0, 0, gripper);
+box('gripper_manifold', M.accent, 0.06, 0.36, 0.44, GRIP - 0.07, 0, 0, gripper);
+box('gripper_pad', M.body, 0.02, 0.38, 0.48, GRIP - 0.03, 0, 0, gripper);
+cyl('vacuum_hose', M.rubber, 0.025, 0.3, 0.15, 0.08, 0.05, 'x', gripper, 16);
+const cupLeds = [];
+for (let iy = 0; iy < 3; iy++) for (let iz = 0; iz < 4; iz++) {
+  const cup = cyl(`suction_cup_${iy}_${iz}`, M.cup, 0.032, 0.02, GRIP - 0.01, -0.12 + iy * 0.12, -0.18 + iz * 0.12, 'x', gripper, 24);
+  cupLeds.push(cup);
+}
+
+/* ================= Kinematics ================= */
+let rx = 0;                                 // robot x (z = 0 centre line)
+const dir = a => new THREE.Vector3(Math.cos(a), 0, -Math.sin(a));
+function ik(wrist, heading) {
+  const dx = wrist.x - (rx + AX), dz = wrist.z;
+  let yaw = Math.atan2(-dz, dx);
+  if (yaw < -1.65) yaw += Math.PI * 2;     // keep sweeps on the far (−z) side
+  const r = Math.hypot(dx, dz), y = wrist.y - SHY;
+  const d = Math.min(Math.hypot(r, y), L1 + L2 - 0.002);
+  const q1 = Math.atan2(y, r) + Math.acos(THREE.MathUtils.clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+  const q2 = -(Math.PI - Math.acos(THREE.MathUtils.clamp((L1 * L1 + L2 * L2 - d * d) / (2 * L1 * L2), -1, 1)));
+  return { yaw, q1, q2, wp: -(q1 + q2), wy: heading - yaw };
+}
+const padPose = (p, h) => ik(p.clone().sub(dir(h).multiplyScalar(GRIP)), h);
+const carryPose = (yaw, h) => ik(new THREE.Vector3(rx + AX, 0, 0).add(dir(yaw).multiplyScalar(0.25)).setY(1.55), h);
+function apply(J) {
+  turntable.rotation.y = J.yaw; shoulder.rotation.z = J.q1; elbow.rotation.z = J.q2;
+  wristP.rotation.z = J.wp; wristY.rotation.y = J.wy;
+}
+const placeCenter = () => new THREE.Vector3(rx - 1.25, BELT_Y + BH / 2 + 0.004, 0);
+function updateConveyor() {
+  const tip = rx - BL / 2 - 0.33, x0 = -0.4, len = Math.max(0.1, tip - x0);
+  for (const [m, k] of [[ext1, 0.55], [ext2, 1], [extBelt, 1]]) { m.scale.x = len * k; m.position.x = x0 + len * k / 2 + (k < 1 ? 0 : 0); }
+  ext1.position.x = x0 + len * 0.55 / 2;
+  nose.position.x = tip;
+}
+
+/* ================= Task runner ================= */
+const ui = { st: { textContent: 'booting' }, ct: { textContent: '' }, rt: { textContent: '' } };
+let J = null, queue = [], cur = null, held = null, unloaded = 0, simT = 0, startT = 0;
+const onBelt = [];
+const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
+const status = s => () => { ui.st.textContent = s; };
+const robotStartX = () => rowFront(0) - 1.4;
+
+function nextCarton() {
+  for (let r = 0; r < ROWS; r++) {
+    const left = cartons.filter(c => c.r === r && c.state === 'stack');
+    if (left.length) return left.sort((a, b) => b.l - a.l || a.c - b.c)[0];
+  }
+  return null;
+}
+let P = null, Hd = 0, Pt = 0;   // P = wrist point, Hd = heading, Pt = gripper pitch (up)
+const TR_Y = 1.3, TR_R = 0.45, TR_PT = 50 * Math.PI / 180;   // elbow stays ≥0.15 m clear of the mast; tilted carton ≤1.14 m from axis
+const trans = a => ({ w: new THREE.Vector3(rx + AX, TR_Y, 0).add(dir(a).multiplyScalar(TR_R)), h: a, pt: TR_PT });
+const pad = (p, h) => ({ w: p.clone().sub(dir(h).multiplyScalar(GRIP)), h, pt: 0 });
+const pose = (w, h, pt) => { const j = ik(w, h); j.wp += pt; return j; };
+function plan() {
+  const c = nextCarton();
+  if (!c) { queue.push({ call: status('container empty — resetting') }, { wait: 3 }, { call: resetScene }); return; }
+  const targetRx = rowFront(c.r) - 1.4;
+  if (Math.abs(targetRx - rx) > 0.01) queue.push({ call: status('advancing into container') }, { move: () => trans(0), dur: 0.6 }, { drive: targetRx, dur: 1.8 });
+  const F = new THREE.Vector3(c.g.position.x - BD / 2 + 0.01, c.g.position.y, c.g.position.z);   // carton face, fixed at plan time
+  const at = (dx, y) => () => pad(new THREE.Vector3(F.x + dx, y, F.z), 0);
+  const yHi = Math.max(F.y + 0.03, 0.85);
+  const pc = y => () => pad(placeCenter().add(new THREE.Vector3(BD / 2, y, 0)), Math.PI);
+  queue.push(
+    { call: status(`perceiving · row ${c.r + 1} layer ${c.l + 1}`) },
+    { move: () => trans(0), dur: 0.4 },
+    { move: at(-0.32, yHi), dur: 0.7 },
+    { move: at(-0.32, F.y), dur: 0.4 },
+    { move: at(0, F.y), dur: 0.45 },
+    { call: () => { ui.st.textContent = 'vacuum seal'; grab(c); } }, { wait: 0.18 },
+    { call: status('pull carton out of wall') },
+    { move: at(-0.3, F.y + 0.03), dur: 0.5 },
+    { move: at(-0.3, yHi), dur: 0.4 },
+    { move: at(-0.5, yHi), dur: 0.35 },
+    { call: status('tuck · arm locked') },
+    { move: () => trans(0), dur: 0.6 },
+    { call: status('rotate CCW → conveyor (turntable only)') },
+    { spin: Math.PI },
+    { call: status('extend & place on conveyor') },
+    { move: pc(0.2), dur: 0.6 },
+    { move: pc(0), dur: 0.45 },
+    { call: release }, { wait: 0.12 },
+    { move: pc(0.3), dur: 0.4 },
+    { move: () => trans(Math.PI), dur: 0.5 },
+    { call: status('rotate CW → carton wall') },
+    { spin: 0 },
+  );
+}
+
+function grab(c) {
+  c.state = 'held'; held = c; gripper.attach(c.g);
+  M.cup.color.setHex(0x1f9e93);
+}
+function release() {
+  if (!held) return;
+  cartonGroup.attach(held.g);
+  held.g.position.y = BELT_Y + BH / 2 + 0.004;
+  held.g.rotation.set(0, held.g.rotation.y, 0);
+  held.state = 'belt'; onBelt.push(held); held = null;
+  M.cup.color.setHex(0x2b2d30);
+  unloaded++; ui.ct.textContent = `${unloaded} / ${cartons.length}`;
+  const hrs = (simT - startT) / 3600; if (hrs > 0) ui.rt.textContent = `${Math.round(unloaded / hrs)} cases / hr`;
+}
+function resetScene() {
+  for (const c of cartons) { cartonGroup.attach(c.g); c.g.position.copy(c.home); c.g.rotation.set(0, (Math.random() - 0.5) * 0.03, 0); c.g.visible = true; c.state = 'stack'; }
+  onBelt.length = 0; held = null; unloaded = 0; startT = simT;
+  rx = robotStartX(); robot.position.x = rx; { const T = trans(Hd); P = T.w; Pt = T.pt; J = pose(P, Hd, Pt); apply(J); } updateConveyor();
+  ui.ct.textContent = `0 / ${cartons.length}`; ui.rt.textContent = '—';
+}
+function step(dt) {
+  simT += dt;
+  onBelt.sort((a, b) => a.g.position.x - b.g.position.x);
+  for (let i = 0; i < onBelt.length; i++) {
+    const c = onBelt[i], lim = i === 0 ? -3.3 : onBelt[i - 1].g.position.x + 0.5;
+    c.g.position.x = Math.max(lim, c.g.position.x - 0.9 * dt);
+    c.g.position.z *= Math.max(0, 1 - 3 * dt);
+  }
+  if (onBelt.length && onBelt[0].g.position.x <= -3.3 + 1e-6 && hooks.accept(onBelt[0])) { const c = onBelt.shift(); c.g.visible = false; c.state = 'gone'; }
+  let budget = dt;
+  while (budget > 0) {
+    if (!cur) { if (!queue.length) plan(); cur = queue.shift(); cur.t = 0;
+      if (cur.move) { cur.p0 = P.clone(); cur.h0 = Hd; cur.t0 = Pt; const T = cur.move(); cur.p1 = T.w; cur.h1 = T.h; cur.t1 = T.pt;
+        cur.dur = Math.max(cur.dur, 1.875 * Math.max(cur.p0.distanceTo(cur.p1) / 0.8, Math.abs(cur.h1 - cur.h0) / 1.6, Math.abs(cur.t1 - cur.t0) / 1.2)); }
+      if (cur.spin !== undefined) { cur.J0 = { ...J }; cur.d = cur.spin - Hd; cur.dur = Math.max(0.5, 1.875 * Math.abs(cur.d) / 1.4); }
+      if (cur.drive !== undefined) cur.rx0 = rx; }
+    if (cur.call) { cur.call(); cur = null; continue; }
+    const dur = cur.dur ?? cur.wait;
+    const use = Math.min(budget, dur - cur.t); cur.t += use; budget -= use;
+    const k = ease(Math.min(1, cur.t / dur));
+    if (cur.move) { P.lerpVectors(cur.p0, cur.p1, k); Hd = cur.h0 + (cur.h1 - cur.h0) * k; Pt = cur.t0 + (cur.t1 - cur.t0) * k; J = pose(P, Hd, Pt); apply(J); }
+    if (cur.spin !== undefined) { J = { ...cur.J0, yaw: cur.J0.yaw + cur.d * k }; apply(J); if (k >= 1) { const T = trans(cur.spin); Hd = T.h; P = T.w; Pt = T.pt; } }
+    if (cur.drive !== undefined) { const prev = rx; rx = cur.rx0 + (cur.drive - cur.rx0) * k; robot.position.x = rx; P.x += rx - prev; updateConveyor(); }
+    if (cur.t >= dur - 1e-9) cur = null;
+  }
+}
+
+
+rx = robotStartX(); robot.position.x = rx; updateConveyor();
+{ const T = trans(0); P = T.w; Hd = T.h; Pt = T.pt; } J = pose(P, Hd, Pt); apply(J);
+return { group: world, step, ui, robot, belt: onBelt };
+}
+function buildFMR(THREE) {
+const M = {
+  shell:  new THREE.MeshStandardMaterial({ name:'shell_white', color:0xe9e7e2, roughness:0.45, metalness:0.05 }),
+  accent: new THREE.MeshStandardMaterial({ name:'safety_orange', color:0xe8692a, roughness:0.4, metalness:0.1 }),
+  steel:  new THREE.MeshStandardMaterial({ name:'mast_steel', color:0x4a4d52, roughness:0.45, metalness:0.35 }),
+  fork:   new THREE.MeshStandardMaterial({ name:'fork_steel', color:0x8a8e94, roughness:0.35, metalness:0.4 }),
+  rubber: new THREE.MeshStandardMaterial({ name:'rubber_black', color:0x1d1e20, roughness:0.85, metalness:0 }),
+  glass:  new THREE.MeshStandardMaterial({ name:'sensor_glass', color:0x101418, roughness:0.15, metalness:0.2 }),
+  led:    new THREE.MeshStandardMaterial({ name:'status_led', color:0x2ad07a, emissive:0x1fbf6a, emissiveIntensity:1.2, roughness:0.3 }),
+  wood:   new THREE.MeshStandardMaterial({ name:'pallet_wood', color:0xc49a64, roughness:0.8, metalness:0 }),
+};
+
+const robot = new THREE.Group(); robot.name = 'FMR';
+function box(name, mat, w, h, d, x, y, z, parent = robot) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.name = name; m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
+  parent.add(m); return m;
+}
+function cyl(name, mat, r, len, x, y, z, axis = 'z', seg = 40, parent = robot) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, seg), mat);
+  m.name = name; m.position.set(x, y, z);
+  if (axis === 'z') m.rotation.x = Math.PI / 2;
+  if (axis === 'x') m.rotation.z = Math.PI / 2;
+  m.castShadow = m.receiveShadow = true; parent.add(m); return m;
+}
+// Rounded-plan prism: footprint w(x) × d(z), height h, corner radius r
+function roundedPrism(name, mat, w, d, h, r, x, y, z, bevel = 0.02) {
+  const s = new THREE.Shape(), hw = w/2 - bevel, hd = d/2 - bevel; r = Math.min(r, hw, hd);
+  s.moveTo(-hw + r, -hd); s.lineTo(hw - r, -hd); s.quadraticCurveTo(hw, -hd, hw, -hd + r);
+  s.lineTo(hw, hd - r); s.quadraticCurveTo(hw, hd, hw - r, hd); s.lineTo(-hw + r, hd);
+  s.quadraticCurveTo(-hw, hd, -hw, hd - r); s.lineTo(-hw, -hd + r); s.quadraticCurveTo(-hw, -hd, -hw + r, -hd);
+  const g = new THREE.ExtrudeGeometry(s, { depth: h - bevel*2, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 4, curveSegments: 12 });
+  g.rotateX(-Math.PI / 2); g.translate(0, bevel, 0);
+  const m = new THREE.Mesh(g, mat); m.name = name; m.position.set(x, y, z);
+  m.castShadow = m.receiveShadow = true; robot.add(m); return m;
+}
+
+/* ---------- Chassis (rear drive tower, forks point +x) ---------- */
+const BX0 = -1.0, BX1 = 0.0, BW = 0.9;           // body x range & width
+const bodyX = (BX0 + BX1) / 2, bodyL = BX1 - BX0;
+box('base_frame', M.steel, bodyL - 0.04, 0.12, BW - 0.04, bodyX, 0.12, 0);
+roundedPrism('body_shell', M.shell, bodyL, BW, 1.05, 0.14, bodyX, 0.16, 0);
+roundedPrism('top_cap', M.steel, bodyL - 0.06, BW - 0.06, 0.04, 0.12, bodyX, 1.21, 0, 0.01);
+// orange safety bumper wrapping the lower body
+roundedPrism('bumper', M.accent, bodyL + 0.05, BW + 0.05, 0.14, 0.16, bodyX - 0.02, 0.1, 0, 0.03);
+// side accent stripe
+for (const s of [-1, 1]) {
+  box('side_stripe_' + (s > 0 ? 'L' : 'R'), M.accent, 0.62, 0.035, 0.004, bodyX - 0.05, 0.92, s * (BW/2 + 0.001));
+  box('side_vent_' + (s > 0 ? 'L' : 'R'), M.steel, 0.3, 0.16, 0.004, bodyX - 0.18, 0.55, s * (BW/2 + 0.001));
+  box('side_scanner_' + (s > 0 ? 'L' : 'R'), M.glass, 0.12, 0.05, 0.004, bodyX + 0.28, 0.32, s * (BW/2 + 0.001));
+}
+// rear face: e-stop panel, HMI, scanner window
+box('rear_panel', M.steel, 0.004, 0.32, 0.5, BX0 - 0.001, 0.86, 0);
+box('hmi_screen', M.glass, 0.006, 0.18, 0.28, BX0 - 0.002, 0.88, -0.06);
+cyl('estop_base', M.accent, 0.045, 0.03, BX0 - 0.015, 0.88, 0.17, 'x', 32);
+cyl('estop_button', new THREE.MeshStandardMaterial({ name:'estop_red', color:0xc4161c, roughness:0.35 }), 0.032, 0.04, BX0 - 0.045, 0.88, 0.17, 'x', 32);
+box('rear_lidar_window', M.glass, 0.006, 0.06, 0.6, BX0 - 0.002, 0.3, 0);
+
+// top 3D lidar + status beacon
+cyl('lidar_base', M.steel, 0.07, 0.05, bodyX - 0.25, 1.275, 0, 'y');
+cyl('lidar_head', M.glass, 0.055, 0.08, bodyX - 0.25, 1.34, 0, 'y');
+cyl('lidar_cap', M.steel, 0.06, 0.02, bodyX - 0.25, 1.39, 0, 'y');
+cyl('beacon_base', M.steel, 0.04, 0.03, bodyX + 0.2, 1.265, 0.3, 'y');
+cyl('beacon_lens', M.led, 0.032, 0.07, bodyX + 0.2, 1.315, 0.3, 'y');
+// status LED light strip around body top
+for (const s of [-1, 1]) box('led_strip_' + (s > 0 ? 'L' : 'R'), M.led, bodyL - 0.3, 0.012, 0.004, bodyX, 1.12, s * (BW/2 + 0.001));
+box('led_strip_rear', M.led, 0.004, 0.012, BW - 0.3, BX0 - 0.001, 1.12, 0);
+
+/* ---------- Wheels ---------- */
+function wheel(name, r, w, x, z) {
+  cyl(name + '_tire', M.rubber, r, w, x, r, z, 'z', 48);
+  cyl(name + '_hub', M.fork, r * 0.55, w + 0.004, x, r, z, 'z', 32);
+}
+wheel('drive_wheel', 0.115, 0.08, BX0 + 0.4, 0);          // central steer-drive wheel
+wheel('caster_L', 0.06, 0.05, BX0 + 0.15, 0.32);
+wheel('caster_R', 0.06, 0.05, BX0 + 0.15, -0.32);
+
+/* ---------- Straddle legs with load rollers (under forks) ---------- */
+const FORK_Z = 0.2, LEG_LEN = 1.1;
+for (const s of [-1, 1]) {
+  const tag = s > 0 ? 'L' : 'R', z = s * (FORK_Z + 0.0);
+  box('leg_' + tag, M.steel, LEG_LEN, 0.07, 0.16, BX1 + LEG_LEN/2, 0.065, z);
+  box('leg_tip_' + tag, M.accent, 0.06, 0.07, 0.16, BX1 + LEG_LEN + 0.03, 0.065, z);
+  wheel('load_roller_' + tag + '_a', 0.04, 0.06, BX1 + LEG_LEN - 0.08, z);
+  wheel('load_roller_' + tag + '_b', 0.04, 0.06, BX1 + LEG_LEN - 0.2, z);
+  box('leg_sensor_' + tag, M.glass, 0.004, 0.035, 0.08, BX1 + LEG_LEN + 0.061, 0.07, z);
+}
+
+/* ---------- Mast (two-stage telescoping) ---------- */
+const MX = 0.07, MAST_H = 2.2, RAIL_Z = 0.36;
+for (const s of [-1, 1]) {
+  const tag = s > 0 ? 'L' : 'R';
+  box('outer_rail_' + tag, M.steel, 0.08, MAST_H, 0.06, MX, 0.16 + MAST_H/2, s * RAIL_Z);
+  box('inner_rail_' + tag, M.steel, 0.06, MAST_H - 0.25, 0.045, MX + 0.07, 0.35 + (MAST_H - 0.25)/2, s * (RAIL_Z - 0.06));
+  cyl('lift_chain_' + tag, M.rubber, 0.012, MAST_H - 0.4, MX + 0.02, 0.3 + (MAST_H - 0.4)/2, s * 0.12, 'y', 12);
+}
+box('mast_top_beam', M.steel, 0.09, 0.08, RAIL_Z*2 + 0.06, MX, 0.16 + MAST_H - 0.04, 0);
+box('mast_mid_beam', M.steel, 0.07, 0.06, RAIL_Z*2 - 0.06, MX + 0.07, 1.2, 0);
+box('mast_base_beam', M.steel, 0.12, 0.1, RAIL_Z*2 + 0.06, MX, 0.2, 0);
+cyl('lift_cylinder', M.fork, 0.04, MAST_H - 0.3, MX - 0.01, 0.25 + (MAST_H - 0.3)/2, 0, 'y', 32);
+cyl('lift_cylinder_rod', M.fork, 0.022, 0.25, MX - 0.01, 0.25 + MAST_H - 0.3 + 0.1, 0, 'y', 24);
+cyl('chain_sheave', M.fork, 0.05, 0.3, MX + 0.02, 0.16 + MAST_H - 0.12, 0, 'z', 32);
+// mast-mounted safety camera
+box('fork_camera', M.glass, 0.05, 0.05, 0.1, MX + 0.03, 0.16 + MAST_H + 0.025, 0);
+
+/* ---------- Carriage + forks (raised, carrying pallet) ---------- */
+const LIFT = 0.55;                     // fork lift height (m)
+const carriage = new THREE.Group(); carriage.name = 'carriage'; carriage.position.set(MX + 0.13, LIFT, 0); robot.add(carriage);
+box('carriage_plate', M.accent, 0.05, 0.42, 0.78, 0, 0.21, 0, carriage);
+box('carriage_bar_top', M.steel, 0.06, 0.05, 0.8, 0.005, 0.44, 0, carriage);
+box('carriage_bar_low', M.steel, 0.06, 0.05, 0.8, 0.005, 0.025, 0, carriage);
+// load backrest grid
+for (let i = -3; i <= 3; i++) box('backrest_bar_' + (i + 3), M.steel, 0.025, 0.42, 0.025, 0.0, 0.66, i * 0.12, carriage);
+box('backrest_top', M.steel, 0.03, 0.035, 0.8, 0.0, 0.87, 0, carriage);
+const FORK_LEN = 1.15;
+for (const s of [-1, 1]) {
+  const tag = s > 0 ? 'L' : 'R';
+  box('fork_shank_' + tag, M.fork, 0.045, 0.4, 0.12, 0.05, 0.2, s * FORK_Z, carriage);
+  const f = box('fork_blade_' + tag, M.fork, FORK_LEN, 0.045, 0.12, 0.05 + FORK_LEN/2, 0.0225, s * FORK_Z, carriage);
+  box('fork_tip_' + tag, M.fork, 0.08, 0.025, 0.12, 0.05 + FORK_LEN + 0.04, 0.0125, s * FORK_Z, carriage);
+  box('fork_tip_sensor_' + tag, M.glass, 0.03, 0.012, 0.05, 0.05 + FORK_LEN - 0.04, 0.051, s * FORK_Z, carriage);
+}
+
+/* ---------- Floor safety projection (blue spot) ---------- */
+const spot = new THREE.Mesh(new THREE.CircleGeometry(0.12, 40),
+  new THREE.MeshStandardMaterial({ name:'safety_spot', color:0x2f7cf6, emissive:0x2f7cf6, emissiveIntensity:0.8, transparent:true, opacity:0.75 }));
+spot.name = 'floor_safety_spot'; spot.rotation.x = -Math.PI/2; spot.position.set(BX0 - 0.6, 0.001, 0); robot.add(spot);
+
+
+return { robot, carriage };
+}
+/* ================= Inbound dock · palletizer · rack · FMR ================= */
+cnt.unl = 0; cnt.pal = 0; Z.fmr = 1;
+const dock = buildDock(THREE, { accept: c => palletAccept(c) });
+dock.group.name = 'inbound_dock'; dock.group.position.set(10.5, 0, 0.3); world.add(dock.group);
+
+const tapeM = mat('floor_tape_yellow', 0xe8c12a, 0.7);
+const tape = (x0, z0, x1, z1) => box('floor_tape', tapeM, Math.abs(x1 - x0) || 0.05, 0.004, Math.abs(z1 - z0) || 0.05, (x0 + x1) / 2, 0.002, (z0 + z1) / 2, world);
+tape(4.1, -0.75, 9.9, -0.75); tape(4.1, -2.15, 9.9, -2.15); tape(5.85, -0.25, 5.85, 1.15); tape(6.95, -0.25, 6.95, 1.15);
+box('dock_door_header', M.podFrame, 0.2, 0.3, 3.0, 10.42, 3.0, 0.3, world);
+for (const z of [-1.25, 1.85]) box('dock_door_post', M.podFrame, 0.2, 3.15, 0.2, 10.42, 1.575, z, world);
+
+/* --- pallets & auto-palletizer --- */
+const woodM = mat('pallet_wood', 0xc49a64, 0.8);
+let palN = 0;
+function makePallet() {
+  const g = new THREE.Group(); g.name = 'pallet_P' + String(++palN).padStart(3, '0'); const DT = 0.022;
+  for (let i = 0; i < 5; i++) box('deck_board', woodM, 1.2, DT, 0.1, 0, 0.144 - DT / 2, -0.35 + i * 0.175, g);
+  for (const z of [-0.38, 0, 0.38]) {
+    box('stringer', woodM, 1.2, DT, 0.1, 0, 0.1 - DT / 2 + 0.001, z, g);
+    for (const x of [-0.53, 0, 0.53]) box('block', woodM, 0.14, 0.078, 0.1, x, 0.061, z, g);
+    box('bottom_board', woodM, 1.2, DT, 0.1, 0, DT / 2, z, g);
+  }
+  return g;
+}
+const ST = new THREE.Vector3(6.4, 0, 0.45), PAL_OFF = 0.87;
+const station = { pallet: null, n: 0, full: false };
+function spawnStationPallet() { const p = makePallet(); p.position.copy(ST); p.rotation.y = -Math.PI / 2; world.add(p); station.pallet = p; station.n = 0; station.full = false; }
+spawnStationPallet();
+const pz = grp('auto_palletizer', world);
+for (const x of [5.75, 7.05]) box('palletizer_post', M.alu, 0.07, 2.0, 0.07, x, 1.0, 1.25, pz);
+box('palletizer_beam', M.alu, 1.37, 0.08, 0.08, 6.4, 2.0, 1.25, pz);
+box('palletizer_carriage', M.teal, 0.2, 0.12, 0.14, 6.6, 1.92, 1.25, pz);
+box('palletizer_infeed', M.conv, 0.5, 0.06, 0.6, 7.0, 0.75, 0.3, pz);
+const flights = [];
+const slotLocal = i => { const l = Math.floor(i / 4), k = i % 4; return new THREE.Vector3(k % 2 ? 0.235 : -0.235, 0.144 + 0.2 + l * 0.402, k < 2 ? -0.225 : 0.225); };
+const LANE_X = 7.5, LANE_Z0 = 1.05, LANE_Z1 = 2.05, LANE_Y = 0.72;
+const lane = []; let laneIn = 0;
+box('decant_lane_bed', M.conv, 0.55, 0.04, 1.3, LANE_X, 0.68, 1.55, world);
+for (let i = 0; i < 9; i++) cyl('decant_lane_roller', M.steel, 0.018, 0.5, LANE_X, 0.705, 0.95 + i * 0.15, 'x', world, 12);
+for (const z of [1.0, 2.1]) for (const s of [-1, 1]) box('decant_lane_leg', M.steel, 0.03, 0.66, 0.03, LANE_X + s * 0.24, 0.33, z, world);
+box('decant_lane_stop', M.teal, 0.55, 0.12, 0.03, LANE_X, 0.76, 2.31, world);
+function palletAccept(c) {
+  if (flights.length) return false;
+  const toLane = lane.length + laneIn < 2;
+  if (!toLane && (!station.pallet || station.n >= 8)) return false;
+  const obj = c.g.clone(true); obj.name = (toLane ? 'decant_' : 'palletised_') + c.g.name; obj.visible = true;
+  const from = c.g.getWorldPosition(new THREE.Vector3());
+  world.add(obj); obj.position.copy(from); obj.rotation.set(0, 0, 0);
+  if (toLane) { laneIn++; flights.push({ obj, from, lane: true, t: 0 }); }
+  else { flights.push({ obj, from, slot: slotLocal(station.n), pallet: station.pallet, t: 0 }); station.n++; }
+  cnt.unl++; return true;
+}
+function stepPalletizer(dt) {
+  for (let i = flights.length - 1; i >= 0; i--) {
+    const fl = flights[i]; fl.t = Math.min(1, fl.t + dt / 0.8);
+    const to = fl.lane ? new THREE.Vector3(LANE_X, LANE_Y + 0.2, LANE_Z0) : fl.pallet.localToWorld(fl.slot.clone()), k = ease(fl.t);
+    fl.obj.position.lerpVectors(fl.from, to, k); fl.obj.position.y += Math.sin(Math.PI * k) * 0.35;
+    if (fl.t >= 1) {
+      flights.splice(i, 1);
+      if (fl.lane) { laneIn--; lane.push({ obj: fl.obj }); continue; }
+      fl.pallet.attach(fl.obj); fl.obj.position.copy(fl.slot);
+      if (station.n >= 8 && fl.pallet === station.pallet) { station.full = true; log(`${fl.pallet.name.slice(7)} built · 8 cases · put-away task → FMR-01`); }
+    }
+  }
+  for (let i = 0; i < lane.length; i++) { const o = lane[i].obj, lim = i === 0 ? LANE_Z1 : lane[i - 1].obj.position.z - 0.5; o.position.z = Math.min(lim, o.position.z + 0.4 * dt); }
+}
+
+/* --- high-bay rack (ground level left for manual picking) --- */
+const RZ = -3.6, BAYS = [4.9, 5.9, 6.9, 7.9], LEVELS = [1.1, 2.25];
+const rackG = grp('pallet_rack', world);
+const uprightM = mat('rack_upright', 0x2f5f8f, 0.5, 0.3), beamM = mat('rack_beam', 0xe8692a, 0.45, 0.2);
+for (let x = 4.4; x <= 8.41; x += 1) for (const z of [-3.0, -4.2]) box('rack_upright', uprightM, 0.08, 3.4, 0.08, x, 1.7, z, rackG);
+for (let x = 4.4; x <= 8.41; x += 1) for (const y of [0.6, 1.7, 2.8]) box('rack_tie', uprightM, 0.04, 0.04, 1.2, x, y, -3.6, rackG);
+for (const z of [-3.0, -4.2]) for (const L of LEVELS) box('rack_beam', beamM, 4.08, 0.1, 0.06, 6.4, L - 0.05, z, rackG);
+box('rack_manual_zone', mat('manual_zone', 0xe0a43a, 0.8), 4.0, 0.004, 1.2, 6.4, 0.003, -3.6, rackG);
+const slots = []; for (const L of LEVELS) for (const bx of BAYS) slots.push({ bx, L, p: null, res: false });
+
+/* --- FMR-01 --- */
+const fk = buildFMR(THREE), fmr = fk.robot, fCar = fk.carriage;
+fmr.name = 'FMR-01_forklift_robot'; world.add(fmr);
+const fmrTag = grp('fmr_tag_anchor', fmr, -0.5, 1.3, 0);
+const mastExt = ['inner_rail_L', 'inner_rail_R', 'mast_mid_beam', 'lift_cylinder_rod'].map(n => fmr.getObjectByName(n)).filter(Boolean).map(o => ({ o, y: o.position.y }));
+const F = { x: 6.4, z: -1.45, h: -Math.PI / 2, lift: 0, load: null };
+let fState = 'idle', fcur = null; const fq = [];
+function poseF() {
+  fmr.position.set(F.x, 0, F.z); fmr.rotation.y = F.h; fCar.position.y = F.lift;
+  const e = Math.max(0, F.lift - 1.75); for (const m of mastExt) m.o.position.y = m.y + e;
+}
+function planF() {
+  if (!station.full) { fq.push({ label: 'standby · waiting for full pallet', goto: [6.4, -1.45] }, { face: -Math.PI / 2 }, { lift: 0 }, { until: () => station.full }); return; }
+  const slot = slots.find(s => !s.p && !s.res);
+  if (!slot) { fq.push({ label: 'rack full · releasing to outbound', call: dispatchRack }); return; }
+  slot.res = true;
+  const tag = `bay ${BAYS.indexOf(slot.bx) + 1} · L${LEVELS.indexOf(slot.L) + 1}`;
+  fq.push(
+    { label: 'approach palletizer', goto: [6.4, -1.45] }, { face: -Math.PI / 2 }, { lift: 0 },
+    { label: 'forks into pallet pockets', line: [ST.x, ST.z - PAL_OFF] }, { lift: 0.04 },
+    { call: () => { F.load = station.pallet; fCar.attach(F.load); station.pallet = null; station.full = false; log(`FMR-01 picked ${F.load.name.slice(7)} · load 186 kg · pocket cam ✓`); } },
+    { label: 'lift & reverse', lift: 0.15 }, { line: [6.4, -1.45] }, { call: spawnStationPallet },
+    { label: `travel → ${tag}`, goto: [slot.bx, -1.45] }, { face: Math.PI / 2 },
+    { label: `raise mast → ${slot.L} m`, lift: slot.L + 0.12 },
+    { label: `enter rack · ${tag}`, line: [slot.bx, RZ + PAL_OFF] }, { lift: slot.L + 0.04 },
+    { call: () => { const p = F.load; world.attach(p); p.position.set(slot.bx, slot.L, RZ); p.rotation.set(0, Math.PI / 2, 0); slot.p = p; slot.res = false; F.load = null; cnt.pal++; log(`FMR-01 stored ${p.name.slice(7)} → ${tag} · beam fiducial ✓`, 'g'); } },
+    { lift: slot.L + 0.005 }, { label: 'reverse out', line: [slot.bx, -1.45] }, { label: 'lower mast', lift: 0 },
+  );
+}
+function dispatchRack() {
+  for (const s of slots) { if (s.p) world.remove(s.p); s.p = null; s.res = false; }
+  log('rack full · 8 pallets released to outbound', 'g');
+}
+function stepF(dt) {
+  let b = dt * Z.fmr, g = 0;
+  while (b > 0 && g++ < 30) {
+    if (!fcur) { if (!fq.length) planF(); fcur = fq.shift(); if (!fcur) break; if (fcur.label) fState = fcur.label; }
+    const c = fcur;
+    if (c.call) { c.call(); fcur = null; continue; }
+    if (c.until) { if (c.until()) { fcur = null; continue; } break; }
+    if (c.lift !== undefined) { const dd = c.lift - F.lift, s = 0.35 * b; if (Math.abs(dd) <= s) { F.lift = c.lift; b -= Math.abs(dd) / 0.35; fcur = null; continue; } F.lift += Math.sign(dd) * s; break; }
+    if (c.face !== undefined) { const dd = wrap(c.face - F.h), s = 0.9 * b; if (Math.abs(dd) <= s) { F.h = c.face; b -= Math.abs(dd) / 0.9; fcur = null; continue; } F.h += Math.sign(dd) * s; break; }
+    if (c.goto || c.line) {
+      const [tx, tz] = c.goto || c.line, dx = tx - F.x, dz = tz - F.z, dist = Math.hypot(dx, dz);
+      if (dist < 0.005) { F.x = tx; F.z = tz; fcur = null; continue; }
+      if (c.goto) {
+        let dd = wrap(Math.atan2(-dz, dx) - F.h); if (Math.abs(dd) > Math.PI / 2) dd = wrap(dd + Math.PI);
+        if (Math.abs(dd) > 0.002) { const s = 0.9 * b; if (Math.abs(dd) <= s) { F.h += dd; b -= Math.abs(dd) / 0.9; continue; } F.h += Math.sign(dd) * s; break; }
+      }
+      const sp = c.line ? 0.35 : F.load ? 0.7 : 1.0, s = sp * b;
+      if (dist <= s) { F.x = tx; F.z = tz; b -= dist / sp; fcur = null; continue; }
+      F.x += dx / dist * s; F.z += dz / dist * s; break;
+    }
+    fcur = null;
+  }
+  poseF();
+}
+poseF();
+const fZoneOut = new THREE.Mesh(new THREE.RingGeometry(1.4, 2.4, 56), zoneMat('zone_fmr_warn')); fZoneOut.rotation.x = -Math.PI / 2; fZoneOut.name = 'zone_fmr_warn'; world.add(fZoneOut);
+const fZoneIn = new THREE.Mesh(new THREE.CircleGeometry(1.4, 56), zoneMat('zone_fmr_stop')); fZoneIn.rotation.x = -Math.PI / 2; fZoneIn.name = 'zone_fmr_stop'; world.add(fZoneIn);
+function safetyF() {
+  const cx = F.x + Math.cos(F.h) * 0.25, cz = F.z - Math.sin(F.h) * 0.25, dd = Math.hypot(H.x - cx, H.z - cz);
+  Z.fmr = dd < 1.4 ? 0 : dd < 2.4 ? 0.4 : 1;
+  fZoneOut.position.set(cx, 0.0045, cz); fZoneIn.position.set(cx, 0.005, cz);
+  fZoneIn.material.color.setHex(Z.fmr === 0 ? zc.r : zc.g); fZoneIn.material.opacity = Z.fmr === 0 ? 0.4 : 0.1;
+  fZoneOut.material.color.setHex(Z.fmr < 1 ? (Z.fmr ? zc.a : zc.r) : zc.g); fZoneOut.material.opacity = Z.fmr < 1 ? 0.32 : 0.12;
+  if (Z.fmr < 1) H.speedF = Math.min(H.speedF, 0.6);
+}
+function dockTick(dt) { safetyF(); dock.step(dt); stepPalletizer(dt); stepF(dt); }
+function hudDock() {
+  $('s3').textContent = dock.ui.st.textContent + (dock.belt.length > 3 ? ' · conveyor queue ' + dock.belt.length : '');
+  $('s4').textContent = (Z.fmr === 0 ? 'HOLD · person in zone' : Z.fmr < 1 ? 'slowed 40% · ' + fState : fState) + (F.lift > 0.3 ? ` · fork ${F.lift.toFixed(2)} m` : '');
+  $('d3').style.background = '#4cc38a'; $('d4').style.background = dotC(Z.fmr);
+  $('c5').textContent = cnt.unl; $('c6').textContent = cnt.pal;
+}
+
+/* --- exploded modules: UNL-01 + FMR-01 --- */
+function groupMeshes(root, name, test) {
+  const g = new THREE.Group(); g.name = name;
+  for (const c of [...root.children]) if (test(c.name)) g.add(c);
+  root.add(g); return g;
+}
+world.updateMatrixWorld(true);
+const anchorOf = g => { g.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(g), c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + 0.05; return g.worldToLocal(c); };
+const modA = (g, off, l, s) => { mod(g, off, l, s); modules[modules.length - 1].anc = anchorOf(g); return g; };
+curRobot = 'unl';
+{
+  const U = dock.robot, q = n => U.getObjectByName(n);
+  modA(groupMeshes(U, 'unl_base_module', n => /^(base_|side_|end_|turntable_ring)/.test(n)), [0, 0, 0], 'Omni base · chassis + battery', 'cell impedance · motor temp');
+  for (const s of ['fn', 'ff', 'rn', 'rf']) modA(groupMeshes(U, 'unl_wheel_' + s, n => n.startsWith('omni_') && n.endsWith('_' + s)), [0, 0, (s[1] === 'n' ? 1 : -1) * 0.45], s === 'fn' ? 'Omni wheels ×4' : '', s === 'fn' ? 'roller wear · slip' : '');
+  modA(groupMeshes(U, 'unl_mast_module', n => /^(mast_column|perception_head|mid_camera_ring)$/.test(n)), [-0.35, 0.45, 0.4], 'Perception mast · 360° cameras', 'extrinsic drift check');
+  mod(q('turntable'), [0, 0.3, 0], 'Turntable · J1 slewing ring', 'bearing vibration');
+  mod(q('shoulder'), [0, 0.25, 0], 'Shoulder · J2 servo + brake', 'torque rainflow');
+  mod(q('elbow'), [0.3, 0.12, 0], 'Forearm · J3 elbow', 'harmonic-drive backlash');
+  mod(q('wrist_pitch'), [0.22, 0, 0], 'Wrist · pitch / yaw', 'encoder drift');
+  mod(q('vacuum_gripper'), [0.5, -0.1, 0], 'Vacuum gripper · 12 cups', 'leak rate per cup');
+  modules[modules.length - 1].anc = new THREE.Vector3(0.3, -0.28, 0);
+}
+curRobot = 'fmr';
+{
+  const Fm = fmr, cw = new THREE.Group(); cw.name = 'fmr_carriage_module'; Fm.add(cw); cw.add(fCar);
+  modA(groupMeshes(Fm, 'fmr_tower_module', n => /^(base_frame|body_shell|top_cap|bumper|side_|rear_|hmi_|estop_|led_strip)/.test(n)), [-0.5, 0, 0], 'Drive tower · battery + controller', 'cell impedance · motor temp');
+  modA(groupMeshes(Fm, 'fmr_nav_module', n => /^(lidar_|beacon_)/.test(n)), [-0.55, 0.5, 0], 'Navigation lidar + beacon', 'scan-match residual');
+  modA(groupMeshes(Fm, 'fmr_drive_module', n => n.startsWith('drive_wheel')), [-0.2, 0, 0.75], 'Steer-drive wheel · PU tread', 'odometry scale error');
+  modA(groupMeshes(Fm, 'fmr_caster_L', n => n.startsWith('caster_L')), [-0.2, 0, 0.6], '', '');
+  modA(groupMeshes(Fm, 'fmr_caster_R', n => n.startsWith('caster_R')), [-0.2, 0, -0.6], '', '');
+  modA(groupMeshes(Fm, 'fmr_leg_L', n => /^(leg_|load_roller_)/.test(n) && /_L(_|$)/.test(n)), [0.1, 0, 0.45], 'Straddle legs + load rollers', 'roller wear');
+  modA(groupMeshes(Fm, 'fmr_leg_R', n => /^(leg_|load_roller_)/.test(n) && /_R(_|$)/.test(n)), [0.1, 0, -0.45], '', '');
+  modA(groupMeshes(Fm, 'fmr_mast_module', n => /^(outer_rail|inner_rail|lift_chain|mast_|chain_sheave|fork_camera)/.test(n)), [0.15, 0.3, 0], 'Mast · 2-stage telescopic', 'roller bearing FFT');
+  modA(groupMeshes(Fm, 'fmr_lift_module', n => n.startsWith('lift_cylinder')), [-0.25, 0.75, 0], 'Lift cylinder · hydraulics', 'load-hold drift');
+  modA(cw, [0.7, 0.2, 0], 'Carriage + forks', 'fork-tip sensors · chain stretch');
+}
+for (const m of modules) if (!m.el) { const d = document.createElement('div'); d.className = 'lbl'; d.innerHTML = m.label + (m.spec ? ` · <em>${m.spec}</em>` : ''); lblRoot.appendChild(d); m.el = d; }
+
+let visSaved = null;
+function syncOccluders() {
+  if (!explodeOn) { if (visSaved) { for (const [c, v] of visSaved) c.visible = v; visSaved = null; } return; }
+  if (!visSaved) visSaved = new Map(world.children.map(c => [c, c.visible]));
+  const keep = new Set();
+  for (const m of modules) if (m.robot === expRobot) { let o = m.obj; while (o.parent && o.parent !== world) o = o.parent; keep.add(o); }
+  for (const [c, v] of visSaved) c.visible = v && (keep.has(c) || /^floor/.test(c.name));
+}
+
+/* --- C4 camera over dock & rack --- */
+box('cam_post_C4', M.alu, 0.08, 3.6, 0.08, 9.4, 1.8, -1.45, camRig);
+box('cam_housing_C4', M.dark, 0.16, 0.08, 0.12, 9.3, 3.55, -1.45, camRig);
+{
+  const cam = new THREE.PerspectiveCamera(72, 300 / 170, 0.1, 9); cam.name = 'overhead_C4';
+  cam.position.set(9.3, 3.9, -0.6); cam.lookAt(6.4, 0.5, -1.6); world.add(cam); cam.updateMatrixWorld();
+  const helper = new THREE.CameraHelper(cam); helper.name = 'coverage_C4'; helper.visible = false; world.add(helper);
+  CAMS.push({ id: 'C4', cam, helper });
+}
+
+/* --- view presets --- */
+const WVIEWS = {
+  overview: [[2.6, 13.5, 17.5], [4.4, 0.4, -0.6]],
+  dock: [[6.2, 6.0, 8.5], [10.5, 0.6, 0.2]],
+  rack: [[3.2, 4.6, 4.2], [6.6, 1.3, -2.6]],
+  cell: [[-1.9, 5.0, 8.0], [-0.2, 0.7, 0.6]],
+};
+function setView(k) {
+  followArm = k === 'arm';
+  if (followArm) {
+    const rp = dock.robot.getWorldPosition(new THREE.Vector3());
+    camGoal = { p: rp.clone().add(new THREE.Vector3(0.2, 2.4, 3.3)), t: rp.clone().add(new THREE.Vector3(1.0, 0.9, -0.1)) };
+    setPip(5);
+    document.querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === k));
+    return;
+  }
+  const [p, t] = WVIEWS[k]; camGoal = { p: new THREE.Vector3(...p), t: new THREE.Vector3(...t) };
+  document.querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === k));
+}
+
+/* ================= Decant + Click & Collect ================= */
+cnt.dec = 0; cnt.col = 0;
+const decantReady = () => rackEmpty && !fullTote && lane.length && lane[0].obj.position.z >= LANE_Z1 - 0.01;
+let dropItems = [];
+box('tote_transfer_roller', M.conv, 0.5, 0.04, 0.55, -2.6, 0.68, 1.2, world);
+function planDecant() {
+  hq.push(
+    { label: 'walk → decant lane (inbound cases)', walk: [LANE_X, 2.75] }, { face: Math.PI }, { crouch: 1 },
+    { call: () => { const o = lane.shift().obj; H.carry = o; pelvis.attach(o); o.position.set(0, 0.085, 0.42); o.rotation.set(0, 0, 0); log('HMN-01 picked inbound case from decant lane'); } },
+    { crouch: 0 },
+    { label: 'carry case → decant station', walk: [1.4, 2.75] }, walk(-2.18, 0.6), { face: -Math.PI / 2 }, { crouch: 0.6 },
+    { label: 'decant · cut & tip into tote', anim: 0.9, tick: k => H.carry && H.carry.scale.setScalar(1 - 0.92 * k) },
+    { call: () => { const o = H.carry; o.parent.remove(o); H.carry = null; fillTote(rackEmpty); dropItems = rackEmpty.userData.items.map(i => ({ i, y: i.position.y })); cnt.dec++; } },
+    { anim: 0.5, tick: k => { for (const d of dropItems) d.i.position.y = d.y + 0.25 * (1 - ease(k)); } },
+    { crouch: 0 },
+    { label: 'push tote → full-tote rack', anim: 1.4, tick: k => { rackEmpty.position.z = EMPTY_RACK.z + (FULL_RACK.z - EMPTY_RACK.z) * ease(k); } },
+    { call: () => { fullTote = rackEmpty; rackEmpty = null; log('decant complete · 6 items → full-tote rack · flow to VAC-01', 'g'); } },
+    { label: 'standby', walk: STANDBY }, { face: Math.PI },
+  );
+}
+
+/* --- storefront --- */
+const CCX = -5.4, PORT_Z = POD_Z - 0.3, WALL_X = -7.6;
+box('floor_west', M.floor, 3.6, 0.02, 7.8, -5.8, -0.01, -0.8, world);
+box('asphalt', mat('asphalt', 0x3b3e42, 0.95), 5.0, 0.02, 20, -10.1, -0.012, 0, world);
+const lineM = mat('bay_line_white', 0xe9e6df, 0.8);
+for (const z of [-2.2, 2.8]) box('bay_line', lineM, 2.6, 0.004, 0.08, -9.4, 0.002, z, world);
+box('curb', M.conv, 0.22, 0.12, 20, -7.71, 0.06, 0, world);
+const wallM = mat('store_wall', 0xd4cfc5, 0.85);
+box('store_wall', wallM, 0.3, 3.2, 7.8, WALL_X - 0.15, 1.6, -0.8, world);
+box('loader_slot', M.dark, 0.02, 0.34, 0.5, WALL_X + 0.005, 0.95, 0.3, world);
+box('locker_frame', M.dark, 0.04, 1.62, 1.62, WALL_X - 0.32, 1.0, 0.3, world);
+{
+  const sc = document.createElement('canvas'); sc.width = 512; sc.height = 128; const sg = sc.getContext('2d');
+  sg.fillStyle = '#1f9e93'; sg.fillRect(0, 0, 512, 128); sg.fillStyle = '#ffffff'; sg.font = 'bold 54px Helvetica, Arial, sans-serif';
+  sg.textAlign = 'center'; sg.textBaseline = 'middle'; sg.fillText('CLICK & COLLECT', 256, 66);
+  const tex = new THREE.CanvasTexture(sc); tex.colorSpace = THREE.SRGBColorSpace;
+  box('cc_sign', new THREE.MeshStandardMaterial({ name: 'cc_sign', map: tex, roughness: 0.6 }), 0.04, 0.4, 1.6, WALL_X - 0.33, 2.2, 0.3, world);
+}
+box('cc_kiosk', M.dark, 0.3, 1.3, 0.4, WALL_X - 0.45, 0.65, -0.9, world);
+box('cc_kiosk_screen', M.glass, 0.01, 0.34, 0.28, WALL_X - 0.605, 1.05, -0.9, world);
+const lockers = [];
+for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+  const y = 0.5 + r * 0.5, z = 0.3 + (c - 1) * 0.5, i = lockers.length;
+  const pivot = grp('locker_door_L' + (i + 1), world, WALL_X - 0.345, y, z - 0.23);
+  box('locker_door', M.shell, 0.03, 0.45, 0.45, 0, 0, 0.23, pivot);
+  const ledM = mat('locker_led_L' + (i + 1), 0x555a5e, 0.4, 0, { emissive: 0x000000, emissiveIntensity: 1 });
+  box('locker_led', ledM, 0.01, 0.04, 0.12, -0.02, 0.17, 0.23, pivot);
+  lockers.push({ id: 'L' + (i + 1), y, z, pivot, ledM, order: null, state: 'free' });
+}
+const setLed = (L, s) => { L.state = s; const c = { free: 0x000000, loading: 0x2f7cf6, ready: 0xe0a43a, open: 0x4cc38a }[s]; L.ledM.emissive.setHex(c); L.ledM.color.setHex(s === 'free' ? 0x555a5e : c); };
+
+/* --- order conveyor + C&C picker --- */
+const CC_END = WALL_X + 0.3, TOTE_SPOT = new THREE.Vector3(CCX, 0.8, 0.3);
+box('order_conveyor', M.conv, 2.6, 0.1, 0.42, -6.25, 0.74, 0.3, world);
+box('order_belt', M.belt, 2.6, 0.01, 0.36, -6.25, 0.795, 0.3, world);
+for (const x of [-7.45, -5.05]) for (const z of [0.14, 0.46]) box('order_conveyor_leg', M.steel, 0.04, 0.69, 0.04, x, 0.345, z, world);
+const ccG = grp('cc_picker', world);
+for (const x of [CCX - 0.85, CCX + 0.85]) box('cc_post', M.alu, 0.07, 2.4, 0.07, x, 1.2, -0.1, ccG);
+box('cc_top_beam', M.alu, 1.77, 0.07, 0.07, CCX, 2.4, -0.1, ccG);
+const ccBeam = box('cc_cross_beam', M.shell, 1.7, 0.06, 0.07, CCX, 1.4, -0.1, ccG);
+const ccCar = box('cc_carriage', M.teal, 0.14, 0.12, 0.12, CCX, 1.4, -0.1, ccG);
+const ccRod = box('cc_rod', M.steel, 0.04, 0.04, 1, CCX, 1.4, -0.1, ccG);
+const ccHead = grp('cc_head', ccG);
+box('cc_head_body', M.dark, 0.12, 0.1, 0.1, 0, 0, 0, ccHead);
+box('cc_head_cups', M.rubber, 0.1, 0.02, 0.08, 0, -0.06, 0, ccHead);
+let order = null, ordN = 1040, ccState = 'booting';
+const ccBelt = [];
+function makeOrderTote(id) {
+  const g = new THREE.Group(); g.name = 'order_tote_' + id; const m = mat('order_tote_blue', 0x2f7cf6, 0.6);
+  box('ot_floor', m, 0.42, 0.01, 0.3, 0, 0.005, 0, g);
+  for (const s of [-1, 1]) { box('ot_side', m, 0.01, 0.16, 0.3, s * 0.21, 0.08, 0, g); box('ot_end', m, 0.42, 0.16, 0.01, 0, 0.08, s * 0.15, g); }
+  return g;
+}
+const portItems = () => portPod ? portPod.children.filter(c => c.name.startsWith('item_')) : [];
+const ccSpotFree = () => !!order || ccBelt.every(o => o.tote.position.x < CCX - 0.55);
+function newOrder(avail) {
+  const id = 'CC-' + (++ordN), tote = makeOrderTote(id);
+  tote.position.copy(TOTE_SPOT); world.add(tote);
+  order = { id, tote, need: Math.min(avail, 1 + ((Math.random() * 3) | 0)), got: 0, loaded: false };
+  log(`${id} order received · ${order.need} item${order.need > 1 ? 's' : ''} · picking from pod`);
+}
+function planCC(q) {
+  const items = podAtPort ? portItems() : [];
+  if (!items.length || !ccSpotFree()) {
+    ccState = !podAtPort ? 'waiting for pod' : !items.length ? 'pod picked clean · ready for swap' : 'waiting for conveyor';
+    q.push({ to: () => ({ x: CCX, y: 1.4, z: -0.1 }), dur: 0.6 }, { until: () => podAtPort && portItems().length && ccSpotFree() }); return;
+  }
+  if (!order) newOrder(items.length);
+  const o = order, it = items[0], wp = it.getWorldPosition(new THREE.Vector3());
+  q.push(
+    { call: () => ccState = `${o.id} · pick ${o.got + 1}/${o.need}` },
+    { to: () => ({ x: wp.x, y: wp.y, z: -0.25 }), dur: 0.8 },
+    { to: () => ({ z: wp.z + 0.06 }), dur: 0.45 },
+    { call: () => ccHead.attach(it) },
+    { to: () => ({ z: -0.25 }), dur: 0.45 },
+    { to: () => ({ x: CCX, y: 1.2, z: 0.3 }), dur: 0.8 },
+    { to: () => ({ y: 0.98 }), dur: 0.35 },
+    { call: () => { o.tote.attach(it); it.position.set(-0.12 + o.got * 0.12, 0.01 + it.userData.h / 2, 0); it.rotation.set(0, 0, 0); o.got++;
+      if (o.got >= o.need) { ccBelt.push(o); order = null; log(`${o.id} packed · ${o.need} item${o.need > 1 ? 's' : ''} → locker loader`); } } },
+    { to: () => ({ y: 1.3 }), dur: 0.35 },
+  );
+}
+const CC = new Runner({ x: CCX, y: 1.4, z: -0.1 }, J => {
+  ccBeam.position.y = J.y; ccCar.position.set(J.x, J.y, -0.1);
+  ccRod.scale.z = Math.abs(J.z + 0.1) + 0.04; ccRod.position.set(J.x, J.y, (J.z - 0.1) / 2);
+  ccHead.position.set(J.x, J.y, J.z);
+}, planCC);
+
+/* --- pods: stow face ⇄ Click & Collect port --- */
+let podAtPort = true, podSwapReq = false, swapping = false; const podTasks = [];
+for (let i = 0; i < bins.length; i++) {
+  const b = bins[i], it = makeItem((Math.random() * 4) | 0);
+  it.position.set(-COLW + b.c * COLW - 0.07, 0.15 + b.r * ROW_H + 0.015 + it.userData.h / 2, 0.05);
+  portPod.add(it);
+}
+function stepPods(dt) {
+  if (podSwapReq && !swapping && !portItems().length) {
+    swapping = true; podAtPort = false;
+    const full = pod, empty = portPod;
+    podTasks.push({ pod: full, path: [[POD_X, -2.0], [CCX, -2.0], [CCX, PORT_Z]], done: false });
+    podTasks.push({ pod: empty, path: [[POD_X, PORT_Z]], wait: () => full.position.z <= -1.9, done: false });
+    log('pod swap · full pod → Click & Collect port · empty pod → stow face');
+  }
+  for (const t of podTasks) {
+    if (t.done || (t.wait && !t.wait())) continue;
+    const [tx, tz] = t.path[0], p = t.pod.position, dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz), s = 0.6 * dt;
+    if (d <= s) { p.x = tx; p.z = tz; t.path.shift(); if (!t.path.length) t.done = true; } else { p.x += dx / d * s; p.z += dz / d * s; }
+  }
+  if (swapping && podTasks.every(t => t.done)) {
+    pod = podTasks[1].pod; portPod = podTasks[0].pod; podTasks.length = 0;
+    for (const b of bins) b.n = 0; swapping = false; podSwapReq = false; podAtPort = true; cnt.pod++;
+    log('pod swap complete · STW-01 resumes · C&C picks customer orders', 'g');
+  }
+}
+
+/* --- locker loading + curbside handover --- */
+let loading = null, car = null; const readyQ = [];
+const carColors = [0x8a2f2f, 0x2f4f8a, 0x3a3d42, 0xcfcac0];
+function stepCCBelt(dt) {
+  for (let i = 0; i < ccBelt.length; i++) {
+    const t = ccBelt[i].tote, lim = i === 0 ? CC_END : ccBelt[i - 1].tote.position.x + 0.5;
+    t.position.x = Math.max(lim, t.position.x - 0.45 * dt);
+  }
+  if (!loading && ccBelt.length && ccBelt[0].tote.position.x <= CC_END + 1e-6) {
+    const L = lockers.find(l => !l.order);
+    if (L) { const o = ccBelt.shift(); L.order = o; o.locker = L; setLed(L, 'loading'); loading = { o, L, t: 0, from: o.tote.position.clone() }; }
+  }
+  if (loading) {
+    const { o, L, from } = loading; loading.t = Math.min(1, loading.t + dt / 1.4);
+    const k = loading.t, p = o.tote.position;
+    if (k < 0.5) { const e = ease(k * 2); p.set(from.x, from.y + (L.y - 0.08 - from.y) * e, from.z + (L.z - from.z) * e); }
+    else { const e = ease((k - 0.5) * 2); p.set(from.x + (WALL_X - 0.15 - from.x) * e, L.y - 0.08, L.z); }
+    if (k >= 1) { setLed(L, 'ready'); readyQ.push(o); log(`${o.id} in locker ${L.id} · pickup code sent to customer`, 'a'); loading = null; }
+  }
+}
+function spawnCar(o) {
+  const g = new THREE.Group(); g.name = 'customer_car_' + o.id;
+  const paint = mat('car_paint', carColors[cnt.col % carColors.length], 0.35, 0.4);
+  box('car_body', paint, 1.8, 0.62, 4.3, 0, 0.6, 0, g);
+  box('car_cabin', paint, 1.6, 0.52, 2.3, 0, 1.17, -0.2, g);
+  box('car_glass', M.glass, 1.62, 0.36, 2.12, 0, 1.2, -0.2, g);
+  for (const sx of [-1, 1]) for (const sz of [-1.35, 1.35]) cyl('car_wheel', M.rubber, 0.32, 0.24, sx * 0.82, 0.32, sz, 'x', g, 24);
+  for (const sx of [-0.6, 0.6]) { box('car_headlight', M.shell, 0.3, 0.1, 0.02, sx, 0.72, -2.16, g); box('car_taillight', mat('car_tail', 0xb8322a, 0.4), 0.3, 0.08, 0.02, sx, 0.74, 2.16, g); }
+  g.position.set(-9.4, 0, 11); world.add(g);
+  car = { g, o, st: 'arriving', t: 0, v: 3.5 };
+  log(`${o.id} customer arriving · curbside bay`);
+}
+function stepCar(dt) {
+  if (!car && readyQ.length) spawnCar(readyQ.shift());
+  if (!car) return;
+  const C = car, L = C.o.locker, p = C.g.position;
+  if (C.st === 'arriving') {
+    const d = p.z - L.z; C.v = Math.min(4, Math.sqrt(2 * 1.6 * Math.max(0, d)) + 0.05);
+    p.z -= Math.min(d, C.v * dt); if (d <= 0.005) { p.z = L.z; C.st = 'handover'; C.t = 0; setLed(L, 'open'); log(`${C.o.id} code scanned · locker ${L.id} open`); }
+  } else if (C.st === 'handover') {
+    C.t += dt; const t = C.o.tote;
+    L.pivot.rotation.y = -1.6 * ease(Math.min(1, C.t / 0.7));
+    if (C.t > 0.7) {
+      const k = Math.min(1, (C.t - 0.7) / 1.4), a = new THREE.Vector3(WALL_X - 0.15, L.y - 0.08, L.z), b = new THREE.Vector3(p.x + 0.5, 0.95, p.z);
+      if (k < 0.35) t.position.lerpVectors(a, new THREE.Vector3(WALL_X - 0.55, L.y - 0.08, L.z), ease(k / 0.35));
+      else { const e = ease((k - 0.35) / 0.65); t.position.lerpVectors(new THREE.Vector3(WALL_X - 0.55, L.y - 0.08, L.z), b, e); t.position.y += Math.sin(Math.PI * e) * 0.25; t.scale.setScalar(1 - 0.7 * e); }
+      if (k >= 1 && t.parent) { world.remove(t); cnt.col++; log(`${C.o.id} collected · locker ${L.id} released`, 'g'); }
+    }
+    if (C.t > 2.4) L.pivot.rotation.y = -1.6 * (1 - ease(Math.min(1, (C.t - 2.4) / 0.6)));
+    if (C.t > 3.0) { L.pivot.rotation.y = 0; L.order = null; setLed(L, 'free'); C.st = 'leaving'; C.v = 0; }
+  } else {
+    C.v = Math.min(5, C.v + 2 * dt); p.z -= C.v * dt;
+    if (p.z < -11) { world.remove(C.g); car = null; }
+  }
+}
+/* --- UNL-01 onboard mast camera + follow view --- */
+{
+  const head = dock.robot.getObjectByName('perception_head');
+  const cam = new THREE.PerspectiveCamera(78, 300 / 170, 0.05, 7); cam.name = 'onboard_UNL-01';
+  cam.rotation.order = 'YXZ'; cam.rotation.set(-0.5, -Math.PI / 2, 0); cam.position.set(0.11, -0.02, 0);
+  head.add(cam);
+  const helper = new THREE.CameraHelper(cam); helper.name = 'coverage_ARM'; helper.visible = false; world.add(helper);
+  CAMS.push({ id: 'ARM', cam, helper });
+}
+let followArm = false; const armPrev = new THREE.Vector3();
+function followTick() {
+  const p = dock.robot.getWorldPosition(new THREE.Vector3());
+  if (followArm) {
+    const d = p.clone().sub(armPrev);
+    if (d.lengthSq() > 0) { stage._camera.position.add(d); stage._controls.target.add(d); if (camGoal) { camGoal.p.add(d); camGoal.t.add(d); } }
+  }
+  armPrev.copy(p);
+}
+function ccTick(dt) {
+  stepPods(dt); CC.step(dt); stepCCBelt(dt); stepCar(dt);
+  for (const L of lockers) if (L.state === 'ready') L.ledM.emissiveIntensity = 0.6 + 0.4 * Math.sin(simT * 6);
+}
+function hudCC() {
+  $('s5').textContent = ccState + (car ? ` · car ${car.st} (${car.o.id})` : '');
+  $('d5').style.background = '#4cc38a';
+  $('c7').textContent = cnt.dec; $('c8').textContent = lockers.filter(l => l.order).length; $('c9').textContent = cnt.col;
+}
+
+/* --- C5 curbside camera + view --- */
+{
+  box('cam_post_C5', M.alu, 0.08, 3.4, 0.08, -11.2, 1.7, 3.6, world);
+  box('cam_housing_C5', M.dark, 0.16, 0.08, 0.12, -11.1, 3.35, 3.55, world);
+  const cam = new THREE.PerspectiveCamera(60, 300 / 170, 0.1, 10); cam.name = 'overhead_C5';
+  cam.position.set(-11.0, 3.6, 3.4); cam.lookAt(-8.0, 0.8, 0.2); world.add(cam); cam.updateMatrixWorld();
+  const helper = new THREE.CameraHelper(cam); helper.name = 'coverage_C5'; helper.visible = false; world.add(helper);
+  CAMS.push({ id: 'C5', cam, helper });
+}
+WVIEWS.cc = [[-15.5, 5.2, 7.5], [-7.4, 1.0, -0.2]];
+WVIEWS.overview = [[1.5, 16.5, 21], [2.2, 0.3, -0.6]];
+
+/* ================= Boot / loop ================= */
+stage.setObject(world);
+stage._camera.position.set(...WVIEWS.overview[0]);
+stage._controls.target.set(...WVIEWS.overview[1]);
+stage._controls.update();
+
+let speed = 1, paused = false, mode = 'auto', last = performance.now();
+const keys = {};
+(function tick(now) {
+  const real = Math.min(0.05, (now - last) / 1000); last = now;
+  updateExplode(real);
+  if (!paused && explode === 0) {
+    const dt = real * speed;
+    simT += dt;
+    safety();
+    stepH(dt, mode === 'manual');
+    vac_r.step(dt * Z.vac);
+    stw_r.step(dt * Z.stw);
+    stepConv(dt);
+    stepFalling(dt);
+    dockTick(dt);
+    ccTick(dt);
+  }
+  followTick(); hud(); hud2(); hudDock(); hudCC(); drawPip();
+  if (document.hidden) setTimeout(() => tick(performance.now()), 33); else requestAnimationFrame(tick);
+})(last);
+
+addEventListener('keydown', e => { const k = e.key.toLowerCase(); if ('wasd'.includes(k) && k.length === 1) keys[k] = true; });
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+document.querySelectorAll('.pad button').forEach(b => {
+  const k = b.dataset.k, on = e => { e.preventDefault(); keys[k] = true; }, off = () => keys[k] = false;
+  b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off);
+});
+const setMode = m => { mode = m; $('bAuto').setAttribute('aria-pressed', m === 'auto'); $('bMan').setAttribute('aria-pressed', m === 'manual'); $('manual').style.display = m === 'manual' ? 'flex' : 'none'; };
+$('bAuto').onclick = () => setMode('auto');
+document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => setView(b.dataset.v));
+$('tBip').onclick = () => setType(false);
+$('tWhl').onclick = () => setType(true);
+$('bDrop').onclick = () => { dropReq = true; log('operator armed a drop on the next STW-01 transfer'); };
+$('bCov').onclick = e => { const on = !CAMS[0].helper.visible; CAMS.forEach(c => c.helper.visible = on); e.target.setAttribute('aria-pressed', on); };
+document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => setPip(+b.dataset.c));
+$('bMan').onclick = () => setMode('manual');
+$('bExp').onclick = e => {
+  explodeOn = !explodeOn; e.target.setAttribute('aria-pressed', explodeOn);
+  $('exp').style.display = explodeOn ? 'flex' : 'none';
+  document.querySelector('.pip').style.display = explodeOn ? 'none' : '';
+  syncOccluders();
+  if (explodeOn) { camSaved = { p: stage._camera.position.clone(), t: stage._controls.target.clone() }; focus(expRobot); }
+  else if (camSaved) camGoal = camSaved;
+};
+document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => focus(b.dataset.r));
+$('bPause').onclick = e => { paused = !paused; e.target.textContent = paused ? 'Play' : 'Pause'; };
+document.querySelectorAll('button[data-s]').forEach(b => b.onclick = () => { speed = +b.dataset.s; document.querySelectorAll('button[data-s]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+</script>
+</body>
+</html>

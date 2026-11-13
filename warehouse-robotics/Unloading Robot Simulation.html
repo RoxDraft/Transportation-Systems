@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Container Unloading Robot — Simulation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<style>
+  html,body{margin:0;height:100%;background:#eeebe5;font-family:Helvetica,Arial,sans-serif;color:#2a2826}
+  three-d-stage:not(:defined){visibility:hidden}
+  .hud{position:fixed;left:20px;top:18px;z-index:2;display:flex;flex-direction:column;gap:10px;max-width:320px}
+  .hud b{font-size:15px;letter-spacing:.02em}
+  .sub{font-size:12px;color:#5d5953;line-height:1.45}
+  .stats{display:grid;grid-template-columns:auto auto;gap:4px 16px;font-size:12px;font-family:ui-monospace,Menlo,monospace}
+  .stats span:nth-child(odd){color:#6b665f}
+  .row{display:flex;gap:6px}
+  button{font:12px Helvetica,Arial,sans-serif;padding:6px 12px;border:1px solid #c9c4ba;background:#faf8f4;border-radius:6px;cursor:pointer;color:#2a2826}
+  button:hover{background:#fff;border-color:#9e988d}
+  button[aria-pressed="true"]{background:#2a2826;color:#faf8f4;border-color:#2a2826}
+  .embed .hud{display:none}
+</style>
+</head>
+<body>
+<script>if(location.search.includes('embed'))document.documentElement.classList.add('embed')</script>
+<div class="hud">
+  <b>Container Unloading Robot</b>
+  <div class="sub">Omnidirectional pallet-sized base · 7-axis arm · vacuum gripper · 360° perception mast. Container side wall and roof cut away.</div>
+  <div class="stats">
+    <span>status</span><span id="st">booting</span>
+    <span>unloaded</span><span id="ct">0 / 100</span>
+    <span>rate</span><span id="rt">—</span>
+    <span>payload</span><span>≤ 23 kg / pick</span>
+  </div>
+  <div class="row">
+    <button id="pp">Pause</button>
+    <button data-s="1" aria-pressed="true">1×</button>
+    <button data-s="2">2×</button>
+    <button data-s="4">4×</button>
+  </div>
+</div>
+<three-d-stage name="container-unloading-robot"></three-d-stage>
+<script src="three-d-stage.js"></script>
+<script type="module">
+const stage = document.querySelector('three-d-stage');
+const { THREE } = await stage.ready;
+
+const mat = (name, color, rough, metal = 0, extra = {}) =>
+  new THREE.MeshStandardMaterial({ name, color, roughness: rough, metalness: metal, ...extra });
+const M = {
+  body:   mat('robot_graphite', 0x34373c, 0.5, 0.2),
+  shell:  mat('robot_light', 0xdcdad5, 0.45, 0.05),
+  accent: mat('accent_teal', 0x1f9e93, 0.4, 0.1),
+  joint:  mat('joint_steel', 0x8b9096, 0.35, 0.4),
+  rubber: mat('rubber_black', 0x1b1c1e, 0.85),
+  glass:  mat('sensor_glass', 0x0e1216, 0.15, 0.2),
+  led:    mat('status_led', 0x3fe0a0, 0.3, 0, { emissive: 0x23c886, emissiveIntensity: 1.2 }),
+  cup:    mat('suction_cup', 0x2b2d30, 0.7),
+  wall:   mat('container_steel', 0x6d8296, 0.55, 0.25),
+  rail:   mat('container_frame', 0x4f6072, 0.5, 0.3),
+  floor:  mat('container_floor', 0x7c5f43, 0.85),
+  conv:   mat('conveyor_frame', 0xc9cbc6, 0.45, 0.2),
+  belt:   mat('conveyor_belt', 0x232427, 0.9),
+  label:  mat('shipping_label', 0xf4f2ec, 0.6),
+  tape:   mat('carton_tape', 0xd7c39e, 0.6),
+};
+const cartonMats = [mat('carton_a', 0xb98b58, 0.9), mat('carton_b', 0xa77c4e, 0.9), mat('carton_c', 0xc79c6a, 0.9)];
+
+function box(name, m, w, h, d, x, y, z, parent) {
+  const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+  o.name = name; o.position.set(x, y, z); parent.add(o); return o;
+}
+function cyl(name, m, r, len, x, y, z, axis, parent, seg = 40) {
+  const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, seg), m);
+  o.name = name; o.position.set(x, y, z);
+  if (axis === 'z') o.rotation.x = Math.PI / 2;
+  if (axis === 'x') o.rotation.z = Math.PI / 2;
+  parent.add(o); return o;
+}
+function roundedPrism(name, m, w, d, h, r, x, y, z, parent, bevel = 0.02) {
+  const s = new THREE.Shape(), hw = w / 2 - bevel, hd = d / 2 - bevel;
+  s.moveTo(-hw + r, -hd); s.lineTo(hw - r, -hd); s.quadraticCurveTo(hw, -hd, hw, -hd + r);
+  s.lineTo(hw, hd - r); s.quadraticCurveTo(hw, hd, hw - r, hd); s.lineTo(-hw + r, hd);
+  s.quadraticCurveTo(-hw, hd, -hw, hd - r); s.lineTo(-hw, -hd + r); s.quadraticCurveTo(-hw, -hd, -hw + r, -hd);
+  const g = new THREE.ExtrudeGeometry(s, { depth: h - bevel * 2, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 4, curveSegments: 12 });
+  g.rotateX(-Math.PI / 2); g.translate(0, bevel, 0);
+  const o = new THREE.Mesh(g, m); o.name = name; o.position.set(x, y, z); parent.add(o); return o;
+}
+
+const world = new THREE.Group(); world.name = 'unloading_scene';
+
+/* ================= Container (20 ft, interior 5.9 × 2.35 × 2.39) ================= */
+const CL = 5.9, CW = 2.35, CH = 2.39, HZ = CW / 2;
+const cont = new THREE.Group(); cont.name = 'shipping_container'; world.add(cont);
+box('floor_deck', M.floor, CL, 0.12, CW, CL / 2, -0.06, 0, cont);
+for (let i = 1; i < 12; i++) box('floor_seam_' + i, M.rail, CL, 0.002, 0.008, CL / 2, 0.001, -HZ + i * CW / 12, cont);
+box('bottom_rail_near', M.rail, CL + 0.1, 0.16, 0.1, CL / 2, -0.04, HZ + 0.05, cont);
+box('bottom_rail_far', M.rail, CL + 0.1, 0.16, 0.1, CL / 2, -0.04, -HZ - 0.05, cont);
+// far side wall (corrugated)
+box('side_wall', M.wall, CL, CH, 0.02, CL / 2, CH / 2, -HZ - 0.01, cont);
+for (let x = 0.15, i = 0; x < CL; x += 0.28, i++) box('side_rib_' + i, M.wall, 0.13, CH, 0.035, x, CH / 2, -HZ - 0.035, cont);
+// end wall
+box('end_wall', M.wall, 0.02, CH, CW, CL + 0.01, CH / 2, 0, cont);
+for (let z = -HZ + 0.15, i = 0; z < HZ; z += 0.28, i++) box('end_rib_' + i, M.wall, 0.035, CH, 0.13, CL + 0.035, CH / 2, z, cont);
+// frame: corner posts, top rails, door header
+for (const [x, z, n] of [[0, HZ, 'door_near'], [0, -HZ, 'door_far'], [CL, HZ, 'end_near'], [CL, -HZ, 'end_far']])
+  box('corner_post_' + n, M.rail, 0.12, CH + 0.12, 0.12, x + (x ? 0.04 : -0.04), (CH + 0.12) / 2 - 0.06, z + Math.sign(z) * 0.04, cont);
+box('top_rail_near', M.rail, CL + 0.2, 0.1, 0.08, CL / 2, CH + 0.05, HZ + 0.04, cont);
+box('top_rail_far', M.rail, CL + 0.2, 0.1, 0.08, CL / 2, CH + 0.05, -HZ - 0.04, cont);
+box('door_header', M.rail, 0.12, 0.14, CW + 0.2, -0.04, CH + 0.07, 0, cont);
+box('end_header', M.rail, 0.12, 0.14, CW + 0.2, CL + 0.04, CH + 0.07, 0, cont);
+box('dock_plate', M.joint, 0.5, 0.02, 1.6, -0.25, -0.01, 0, cont);
+
+/* ================= Cartons (floor-loaded wall) ================= */
+const BD = 0.45, BH = 0.4, BWd = 0.47;               // carton x / y / z
+const ROWS = 4, COLS = 5, LAYERS = 5;
+const cartons = [];
+const cartonGroup = new THREE.Group(); cartonGroup.name = 'cartons'; world.add(cartonGroup);
+function makeCarton(i) {
+  const g = new THREE.Group(); g.name = 'carton_' + i;
+  const j = 0.96 + Math.random() * 0.04;
+  const c = box('carton_body_' + i, cartonMats[i % 3], BD * j, BH * j, BWd * j, 0, 0, 0, g);
+  box('carton_tape_' + i, M.tape, BD * j, 0.003, 0.06, 0, BH * j / 2 + 0.0015, 0, g);
+  box('carton_label_' + i, M.label, 0.003, 0.09, 0.13, -BD * j / 2 - 0.0015, 0.05, (i % 2 ? 0.1 : -0.1), g);
+  return g;
+}
+const rowFront = r => CL - BD * (ROWS - r) - 0.005;   // r = 0 is front (nearest door)
+for (let r = 0, i = 0; r < ROWS; r++) for (let l = 0; l < LAYERS; l++) for (let c = 0; c < COLS; c++, i++) {
+  const g = makeCarton(i);
+  const home = new THREE.Vector3(rowFront(r) + BD / 2, BH / 2 + l * BH + 0.002, -HZ + 0.02 + BWd / 2 + c * BWd);
+  g.position.copy(home); g.rotation.y = (Math.random() - 0.5) * 0.03;
+  cartonGroup.add(g);
+  cartons.push({ g, home, r, l, c, state: 'stack' });
+}
+
+/* ================= Telescopic conveyor ================= */
+const BELT_Y = 0.78;
+const conv = new THREE.Group(); conv.name = 'telescopic_conveyor'; world.add(conv);
+box('conveyor_base_unit', M.conv, 3.0, 0.62, 0.9, -1.9, 0.43, 0, conv);
+box('conveyor_base_belt', M.belt, 3.0, 0.01, 0.66, -1.9, BELT_Y - 0.03, 0, conv);
+for (const x of [-3.2, -0.6]) for (const z of [-0.35, 0.35]) box('conveyor_foot', M.rail, 0.1, 0.12, 0.1, x, 0.06, z, conv);
+const ext1 = box('conveyor_stage_1', M.conv, 1, 0.12, 0.8, 0, BELT_Y - 0.1, 0, conv);
+const ext2 = box('conveyor_stage_2', M.conv, 1, 0.1, 0.72, 0, BELT_Y - 0.05, 0, conv);
+const extBelt = box('conveyor_stage_belt', M.belt, 1, 0.01, 0.62, 0, BELT_Y - 0.001, 0, conv);
+const nose = new THREE.Group(); nose.name = 'conveyor_nose'; conv.add(nose);
+box('nose_housing', M.accent, 0.12, 0.16, 0.76, 0, BELT_Y - 0.08, 0, nose);
+cyl('nose_roller', M.joint, 0.03, 0.66, -0.06, BELT_Y - 0.02, 0, 'z', nose, 24);
+box('nose_light', M.led, 0.01, 0.02, 0.5, 0.061, BELT_Y - 0.08, 0, nose);
+
+/* ================= Robot ================= */
+const robot = new THREE.Group(); robot.name = 'unloading_robot'; world.add(robot);
+const BL = 1.25, BWb = 1.0, BASE_Y = 0.07, BASE_H = 0.42, BASE_TOP = BASE_Y + BASE_H;
+roundedPrism('base_chassis', M.body, BL, BWb, BASE_H, 0.08, 0, BASE_Y, 0, robot);
+roundedPrism('base_top_cover', M.shell, BL - 0.08, BWb - 0.08, 0.03, 0.06, 0, BASE_TOP - 0.005, 0, robot, 0.01);
+for (const s of [-1, 1]) {
+  const t = s > 0 ? 'near' : 'far';
+  box('side_band_' + t, M.accent, BL - 0.3, 0.06, 0.004, 0, BASE_Y + 0.29, s * (BWb / 2 + 0.001), robot);
+  box('side_battery_door_' + t, M.shell, 0.5, 0.18, 0.004, -0.15, BASE_Y + 0.15, s * (BWb / 2 + 0.002), robot);
+  box('side_led_' + t, M.led, BL - 0.3, 0.012, 0.004, 0, BASE_Y + 0.36, s * (BWb / 2 + 0.002), robot);
+}
+for (const s of [-1, 1]) {
+  box('end_bumper_' + (s > 0 ? 'front' : 'rear'), M.rubber, 0.05, 0.12, BWb - 0.12, s * (BL / 2 + 0.01), BASE_Y + 0.08, 0, robot);
+  box('end_scanner_' + (s > 0 ? 'front' : 'rear'), M.glass, 0.004, 0.05, 0.4, s * (BL / 2 + 0.002), BASE_Y + 0.26, 0, robot);
+}
+// omni wheels with roller rings
+for (const [x, z, n] of [[0.42, 0.36, 'fn'], [0.42, -0.36, 'ff'], [-0.42, 0.36, 'rn'], [-0.42, -0.36, 'rf']]) {
+  cyl('omni_wheel_' + n, M.rubber, 0.09, 0.09, x, 0.09, z + Math.sign(z) * 0.06, 'z', robot, 48);
+  cyl('omni_hub_' + n, M.joint, 0.05, 0.1, x, 0.09, z + Math.sign(z) * 0.06, 'z', robot, 24);
+}
+// perception mast — rear near corner (arm sweeps via the far side, never crosses it)
+const MX = -0.5, MZ = 0.38;
+cyl('mast_column', M.body, 0.045, 1.55, MX, BASE_TOP + 0.775, MZ, 'y', robot, 24);
+const head = new THREE.Group(); head.name = 'perception_head'; head.position.set(MX, BASE_TOP + 1.62, MZ); robot.add(head);
+box('perception_housing', M.shell, 0.2, 0.16, 0.2, 0, 0, 0, head);
+for (let k = 0; k < 4; k++) {
+  const a = k * Math.PI / 2, w = box('camera_window_' + k, M.glass, 0.004, 0.08, 0.13, 0, 0, 0, head);
+  w.position.set(Math.cos(a) * 0.101, 0.01, Math.sin(a) * 0.101); w.rotation.y = -a;
+}
+cyl('perception_cap', M.accent, 0.08, 0.03, 0, 0.095, 0, 'y', head, 32);
+cyl('perception_beacon', M.led, 0.03, 0.04, 0, 0.13, 0, 'y', head, 24);
+const midCam = new THREE.Group(); midCam.name = 'mid_camera_ring'; midCam.position.set(MX, BASE_TOP + 0.75, MZ); robot.add(midCam);
+cyl('mid_camera_body', M.shell, 0.075, 0.1, 0, 0, 0, 'y', midCam, 32);
+cyl('mid_camera_lens_band', M.glass, 0.077, 0.035, 0, 0, 0, 'y', midCam, 32);
+
+// turntable + arm
+const AX = 0.08, L1 = 1.05, L2 = 1.05, GRIP = 0.34;
+const TT_Y = BASE_TOP + 0.05;
+cyl('turntable_ring', M.joint, 0.4, 0.05, AX, BASE_TOP + 0.025, 0, 'y', robot, 64);
+const turntable = new THREE.Group(); turntable.name = 'turntable'; turntable.position.set(AX, TT_Y, 0); robot.add(turntable);
+cyl('turntable_disc', M.body, 0.36, 0.06, 0, 0.03, 0, 'y', turntable, 64);
+box('shoulder_pedestal', M.body, 0.38, 0.26, 0.42, 0, 0.19, 0, turntable);
+const SH_L = 0.42, SHY = TT_Y + SH_L;
+for (const s of [-1, 1]) box('shoulder_yoke_' + (s > 0 ? 'near' : 'far'), M.shell, 0.3, 0.3, 0.06, 0, SH_L - 0.04, s * 0.18, turntable);
+const shoulder = new THREE.Group(); shoulder.name = 'shoulder'; shoulder.position.set(0, SH_L, 0); turntable.add(shoulder);
+cyl('shoulder_actuator', M.joint, 0.13, 0.42, 0, 0, 0, 'z', shoulder, 48);
+cyl('shoulder_cap', M.accent, 0.1, 0.43, 0, 0, 0, 'z', shoulder, 48);
+box('upper_arm', M.shell, L1, 0.17, 0.18, L1 / 2, 0, 0, shoulder);
+box('upper_arm_spine', M.body, L1 - 0.2, 0.05, 0.185, L1 / 2, 0.065, 0, shoulder);
+const elbow = new THREE.Group(); elbow.name = 'elbow'; elbow.position.set(L1, 0, 0); shoulder.add(elbow);
+cyl('elbow_actuator', M.joint, 0.11, 0.3, 0, 0, 0, 'z', elbow, 48);
+box('forearm', M.shell, L2, 0.13, 0.14, L2 / 2, 0, -0.0, elbow);
+box('forearm_spine', M.body, L2 - 0.2, 0.04, 0.145, L2 / 2, -0.05, 0, elbow);
+const wristP = new THREE.Group(); wristP.name = 'wrist_pitch'; wristP.position.set(L2, 0, 0); elbow.add(wristP);
+cyl('wrist_pitch_actuator', M.joint, 0.085, 0.22, 0, 0, 0, 'z', wristP, 40);
+const wristY = new THREE.Group(); wristY.name = 'wrist_yaw'; wristP.add(wristY);
+cyl('wrist_yaw_actuator', M.body, 0.075, 0.2, 0, -0.02, 0, 'y', wristY, 40);
+const gripper = new THREE.Group(); gripper.name = 'vacuum_gripper'; wristY.add(gripper);
+box('gripper_neck', M.body, GRIP - 0.12, 0.1, 0.12, 0.05 + (GRIP - 0.12) / 2, 0, 0, gripper);
+box('gripper_manifold', M.accent, 0.06, 0.36, 0.44, GRIP - 0.07, 0, 0, gripper);
+box('gripper_pad', M.body, 0.02, 0.38, 0.48, GRIP - 0.03, 0, 0, gripper);
+cyl('vacuum_hose', M.rubber, 0.025, 0.3, 0.15, 0.08, 0.05, 'x', gripper, 16);
+const cupLeds = [];
+for (let iy = 0; iy < 3; iy++) for (let iz = 0; iz < 4; iz++) {
+  const cup = cyl(`suction_cup_${iy}_${iz}`, M.cup, 0.032, 0.02, GRIP - 0.01, -0.12 + iy * 0.12, -0.18 + iz * 0.12, 'x', gripper, 24);
+  cupLeds.push(cup);
+}
+
+/* ================= Kinematics ================= */
+let rx = 0;                                 // robot x (z = 0 centre line)
+const dir = a => new THREE.Vector3(Math.cos(a), 0, -Math.sin(a));
+function ik(wrist, heading) {
+  const dx = wrist.x - (rx + AX), dz = wrist.z;
+  let yaw = Math.atan2(-dz, dx);
+  if (yaw < -1.65) yaw += Math.PI * 2;     // keep sweeps on the far (−z) side
+  const r = Math.hypot(dx, dz), y = wrist.y - SHY;
+  const d = Math.min(Math.hypot(r, y), L1 + L2 - 0.002);
+  const q1 = Math.atan2(y, r) + Math.acos(THREE.MathUtils.clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+  const q2 = -(Math.PI - Math.acos(THREE.MathUtils.clamp((L1 * L1 + L2 * L2 - d * d) / (2 * L1 * L2), -1, 1)));
+  return { yaw, q1, q2, wp: -(q1 + q2), wy: heading - yaw };
+}
+const padPose = (p, h) => ik(p.clone().sub(dir(h).multiplyScalar(GRIP)), h);
+const carryPose = (yaw, h) => ik(new THREE.Vector3(rx + AX, 0, 0).add(dir(yaw).multiplyScalar(0.25)).setY(1.55), h);
+function apply(J) {
+  turntable.rotation.y = J.yaw; shoulder.rotation.z = J.q1; elbow.rotation.z = J.q2;
+  wristP.rotation.z = J.wp; wristY.rotation.y = J.wy;
+}
+const placeCenter = () => new THREE.Vector3(rx - 1.25, BELT_Y + BH / 2 + 0.004, 0);
+function updateConveyor() {
+  const tip = rx - BL / 2 - 0.33, x0 = -0.4, len = Math.max(0.1, tip - x0);
+  for (const [m, k] of [[ext1, 0.55], [ext2, 1], [extBelt, 1]]) { m.scale.x = len * k; m.position.x = x0 + len * k / 2 + (k < 1 ? 0 : 0); }
+  ext1.position.x = x0 + len * 0.55 / 2;
+  nose.position.x = tip;
+}
+
+/* ================= Task runner ================= */
+const ui = { st: document.getElementById('st'), ct: document.getElementById('ct'), rt: document.getElementById('rt') };
+let J = null, queue = [], cur = null, held = null, unloaded = 0, simT = 0, startT = 0;
+const onBelt = [];
+const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
+const status = s => () => { ui.st.textContent = s; };
+const robotStartX = () => rowFront(0) - 1.4;
+
+function nextCarton() {
+  for (let r = 0; r < ROWS; r++) {
+    const left = cartons.filter(c => c.r === r && c.state === 'stack');
+    if (left.length) return left.sort((a, b) => b.l - a.l || a.c - b.c)[0];
+  }
+  return null;
+}
+let P = null, Hd = 0, Pt = 0;   // P = wrist point, Hd = heading, Pt = gripper pitch (up)
+const TR_Y = 1.3, TR_R = 0.45, TR_PT = 50 * Math.PI / 180;   // elbow stays ≥0.15 m clear of the mast; tilted carton ≤1.14 m from axis
+const trans = a => ({ w: new THREE.Vector3(rx + AX, TR_Y, 0).add(dir(a).multiplyScalar(TR_R)), h: a, pt: TR_PT });
+const pad = (p, h) => ({ w: p.clone().sub(dir(h).multiplyScalar(GRIP)), h, pt: 0 });
+const pose = (w, h, pt) => { const j = ik(w, h); j.wp += pt; return j; };
+function plan() {
+  const c = nextCarton();
+  if (!c) { queue.push({ call: status('container empty — resetting') }, { wait: 3 }, { call: resetScene }); return; }
+  const targetRx = rowFront(c.r) - 1.4;
+  if (Math.abs(targetRx - rx) > 0.01) queue.push({ call: status('advancing into container') }, { move: () => trans(0), dur: 0.6 }, { drive: targetRx, dur: 1.8 });
+  const F = new THREE.Vector3(c.g.position.x - BD / 2 + 0.01, c.g.position.y, c.g.position.z);   // carton face, fixed at plan time
+  const at = (dx, y) => () => pad(new THREE.Vector3(F.x + dx, y, F.z), 0);
+  const yHi = Math.max(F.y + 0.03, 0.85);
+  const pc = y => () => pad(placeCenter().add(new THREE.Vector3(BD / 2, y, 0)), Math.PI);
+  queue.push(
+    { call: status(`perceiving · row ${c.r + 1} layer ${c.l + 1}`) },
+    { move: () => trans(0), dur: 0.4 },
+    { move: at(-0.32, yHi), dur: 0.7 },
+    { move: at(-0.32, F.y), dur: 0.4 },
+    { move: at(0, F.y), dur: 0.45 },
+    { call: () => { ui.st.textContent = 'vacuum seal'; grab(c); } }, { wait: 0.18 },
+    { call: status('pull carton out of wall') },
+    { move: at(-0.3, F.y + 0.03), dur: 0.5 },
+    { move: at(-0.3, yHi), dur: 0.4 },
+    { move: at(-0.5, yHi), dur: 0.35 },
+    { call: status('tuck · arm locked') },
+    { move: () => trans(0), dur: 0.6 },
+    { call: status('rotate CCW → conveyor (turntable only)') },
+    { spin: Math.PI },
+    { call: status('extend & place on conveyor') },
+    { move: pc(0.2), dur: 0.6 },
+    { move: pc(0), dur: 0.45 },
+    { call: release }, { wait: 0.12 },
+    { move: pc(0.3), dur: 0.4 },
+    { move: () => trans(Math.PI), dur: 0.5 },
+    { call: status('rotate CW → carton wall') },
+    { spin: 0 },
+  );
+}
+
+function grab(c) {
+  c.state = 'held'; held = c; gripper.attach(c.g);
+  M.cup.color.setHex(0x1f9e93);
+}
+function release() {
+  if (!held) return;
+  cartonGroup.attach(held.g);
+  held.g.position.y = BELT_Y + BH / 2 + 0.004;
+  held.g.rotation.set(0, held.g.rotation.y, 0);
+  held.state = 'belt'; onBelt.push(held); held = null;
+  M.cup.color.setHex(0x2b2d30);
+  unloaded++; ui.ct.textContent = `${unloaded} / ${cartons.length}`;
+  const hrs = (simT - startT) / 3600; if (hrs > 0) ui.rt.textContent = `${Math.round(unloaded / hrs)} cases / hr`;
+}
+function resetScene() {
+  for (const c of cartons) { cartonGroup.attach(c.g); c.g.position.copy(c.home); c.g.rotation.set(0, (Math.random() - 0.5) * 0.03, 0); c.g.visible = true; c.state = 'stack'; }
+  onBelt.length = 0; held = null; unloaded = 0; startT = simT;
+  rx = robotStartX(); robot.position.x = rx; { const T = trans(Hd); P = T.w; Pt = T.pt; J = pose(P, Hd, Pt); apply(J); } updateConveyor();
+  ui.ct.textContent = `0 / ${cartons.length}`; ui.rt.textContent = '—';
+}
+function step(dt) {
+  simT += dt;
+  for (let i = onBelt.length - 1; i >= 0; i--) {
+    const c = onBelt[i]; c.g.position.x -= 0.9 * dt;
+    c.g.position.z *= Math.max(0, 1 - 3 * dt);
+    if (c.g.position.x < -3.3) { c.g.visible = false; c.state = 'gone'; onBelt.splice(i, 1); }
+  }
+  let budget = dt;
+  while (budget > 0) {
+    if (!cur) { if (!queue.length) plan(); cur = queue.shift(); cur.t = 0;
+      if (cur.move) { cur.p0 = P.clone(); cur.h0 = Hd; cur.t0 = Pt; const T = cur.move(); cur.p1 = T.w; cur.h1 = T.h; cur.t1 = T.pt;
+        cur.dur = Math.max(cur.dur, 1.875 * Math.max(cur.p0.distanceTo(cur.p1) / 0.8, Math.abs(cur.h1 - cur.h0) / 1.6, Math.abs(cur.t1 - cur.t0) / 1.2)); }
+      if (cur.spin !== undefined) { cur.J0 = { ...J }; cur.d = cur.spin - Hd; cur.dur = Math.max(0.5, 1.875 * Math.abs(cur.d) / 1.4); }
+      if (cur.drive !== undefined) cur.rx0 = rx; }
+    if (cur.call) { cur.call(); cur = null; continue; }
+    const dur = cur.dur ?? cur.wait;
+    const use = Math.min(budget, dur - cur.t); cur.t += use; budget -= use;
+    const k = ease(Math.min(1, cur.t / dur));
+    if (cur.move) { P.lerpVectors(cur.p0, cur.p1, k); Hd = cur.h0 + (cur.h1 - cur.h0) * k; Pt = cur.t0 + (cur.t1 - cur.t0) * k; J = pose(P, Hd, Pt); apply(J); }
+    if (cur.spin !== undefined) { J = { ...cur.J0, yaw: cur.J0.yaw + cur.d * k }; apply(J); if (k >= 1) { const T = trans(cur.spin); Hd = T.h; P = T.w; Pt = T.pt; } }
+    if (cur.drive !== undefined) { const prev = rx; rx = cur.rx0 + (cur.drive - cur.rx0) * k; robot.position.x = rx; P.x += rx - prev; updateConveyor(); }
+    if (cur.t >= dur - 1e-9) cur = null;
+  }
+}
+
+/* ================= Boot ================= */
+rx = robotStartX(); robot.position.x = rx; updateConveyor();
+{ const T = trans(0); P = T.w; Hd = T.h; Pt = T.pt; } J = pose(P, Hd, Pt); apply(J);
+stage.setObject(world);
+stage._camera.position.set(-1.6, 3.9, 6.4);
+stage._controls.target.set(2.6, 0.9, -0.2);
+stage._controls.update();
+
+let speed = 1, paused = false, last = performance.now();
+(function tick(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!paused) step(dt * speed);
+  if (document.hidden) setTimeout(() => tick(performance.now()), 33); else requestAnimationFrame(tick);
+})(last);
+document.getElementById('pp').onclick = e => { paused = !paused; e.target.textContent = paused ? 'Play' : 'Pause'; };
+document.querySelectorAll('button[data-s]').forEach(b => b.onclick = () => {
+  speed = +b.dataset.s;
+  document.querySelectorAll('button[data-s]').forEach(x => x.setAttribute('aria-pressed', x === b));
+});
+</script>
+</body>
+</html>

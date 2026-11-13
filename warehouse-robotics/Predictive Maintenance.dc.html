@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;background:#0f1214;color:#e6e8e6;font-family:'IBM Plex Sans',Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#4fc9ba;text-decoration:none}
+a:hover{color:#8ee3d8}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+  <header style="display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:12px 20px;border-bottom:1px solid #232a2f;background:#121619">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:22px;height:22px;border-radius:5px;background:#2fb5a6"></div>
+      <div style="font-weight:600;font-size:15px;white-space:nowrap">Dockyard OS</div>
+      <div style="font-size:12px;color:#8b949a;white-space:nowrap">Predictive Maintenance</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      <sc-for list="{{ assets }}" as="a" hint-placeholder-count="3">
+        <button onClick="{{ a.pick }}" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;border:1px solid {{ a.border }};background:{{ a.bg }};color:#e6e8e6;cursor:pointer;font:12px 'IBM Plex Sans',sans-serif;white-space:nowrap">
+          <span style="width:8px;height:8px;border-radius:50%;background:{{ a.color }}"></span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-weight:500">{{ a.id }}</span>
+          <span style="color:#8b949a">{{ a.kind }}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;color:{{ a.color }}">{{ a.score }}</span>
+        </button>
+      </sc-for>
+    </div>
+    <div style="flex:1"></div>
+    <a href="Fleet Orchestrator.dc.html" onClick="{{ navFleet }}" style="font-size:12px;white-space:nowrap">← Fleet Orchestrator</a>
+    <a href="Warehouse Floor.html" onClick="{{ navCell }}" style="font-size:12px;white-space:nowrap">Warehouse floor →</a>
+  </header>
+
+  <main style="flex:1;display:flex;flex-wrap:wrap;gap:12px;padding:12px;align-items:flex-start">
+    <!-- component list -->
+    <section style="flex:1 1 300px;min-width:0;background:#161a1d;border:1px solid #232a2f;border-radius:8px;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid #232a2f">
+        <span style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2;white-space:nowrap">Components</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b949a;white-space:nowrap">{{ assetHours }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;padding:6px">
+        <sc-for list="{{ comps }}" as="c" hint-placeholder-count="5">
+          <div onClick="{{ c.pick }}" style="display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:6px;cursor:pointer;background:{{ c.bg }};border:1px solid {{ c.border }}" style-hover="background:#1d2226">
+            <div style="display:flex;gap:8px;align-items:baseline">
+              <span style="font-size:13px;font-weight:500;flex:1;min-width:0">{{ c.name }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ c.color }}">{{ c.health }}%</span>
+            </div>
+            <div style="height:4px;border-radius:2px;background:#232a2f;overflow:hidden"><div style="height:100%;width:{{ c.healthPct }};background:{{ c.color }}"></div></div>
+            <div style="display:flex;gap:8px;font-size:11px;color:#8b949a">
+              <span style="flex:1;min-width:0">{{ c.method }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;white-space:nowrap">RUL {{ c.rul }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- detail -->
+    <div style="flex:2.2 1 520px;min-width:0;display:flex;flex-direction:column;gap:12px">
+      <section style="background:#161a1d;border:1px solid #232a2f;border-radius:8px;overflow:hidden">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 14px;border-bottom:1px solid #232a2f">
+          <span style="font-size:15px;font-weight:600">{{ comp.name }}</span>
+          <span style="font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid {{ comp.color }};color:{{ comp.color }};white-space:nowrap">{{ comp.status }}</span>
+          <span style="flex:1"></span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b949a">{{ comp.topic }}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:1px;background:#232a2f">
+          <sc-for list="{{ comp.kpis }}" as="k" hint-placeholder-count="4">
+            <div style="flex:1 1 130px;background:#161a1d;padding:10px 14px;display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:11px;color:#8b949a">{{ k.label }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:16px">{{ k.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding:14px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;gap:12px;font-size:11px;color:#8b949a;flex-wrap:wrap">
+            <span style="flex:1;min-width:0">{{ comp.signal }} · 90-day trend + forecast</span>
+            <span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:14px;height:2px;background:#4fc9ba"></span>measured</span>
+            <span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:14px;height:0;border-top:2px dashed #e0a43a"></span>forecast</span>
+            <span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:14px;height:2px;background:#e0564a"></span>limit</span>
+          </div>
+          <svg viewBox="0 0 400 120" preserveAspectRatio="none" style="width:100%;height:170px;display:block;background:#0b0f12;border-radius:6px">
+            <line x1="0" x2="400" y1="{{ comp.limitY }}" y2="{{ comp.limitY }}" stroke="#e0564a" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+            <line x1="{{ comp.nowX }}" x2="{{ comp.nowX }}" y1="0" y2="120" stroke="#2a3136" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+            <polyline points="{{ comp.trend }}" fill="none" stroke="#4fc9ba" stroke-width="1.5" vector-effect="non-scaling-stroke"></polyline>
+            <polyline points="{{ comp.forecast }}" fill="none" stroke="#e0a43a" stroke-width="1.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"></polyline>
+            <circle cx="{{ comp.crossX }}" cy="{{ comp.limitY }}" r="3" fill="#e0564a"></circle>
+          </svg>
+          <div style="position:relative;display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6f787d;height:14px"><span>-90 d</span><span style="position:absolute;left:{{ comp.nowPct }};transform:translateX(-50%)">today</span><span>+{{ comp.horizon }} d</span></div>
+        </div>
+      </section>
+
+      <div style="display:flex;flex-wrap:wrap;gap:12px">
+        <sc-if value="{{ isFatigue }}" hint-placeholder-val="{{ true }}">
+          <section style="flex:1 1 300px;min-width:0;background:#161a1d;border:1px solid #232a2f;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Fatigue · rainflow load spectrum</div>
+            <svg viewBox="0 0 300 110" preserveAspectRatio="none" style="width:100%;height:140px;display:block">
+              <sc-for list="{{ spectrum }}" as="b" hint-placeholder-count="12">
+                <rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" fill="{{ b.c }}"></rect>
+              </sc-for>
+            </svg>
+            <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6f787d"><span>low torque amplitude</span><span>peak</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#9aa3a8">Miner cumulative damage D</span><span style="font-family:'IBM Plex Mono',monospace">{{ comp.damage }}</span></div>
+              <div style="height:6px;border-radius:3px;background:#232a2f;overflow:hidden"><div style="height:100%;width:{{ comp.damagePct }};background:{{ comp.color }}"></div></div>
+              <div style="font-size:11px;color:#8b949a;line-height:1.5">D = Σ nᵢ/Nᵢ — each counted cycle at amplitude i consumes 1/Nᵢ of life from the gear's S-N curve. Replace at D ≥ 0.8.</div>
+            </div>
+          </section>
+        </sc-if>
+        <sc-if value="{{ isAccuracy }}" hint-placeholder-val="{{ false }}">
+          <section style="flex:1 1 300px;min-width:0;background:#161a1d;border:1px solid #232a2f;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Accuracy · fiducial self-check</div>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+              <svg viewBox="-60 -60 120 120" style="width:170px;height:170px;display:block;background:#0b0f12;border-radius:6px;flex:none">
+                <circle cx="0" cy="0" r="40" fill="none" stroke="#e0564a" stroke-width="0.8" stroke-dasharray="3 2"></circle>
+                <circle cx="0" cy="0" r="20" fill="none" stroke="#2a3136" stroke-width="0.6"></circle>
+                <line x1="-55" x2="55" y1="0" y2="0" stroke="#2a3136" stroke-width="0.5"></line>
+                <line y1="-55" y2="55" x1="0" x2="0" stroke="#2a3136" stroke-width="0.5"></line>
+                <sc-for list="{{ scatter }}" as="p" hint-placeholder-count="20">
+                  <circle cx="{{ p.x }}" cy="{{ p.y }}" r="1.8" fill="{{ p.c }}"></circle>
+                </sc-for>
+              </svg>
+              <div style="flex:1 1 140px;min-width:0;font-size:11px;color:#8b949a;line-height:1.6">Each shift the robot touches or images a fixed reference target. Teal = last 7 days, amber = today. The red ring is the {{ comp.tolLabel }} tolerance; the centroid drifting off-centre indicates calibration or backlash wear, while a growing spread indicates repeatability loss.</div>
+            </div>
+          </section>
+        </sc-if>
+        <sc-if value="{{ isVibration }}" hint-placeholder-val="{{ false }}">
+          <section style="flex:1 1 300px;min-width:0;background:#161a1d;border:1px solid #232a2f;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Vibration · live FFT</div>
+            <svg viewBox="0 0 300 110" preserveAspectRatio="none" style="width:100%;height:140px;display:block;background:#0b0f12;border-radius:6px">
+              <polyline points="{{ fft }}" fill="none" stroke="#4fc9ba" stroke-width="1.2" vector-effect="non-scaling-stroke"></polyline>
+              <sc-for list="{{ faultLines }}" as="f" hint-placeholder-count="3">
+                <line x1="{{ f.x }}" x2="{{ f.x }}" y1="0" y2="110" stroke="#e0a43a" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"></line>
+              </sc-for>
+            </svg>
+            <div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#e0a43a">
+              <sc-for list="{{ faultLines }}" as="f" hint-placeholder-count="3"><span>{{ f.label }}</span></sc-for>
+            </div>
+            <div style="font-size:11px;color:#8b949a;line-height:1.5">Peaks at bearing defect frequencies (BPFO / BPFI / belt mesh) rising above the baseline mean a worn race or a loose belt, often weeks before position error shows up.</div>
+          </section>
+        </sc-if>
+
+        <section style="flex:1 1 260px;min-width:0;background:#161a1d;border:1px solid #232a2f;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Detection pipeline</div>
+          <sc-for list="{{ pipeline }}" as="s" hint-placeholder-count="5">
+            <div style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start">
+              <span style="width:22px;height:22px;border-radius:50%;border:1px solid #2fb5a6;color:#4fc9ba;font-family:'IBM Plex Mono',monospace;font-size:11px;display:flex;align-items:center;justify-content:center">{{ s.n }}</span>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:12px;font-weight:500">{{ s.title }}</span>
+                <span style="font-size:11px;color:#8b949a;line-height:1.45">{{ s.body }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+    </div>
+
+    <!-- work orders -->
+    <aside style="flex:1 1 280px;min-width:0;display:flex;flex-direction:column;gap:12px">
+      <section style="background:#161a1d;border:1px solid #232a2f;border-radius:8px;overflow:hidden">
+        <div style="padding:12px 14px;border-bottom:1px solid #232a2f;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Work orders</div>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ orders }}" as="o" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-bottom:1px solid #1e2428">
+              <div style="display:flex;gap:8px;align-items:center">
+                <span style="width:8px;height:8px;border-radius:2px;background:{{ o.color }};flex:none"></span>
+                <span style="font-size:12px;font-weight:500;flex:1;min-width:0">{{ o.title }}</span>
+              </div>
+              <span style="font-size:11px;color:#9aa3a8;line-height:1.45;padding-left:16px">{{ o.body }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6f787d;padding-left:16px">{{ o.when }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+      <section style="background:#161a1d;border:1px solid #232a2f;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#b7bec2">Fleet coverage during service</div>
+        <sc-for list="{{ coverage }}" as="c" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#c8cdcf">{{ c.label }}</span><span style="font-family:'IBM Plex Mono',monospace;color:#8b949a">{{ c.window }}</span></div>
+            <div style="height:10px;border-radius:2px;background:#232a2f;position:relative;overflow:hidden">
+              <div style="position:absolute;top:0;bottom:0;left:{{ c.left }};width:{{ c.width }};background:{{ c.color }}"></div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6f787d"><span>00:00</span><span>12:00</span><span>24:00</span></div>
+      </section>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const C = { teal: '#2fb5a6', amber: '#e0a43a', red: '#e0564a', green: '#4cc38a' };
+const ASSETS = [
+  { id: 'VAC-01', kind: 'Vacuum arm', hours: 6420, comps: [
+    { name: 'J2 shoulder · harmonic drive', method: 'Torque rainflow + motor current signature', kind: 'fatigue', health: 71, rul: 64, signal: 'Cumulative damage D', topic: '/vac_01/arm/joint_states', limit: 0.8, now: 0.52, rate: 0.0036, unit: '' },
+    { name: 'Suction cups · lip wear', method: 'Leak rate per cup at seal', kind: 'vibration', health: 58, rul: 12, signal: 'Mean leak rate (L/min)', topic: '/vac_01/gripper/vacuum', limit: 9, now: 7.3, rate: 0.14, unit: 'L/min', faults: [['cup 3 leak', 0.32], ['cup 5 leak', 0.58]] },
+    { name: 'Overhead 3D camera · extrinsics', method: 'Fiducial reprojection error', kind: 'accuracy', health: 86, rul: 140, signal: 'Reprojection error (px)', topic: '/vac_01/camera/calib_check', limit: 1.5, now: 0.62, rate: 0.006, unit: 'px', tol: '1.5 px', drift: [6, -4], spread: 9 },
+    { name: 'Vacuum blower', method: 'Flow decay at fixed duty', kind: 'vibration', health: 92, rul: 300, signal: 'Flow loss (%)', topic: '/vac_01/pump/diagnostics', limit: 20, now: 4.1, rate: 0.05, unit: '%', faults: [['impeller 1×', 0.2], ['bearing BPFO', 0.66]] },
+  ]},
+  { id: 'STW-01', kind: 'Haptic stow gantry', hours: 3810, comps: [
+    { name: 'Y axis · timing belt', method: 'Belt stretch → following error', kind: 'accuracy', health: 63, rul: 21, signal: 'Positioning error (mm)', topic: '/stw_01/y_axis/state', limit: 0.5, now: 0.36, rate: 0.0066, unit: 'mm', tol: '±0.5 mm', drift: [14, 9], spread: 12 },
+    { name: 'Paddle belts · surface wear', method: 'Commanded vs encoder slip ratio', kind: 'vibration', health: 54, rul: 9, signal: 'Belt slip ratio (%)', topic: '/stw_01/paddles/odom', limit: 6, now: 4.9, rate: 0.12, unit: '%', faults: [['belt mesh', 0.28], ['roller BPFO', 0.52], ['2× mesh', 0.56]] },
+    { name: '6-axis force / tactile sensor', method: 'Zero-offset drift at no-load', kind: 'accuracy', health: 81, rul: 75, signal: 'Zero offset (N)', topic: '/stw_01/ft_sensor/wrench', limit: 0.6, now: 0.21, rate: 0.0052, unit: 'N', tol: '0.6 N', drift: [-8, 5], spread: 7 },
+    { name: 'Z telescopic · ball screw', method: 'Backlash by reversal test', kind: 'fatigue', health: 88, rul: 190, signal: 'Cumulative damage D', topic: '/stw_01/z_axis/state', limit: 0.8, now: 0.31, rate: 0.0026, unit: '' },
+    { name: 'X carriage · linear guide', method: 'Vibration RMS + bearing FFT', kind: 'vibration', health: 90, rul: 260, signal: 'Vibration RMS (mm/s)', topic: '/stw_01/x_axis/accel', limit: 4.5, now: 1.6, rate: 0.011, unit: 'mm/s', faults: [['ball pass', 0.42], ['rail 1×', 0.12]] },
+  ]},
+  { id: 'HMN-01', kind: 'Humanoid', hours: 2150, comps: [
+    { name: 'Knee actuator L · cycloidal gear', method: 'Gait-cycle torque rainflow', kind: 'fatigue', health: 49, rul: 18, signal: 'Cumulative damage D', topic: '/hmn_01/legs/joint_states', limit: 0.8, now: 0.66, rate: 0.0078, unit: '' },
+    { name: 'Knee actuator R · cycloidal gear', method: 'Gait-cycle torque rainflow', kind: 'fatigue', health: 66, rul: 41, signal: 'Cumulative damage D', topic: '/hmn_01/legs/joint_states', limit: 0.8, now: 0.55, rate: 0.0061, unit: '' },
+    { name: 'Head stereo · calibration', method: 'Calibration target at charging dock', kind: 'accuracy', health: 77, rul: 60, signal: 'Depth error @1 m (mm)', topic: '/hmn_01/head/calib_check', limit: 8, now: 4.6, rate: 0.055, unit: 'mm', tol: '8 mm', drift: [-12, -10], spread: 11 },
+    { name: 'Foot F/T sensors', method: 'Stance-phase load vs body mass', kind: 'accuracy', health: 84, rul: 110, signal: 'Load bias (%)', topic: '/hmn_01/feet/wrench', limit: 5, now: 1.9, rate: 0.026, unit: '%', tol: '5 %', drift: [5, 7], spread: 8 },
+    { name: 'Battery pack · cell impedance', method: 'Impedance per cell at swap', kind: 'vibration', health: 80, rul: 150, signal: 'Max cell impedance rise (%)', topic: '/hmn_01/battery_state', limit: 30, now: 13, rate: 0.11, unit: '%', faults: [['cell 14', 0.62]] },
+  ]},
+];
+ASSETS.push({ id: 'FMR-01', kind: 'Forklift robot', hours: 5280, comps: [
+  { name: 'Lift chains · fatigue', method: 'Load × lift-cycle rainflow per chain', kind: 'fatigue', health: 62, signal: 'Cumulative damage D', topic: '/fmr_01/mast/lift_state', limit: 0.8, now: 0.58, rate: 0.0055, unit: '' },
+  { name: 'Fork height · repeatability', method: 'Rack-beam fiducial at every put-away', kind: 'accuracy', health: 74, signal: 'Height error at 2.25 m (mm)', topic: '/fmr_01/fork/height_check', limit: 10, now: 5.8, rate: 0.07, unit: 'mm', tol: '±10 mm', drift: [4, 13], spread: 10 },
+  { name: 'Hydraulic lift · seal & pump', method: 'Load-hold drift + pump pressure ripple', kind: 'vibration', health: 69, signal: 'Load-hold drift (mm/min)', topic: '/fmr_01/hydraulics/pressure', limit: 4, now: 2.6, rate: 0.045, unit: 'mm/min', faults: [['pump ripple', 0.24], ['valve chatter', 0.61]] },
+  { name: 'Mast rollers · bearings', method: 'Mast accelerometer FFT while lifting', kind: 'vibration', health: 85, signal: 'Vibration RMS (mm/s)', topic: '/fmr_01/mast/accel', limit: 4.5, now: 1.9, rate: 0.012, unit: 'mm/s', faults: [['chain mesh', 0.14], ['roller BPFO', 0.38]] },
+  { name: 'Pallet-pocket camera · extrinsics', method: 'Pocket detection vs fork-tip sensors', kind: 'accuracy', health: 88, signal: 'Pocket offset (mm)', topic: '/fmr_01/pallet_detector/pose', limit: 15, now: 4.2, rate: 0.06, unit: 'mm', tol: '15 mm', drift: [-6, 3], spread: 7 },
+  { name: 'Drive wheel · PU tread', method: 'Odometry scale error vs lidar localisation', kind: 'accuracy', health: 79, signal: 'Odometry scale error (%)', topic: '/fmr_01/odom', limit: 2, now: 0.9, rate: 0.009, unit: '%', tol: '2 %', drift: [9, -6], spread: 8 },
+]});
+for (const A of ASSETS) for (const k of A.comps) k.rul = Math.round((k.limit - k.now) / k.rate);
+const hash = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const colorOf = h => h < 60 ? C.red : h < 75 ? C.amber : C.green;
+const statusOf = h => h < 60 ? 'Service soon' : h < 75 ? 'Watch' : 'Healthy';
+
+class Component extends DCLogic {
+  state = { a: 1, c: 1, t: 0 };
+  componentDidMount() { this.iv = setInterval(() => this.setState(s => ({ t: s.t + 1 })), 300); }
+  componentWillUnmount() { clearInterval(this.iv); }
+
+  renderVals() {
+    const { a, c, t } = this.state, A = ASSETS[a], comp = A.comps[Math.min(c, A.comps.length - 1)];
+    const seed = a * 10 + c;
+    const assets = ASSETS.map((x, i) => {
+      const score = Math.min(...x.comps.map(k => k.health));
+      return { id: x.id, kind: x.kind, score: score + '%', color: colorOf(score), bg: i === a ? '#1f2629' : 'transparent', border: i === a ? '#2fb5a6' : '#2a3136', pick: () => this.setState({ a: i, c: 0 }) };
+    });
+    const comps = A.comps.map((k, i) => ({ ...k, rul: k.rul + ' d', healthPct: k.health + '%', color: colorOf(k.health), bg: i === c ? '#1f2629' : 'transparent', border: i === c ? '#2fb5a6' : 'transparent', pick: () => this.setState({ c: i }) }));
+
+    // trend + forecast (y: 0 top → 120 bottom); scale so limit sits at 20% from top
+    const horizon = Math.min(180, Math.max(30, Math.ceil(comp.rul * 1.4)));
+    const span = 90 + horizon, X = d => ((d + 90) / span) * 400;
+    const ymax = comp.limit * 1.25, Y = v => 115 - (v / ymax) * 110;
+    const pts = [];
+    for (let d = -90; d <= 0; d += 2) {
+      const base = comp.now * 0.15, lin = comp.now + comp.rate * d;
+      const v = (lin > base ? lin : base + (lin - base) * 0.04 * Math.exp((lin - base) / comp.now)) + (hash(seed * 100 + d) - 0.5) * comp.limit * 0.04;
+      pts.push(`${X(d).toFixed(1)},${Y(v).toFixed(1)}`);
+    }
+    const crossD = (comp.limit - comp.now) / comp.rate;
+    const fc = [`${X(0).toFixed(1)},${Y(comp.now).toFixed(1)}`, `${X(Math.min(horizon, crossD)).toFixed(1)},${Y(comp.now + comp.rate * Math.min(horizon, crossD)).toFixed(1)}`];
+    const fmt = v => comp.unit === '' ? v.toFixed(2) : v.toFixed(v < 10 ? 2 : 1) + ' ' + comp.unit;
+    const kpis = [
+      ['Current', fmt(comp.now)], ['Limit', fmt(comp.limit)],
+      ['Trend', (comp.rate >= 0 ? '+' : '') + (comp.rate * 30).toFixed(comp.unit === '' ? 3 : 2) + (comp.unit ? ' ' + comp.unit : '') + ' / 30 d'],
+      ['Predicted limit', 'in ' + Math.round(crossD) + ' d'],
+    ].map(([label, value]) => ({ label, value }));
+
+    // fatigue spectrum
+    const spectrum = [];
+    for (let i = 0; i < 14; i++) {
+      const h = Math.max(4, 100 * Math.exp(-i * 0.32) * (0.8 + hash(seed + i) * 0.4));
+      spectrum.push({ x: i * 21.4 + 2, w: 17, h, y: 108 - h, c: i > 9 ? C.red : i > 6 ? C.amber : C.teal });
+    }
+    // accuracy scatter (units: tolerance ring = 40)
+    const scatter = [];
+    const [dx, dy] = comp.drift || [0, 0], sp = comp.spread || 8;
+    for (let i = 0; i < 42; i++) {
+      const today = i >= 34, k = today ? 1 : i / 34;
+      const r = sp * Math.sqrt(-2 * Math.log(hash(seed * 7 + i) + 1e-3)) * 0.6, th = hash(seed * 13 + i) * Math.PI * 2;
+      scatter.push({ x: (dx * k + r * Math.cos(th)).toFixed(1), y: (dy * k + r * Math.sin(th)).toFixed(1), c: today ? C.amber : 'rgba(79,201,186,.75)' });
+    }
+    // live fft
+    const fp = [], faults = comp.faults || [];
+    for (let i = 0; i <= 150; i++) {
+      const f = i / 150;
+      let v = 8 + 22 * Math.exp(-f * 6) + hash(i + t * 3.1) * 7;
+      for (const [, at] of faults) v += 62 * Math.exp(-Math.pow((f - at) * 70, 2)) * (0.85 + 0.15 * Math.sin(t * 0.7 + at * 10));
+      fp.push(`${(f * 300).toFixed(1)},${(108 - v).toFixed(1)}`);
+    }
+    const faultLines = faults.map(([label, at]) => ({ label, x: at * 300 }));
+
+    const pipeline = [
+      ['Sense', comp.kind === 'fatigue' ? '1 kHz joint torque and current from the servo drive' : comp.kind === 'accuracy' ? 'Reference target measured each shift, plus encoder and command residuals' : 'Accelerometer, flow or leak sensors sampled at the edge'],
+      ['Edge features', comp.kind === 'fatigue' ? 'Rainflow cycle counting on the robot; only histograms are sent upstream (~2 KB/min)' : comp.kind === 'accuracy' ? 'Centroid offset and spread per check, temperature-compensated' : 'FFT bands, RMS and defect-frequency amplitudes'],
+      ['Model', 'Physics limit (S-N curve or tolerance) plus a fleet-trained degradation model, which compares this unit against peers of the same build'],
+      ['Decide', 'Remaining-life estimate with confidence. The alert fires when P(limit within 14 d) > 0.3'],
+      ['Act', 'A work order is placed in a low-demand window, the fleet manager reassigns tasks, and the part is pre-ordered'],
+    ].map(([title, body], i) => ({ n: i + 1, title, body }));
+
+    const all = ASSETS.flatMap(x => x.comps.map(k => ({ ...k, asset: x.id }))).sort((p, q) => p.rul - q.rul).slice(0, 5);
+    const orders = all.map(k => ({
+      title: `${k.asset} · ${k.name.split(' · ')[0]}`,
+      body: k.kind === 'fatigue' ? 'Replace gear module (swap unit, ~25 min) and reset the damage counter' : k.kind === 'accuracy' ? 'Re-run auto-calibration; if the residual stays high, re-tension or replace' : 'Replace the wear part and check the baseline spectrum after service',
+      when: k.rul <= 14 ? `scheduled · tonight 02:00 (RUL ${k.rul} d)` : `planned · within ${Math.round(k.rul * 0.6)} d`,
+      color: colorOf(k.health),
+    }));
+    const coverage = [
+      { label: 'Inbound demand', window: 'peak 08–18', left: '30%', width: '45%', color: '#2a3a40' },
+      { label: 'STW-01 paddle belts', window: '02:00–02:40', left: '8.3%', width: '2.8%', color: C.amber },
+      { label: 'HMN-01 knee L (HMN-02 covers)', window: '02:45–03:30', left: '11.4%', width: '3.1%', color: C.red },
+      { label: 'VAC-01 cup set', window: '03:30–03:50', left: '14.6%', width: '1.4%', color: C.amber },
+      { label: 'FMR-01 lift chains (put-away paused)', window: '04:00–05:00', left: '16.7%', width: '4.2%', color: C.amber },
+    ];
+    return {
+      assets, comps, assetHours: A.hours.toLocaleString() + ' h · ' + A.comps.length + ' monitored',
+      comp: { ...comp, color: colorOf(comp.health), status: statusOf(comp.health), kpis, trend: pts.join(' '), forecast: fc.join(' '), limitY: Y(comp.limit).toFixed(1), nowX: X(0).toFixed(1), crossX: X(Math.min(horizon, crossD)).toFixed(1), horizon, nowPct: (X(0) / 4).toFixed(1) + '%', damage: comp.now.toFixed(2) + ' / 1.00', damagePct: (comp.now * 100).toFixed(0) + '%', tolLabel: comp.tol || '' },
+      isFatigue: comp.kind === 'fatigue', isAccuracy: comp.kind === 'accuracy', isVibration: comp.kind === 'vibration',
+      navFleet: e => { if (window.parent !== window) { e.preventDefault(); window.parent.postMessage({ dockyardNav: 'fleet' }, '*'); } },
+      navCell: e => { if (window.parent !== window) { e.preventDefault(); window.parent.postMessage({ dockyardNav: 'cell' }, '*'); } },
+      spectrum, scatter, fft: fp.join(' '), faultLines, pipeline, orders, coverage,
+    };
+  }
+}
+</script>
+</body>
+</html>

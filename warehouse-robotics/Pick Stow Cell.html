@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Collaborative Pick &amp; Stow Cell</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<style>
+  html,body{margin:0;height:100%;background:#eeebe5;font-family:Helvetica,Arial,sans-serif;color:#2a2826;overflow:hidden}
+  three-d-stage:not(:defined){visibility:hidden}
+  .hud{position:fixed;left:16px;top:14px;z-index:3;width:300px;max-height:calc(100vh - 28px);overflow:auto;display:flex;flex-direction:column;gap:10px;background:rgba(250,248,244,.92);border:1px solid #d8d3c9;border-radius:10px;padding:14px}
+  .hud b{font-size:14px}
+  .sub{font-size:11.5px;color:#5d5953;line-height:1.45}
+  .rob{display:grid;grid-template-columns:10px 64px 1fr;gap:4px 8px;align-items:center;font-size:12px}
+  .dot{width:8px;height:8px;border-radius:50%}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:11px}
+  .muted{color:#6b665f}
+  .row{display:flex;flex-wrap:wrap;gap:6px}
+  button{font:12px Helvetica,Arial,sans-serif;padding:6px 10px;border:1px solid #c9c4ba;background:#faf8f4;border-radius:6px;cursor:pointer;color:#2a2826;white-space:nowrap}
+  button:hover{background:#fff;border-color:#9e988d}
+  button[aria-pressed="true"]{background:#2a2826;color:#faf8f4;border-color:#2a2826}
+  .gauge{height:8px;border-radius:4px;background:#e2ddd3;position:relative;overflow:hidden}
+  .gauge i{position:absolute;inset:0 auto 0 0;background:#1f9e93;transition:width .12s}
+  .gauge s{position:absolute;top:-2px;bottom:-2px;width:2px;background:#2a2826}
+  .pad{display:grid;grid-template-columns:repeat(3,40px);gap:4px;justify-content:start}
+  .pad button{padding:8px 0;user-select:none}
+  .lbl{position:fixed;z-index:2;pointer-events:none;transform:translate(-50%,-100%);font-size:11px;background:#2a2826;color:#faf8f4;padding:3px 7px;border-radius:4px;white-space:nowrap;opacity:0;transition:opacity .3s}
+  .lbl.on{opacity:1}
+  .lbl em{font-style:normal;color:#9fe3da}
+  .pip{position:fixed;right:16px;top:14px;z-index:3;background:#151719;border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px;width:312px}
+  .pip .bar{display:flex;align-items:center;gap:4px;font:11px ui-monospace,Menlo,monospace;color:#9aa3a8}
+  .pip button{padding:3px 8px;font-size:11px;background:#22272b;color:#c8cdcf;border-color:#2f363b}
+  .pip button[aria-pressed="true"]{background:#e6e8e6;color:#151719}
+  .pip canvas{display:block;width:300px;height:170px;border-radius:4px}
+  hr{border:0;border-top:1px solid #e0dbd1;margin:0}
+</style>
+</head>
+<body>
+<div class="hud">
+  <b>Collaborative Pick &amp; Stow Cell</b>
+  <div class="sub">Vacuum arm singulates mixed items from totes → haptic stow gantry places them in the top and bottom pod rows (the middle rows stay for people) → a bipedal humanoid swaps totes. The coloured floor rings are speed-and-separation zones.</div>
+  <div class="rob"><span class="dot" id="d0"></span><b class="mono">VAC-01</b><span id="s0" class="mono muted"></span>
+    <span class="dot" id="d1"></span><b class="mono">STW-01</b><span id="s1" class="mono muted"></span>
+    <span class="dot" id="d2"></span><b class="mono">HMN-01</b><span id="s2" class="mono muted"></span></div>
+  <hr>
+  <div class="mono" style="display:flex;justify-content:space-between"><span>grip force · <span id="it">—</span></span><span id="fN">0.0 N</span></div>
+  <div class="gauge"><i id="fg" style="width:0"></i><s id="ft" style="left:0"></s></div>
+  <div class="mono muted" id="fs">waiting for item</div>
+  <hr>
+  <div class="mono" style="display:grid;grid-template-columns:1fr auto;gap:2px 10px">
+    <span class="muted">inducted</span><span id="c0">0</span>
+    <span class="muted">stowed</span><span id="c1">0</span>
+    <span class="muted">totes swapped</span><span id="c2">0</span>
+    <span class="muted">pods completed</span><span id="c3">0</span>
+    <span class="muted">drop incidents resolved</span><span id="c4">0</span>
+  </div>
+  <hr>
+  <div class="row" style="align-items:center"><span class="sub">HMN-01 base</span><button id="tBip" aria-pressed="true">Bipedal</button><button id="tWhl">Wheeled</button></div>
+  <div class="mono" style="display:flex;justify-content:space-between;gap:8px"><span>stability · <span id="stT">—</span></span><span id="stV"></span></div>
+  <div class="gauge"><i id="stG" style="width:0"></i></div>
+  <div class="mono muted" id="stS" style="line-height:1.4"></div>
+  <hr>
+  <div class="row"><button id="bDrop">Inject drop</button><button id="bCov">Camera coverage</button></div>
+  <div class="mono muted" style="font-size:10px">event log · traceable to camera clips</div>
+  <div id="log" class="mono" style="display:flex;flex-direction:column;gap:3px;font-size:10.5px;line-height:1.35"></div>
+  <hr>
+  <div class="row"><button id="bAuto" aria-pressed="true">Autonomous</button><button id="bMan">Drive humanoid</button><button id="bExp">Exploded modules</button></div>
+  <div id="exp" class="row" style="display:none"><button data-r="vac">VAC-01</button><button data-r="stw" aria-pressed="true">STW-01</button><button data-r="hmn">HMN-01</button></div>
+  <div class="row"><button data-s="1" aria-pressed="true">1×</button><button data-s="2">2×</button><button data-s="4">4×</button><button id="bPause">Pause</button></div>
+  <div id="manual" style="display:none;flex-direction:column;gap:6px">
+    <div class="sub">Hold W/A/S/D or the pad. Walk HMN-01 into a ring to see the other robots slow (amber) or hold (red).</div>
+    <div class="pad"><span></span><button data-k="w">▲</button><span></span><button data-k="a">◀</button><button data-k="s">▼</button><button data-k="d">▶</button></div>
+  </div>
+</div>
+<div id="labels"></div>
+<div class="pip"><div class="bar"><span style="flex:1">overhead traceability cam</span><button data-c="0">C1</button><button data-c="1" aria-pressed="true">C2</button><button data-c="2">C3</button></div>
+<div style="position:relative;width:300px;height:170px"><canvas id="pip3d"></canvas><canvas id="pip2d" width="600" height="340" style="position:absolute;inset:0"></canvas></div></div>
+<three-d-stage name="pick-stow-cell"></three-d-stage>
+<script src="three-d-stage.js"></script>
+<script type="module">
+const stage = document.querySelector('three-d-stage');
+const { THREE } = await stage.ready;
+const $ = id => document.getElementById(id);
+
+const mat = (name, color, rough, metal = 0, extra = {}) => new THREE.MeshStandardMaterial({ name, color, roughness: rough, metalness: metal, ...extra });
+const M = {
+  dark: mat('graphite', 0x34373c, 0.5, 0.2), shell: mat('shell_light', 0xdedcd7, 0.45, 0.05),
+  teal: mat('accent_teal', 0x1f9e93, 0.4, 0.1), steel: mat('joint_steel', 0x8b9096, 0.35, 0.4),
+  rubber: mat('rubber', 0x1b1c1e, 0.85), glass: mat('sensor_glass', 0x0e1216, 0.15, 0.2),
+  alu: mat('aluminium_profile', 0xb9bdc1, 0.4, 0.35), floor: mat('floor_concrete', 0xd9d5cc, 0.95),
+  fabric: mat('pod_fabric', 0xd9c79a, 0.95), band: mat('pod_band', 0x8a7a55, 0.9), podFrame: mat('pod_frame', 0x4f5a64, 0.5, 0.3),
+  tote: mat('tote_yellow', 0xe8b923, 0.6), conv: mat('conveyor_frame', 0xc9cbc6, 0.45, 0.2), belt: mat('belt', 0x232427, 0.9),
+  rowTag: mat('robot_row_tag', 0x1f9e93, 0.5), humanTag: mat('human_row_tag', 0xe0a43a, 0.5),
+  sensor: mat('force_sensor', 0x2f7cf6, 0.4, 0, { emissive: 0x2f7cf6, emissiveIntensity: 0.0 }),
+};
+const zoneMat = n => mat(n, 0x4cc38a, 1, 0, { transparent: true, opacity: 0.22, depthWrite: false });
+const ITEM = [
+  { name: 'snack bag', force: 3, d: [0.18, 0.063, 0.14], m: mat('item_snack', 0xd9534f, 0.5), shape: 'bag' },
+  { name: 'textbook', force: 12, d: [0.16, 0.045, 0.12], m: mat('item_book', 0x3d5a80, 0.7), shape: 'box' },
+  { name: 'bottle', force: 6, d: [0.16, 0.07, 0.07], m: mat('item_bottle', 0x6ab0de, 0.25), shape: 'cyl' },
+  { name: 'carton', force: 5, d: [0.14, 0.1, 0.12], m: mat('item_carton', 0xc79c6a, 0.9), shape: 'box' },
+];
+
+function box(name, m, w, h, d, x, y, z, p) { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.name = name; o.position.set(x, y, z); p.add(o); return o; }
+function cyl(name, m, r, len, x, y, z, axis, p, seg = 32) {
+  const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, seg), m); o.name = name; o.position.set(x, y, z);
+  if (axis === 'z') o.rotation.x = Math.PI / 2; if (axis === 'x') o.rotation.z = Math.PI / 2; p.add(o); return o;
+}
+const grp = (name, p, x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.name = name; g.position.set(x, y, z); p.add(g); return g; };
+const world = new THREE.Group(); world.name = 'pick_stow_cell';
+box('floor', M.floor, 7.4, 0.02, 4.8, 0.1, -0.01, 0.5, world);
+
+/* modules registry for exploded view */
+const modules = [];
+let curRobot = 'vac';
+const mod = (obj, off, label, spec) => { modules.push({ obj, base: obj.position.clone(), off: new THREE.Vector3(...off), label, spec, robot: curRobot }); return obj; };
+
+/* ================= Storage pod ================= */
+const POD_X = 0.2, POD_Z = -0.45, ROW_H = 0.36, COLW = 0.33;
+const pod = grp('storage_pod', world, POD_X, 0, POD_Z - 0.3);
+box('pod_drive_unit', M.dark, 0.9, 0.12, 0.7, 0, 0.06, 0, pod);
+box('pod_back', M.fabric, 1.0, 2.2, 0.01, 0, 0.15 + 1.08, -0.3, pod);
+for (const s of [-1, 1]) box('pod_side', M.podFrame, 0.02, 2.2, 0.6, s * 0.5, 0.15 + 1.08, 0, pod);
+for (let r = 0; r <= 6; r++) box('pod_shelf_' + r, M.podFrame, 1.0, 0.012, 0.6, 0, 0.15 + r * ROW_H, 0, pod);
+for (let r = 0; r < 6; r++) {
+  for (let c = 1; c < 3; c++) box('bin_divider', M.fabric, 0.006, ROW_H, 0.6, -0.5 + c * COLW, 0.15 + r * ROW_H + ROW_H / 2, 0, pod);
+  box('bin_band_' + r, M.band, 1.0, 0.03, 0.006, 0, 0.15 + r * ROW_H + 0.2, 0.3, pod);
+  box('row_tag_' + r, (r <= 1 || r >= 4) ? M.rowTag : M.humanTag, 0.02, ROW_H - 0.04, 0.006, -0.49, 0.15 + r * ROW_H + ROW_H / 2, 0.303, pod);
+}
+const ROBOT_ROWS = [5, 0, 4, 1];
+const bins = []; for (const r of ROBOT_ROWS) for (let c = 0; c < 3; c++) bins.push({ r, c, n: 0 });
+const binX = c => POD_X - COLW + c * COLW;
+
+/* ================= Induction conveyor ================= */
+const CV_Y = 0.9, CV_END = 0.9, CV_START = 2.15;
+const convG = grp('induction_conveyor', world);
+box('conveyor_frame', M.conv, 1.6, 0.1, 0.36, 1.55, CV_Y - 0.06, 0, convG);
+box('conveyor_belt', M.belt, 1.6, 0.01, 0.3, 1.55, CV_Y - 0.005, 0, convG);
+for (const x of [0.85, 2.25]) for (const z of [-0.14, 0.14]) box('conveyor_leg', M.steel, 0.04, CV_Y - 0.1, 0.04, x, (CV_Y - 0.1) / 2, z, convG);
+
+/* ================= VAC-01 vacuum arm ================= */
+const VX = 2.6, VZ = 0.35, VSH = 0.75, VL1 = 0.55, VL2 = 0.5, VGL = 0.2;
+const vac = grp('VAC-01_vacuum_arm', world, VX, 0, VZ);
+const vBase = mod(grp('vac_base', vac), [0, -0.0, 0], 'Base · J1 slewing ring', 'cross-roller bearing');
+cyl('vac_pedestal', M.dark, 0.17, 0.55, 0, 0.275, 0, 'y', vBase, 40);
+cyl('vac_flange', M.steel, 0.22, 0.03, 0, 0.015, 0, 'y', vBase, 40);
+const vTurn = grp('vac_turntable', vac, 0, 0.55, 0);
+const vJ2 = mod(grp('vac_shoulder_module', vTurn), [0, 0.25, 0], 'Shoulder · J1/J2 servo + brake', 'motor current signature');
+cyl('vac_turn_disc', M.steel, 0.16, 0.06, 0, 0.03, 0, 'y', vJ2, 40);
+box('vac_shoulder_housing', M.shell, 0.22, 0.2, 0.24, 0, 0.12, 0, vJ2);
+const vSh = grp('vac_shoulder', vTurn, 0, VSH - 0.55, 0);
+cyl('vac_j2_motor', M.teal, 0.09, 0.26, 0, 0, 0, 'z', vSh, 40);
+const vUp = mod(grp('vac_upper_arm', vSh), [0, 0.14, 0], 'Upper arm · J3', 'harmonic drive 100:1');
+box('vac_upper_link', M.shell, VL1, 0.1, 0.11, VL1 / 2, 0, 0, vUp);
+const vEl = grp('vac_elbow', vSh, VL1, 0, 0);
+const vFore = mod(grp('vac_forearm', vEl), [0.15, 0.08, 0], 'Forearm', 'carbon tube');
+cyl('vac_j3_motor', M.steel, 0.07, 0.18, 0, 0, 0, 'z', vFore, 32);
+box('vac_fore_link', M.shell, VL2, 0.08, 0.09, VL2 / 2, 0, 0, vFore);
+const vWr = grp('vac_wrist', vEl, VL2, 0, 0);
+const vGrip = mod(grp('vac_gripper', vWr), [0.18, 0, 0], 'Vacuum gripper · 6-zone valves', 'leak-rate per cup');
+cyl('vac_wrist_motor', M.dark, 0.055, 0.14, 0, 0, 0, 'z', vGrip, 32);
+box('vac_tool_neck', M.dark, 0.1, 0.06, 0.06, 0.07, 0, 0, vGrip);
+box('vac_manifold', M.teal, 0.04, 0.12, 0.12, 0.14, 0, 0, vGrip);
+for (let i = 0; i < 4; i++) cyl('vac_bellows_cup_' + i, M.rubber, 0.022, 0.04, 0.18, (i % 2 ? 0.03 : -0.03), (i < 2 ? 0.03 : -0.03), 'x', vGrip, 20);
+const vPump = mod(grp('vac_pump_unit', vac, 0.42, 0, -0.25), [0.35, 0, -0.2], 'Vacuum blower', 'flow decay trend');
+box('vac_pump_body', M.dark, 0.3, 0.4, 0.3, 0, 0.2, 0, vPump);
+cyl('vac_pump_fan', M.steel, 0.1, 0.02, 0, 0.2, 0.151, 'z', vPump, 32);
+const vCam = mod(grp('vac_overhead_camera', world, VX + 0.5, 0, 1.0), [0.3, 0.3, 0], 'Overhead 3D camera', 'extrinsic drift check');
+cyl('vac_cam_pole', M.alu, 0.025, 1.85, 0, 0.925, 0, 'y', vCam, 16);
+box('vac_cam_arm', M.alu, 0.5, 0.04, 0.04, -0.25, 1.83, 0, vCam);
+box('vac_cam_head', M.dark, 0.14, 0.06, 0.1, -0.5, 1.8, 0, vCam);
+box('vac_cam_lens', M.glass, 0.1, 0.004, 0.05, -0.5, 1.769, 0, vCam);
+// tote stand
+const STAND = new THREE.Vector3(VX, 0.7, 1.0);
+box('tote_stand_top', M.steel, 0.6, 0.03, 0.45, VX, 0.685, 1.0, world);
+for (const sx of [-1, 1]) for (const sz of [-1, 1]) box('tote_stand_leg', M.steel, 0.03, 0.67, 0.03, VX + sx * 0.27, 0.335, 1.0 + sz * 0.2, world);
+
+/* ================= Totes & items ================= */
+const TW = 0.5, TH = 0.22, TD = 0.36;
+let itemN = 0;
+function makeItem(t) {
+  const T = ITEM[t], g = new THREE.Group(); g.name = 'item_' + (itemN++) + '_' + T.name.replace(' ', '_');
+  let m;
+  if (T.shape === 'bag') { m = new THREE.Mesh(new THREE.SphereGeometry(0.5, 24, 12), T.m); m.scale.set(...T.d); }
+  else if (T.shape === 'cyl') { m = new THREE.Mesh(new THREE.CylinderGeometry(T.d[1] / 2, T.d[1] / 2, T.d[0], 24), T.m); m.rotation.z = Math.PI / 2; }
+  else m = new THREE.Mesh(new THREE.BoxGeometry(...T.d), T.m);
+  m.name = g.name + '_mesh'; m.castShadow = true; g.add(m); g.userData = { t, h: T.d[1], sku: 'SKU-' + (10000 + Math.random() * 89999 | 0) }; return g;
+}
+function makeTote(name) {
+  const g = new THREE.Group(); g.name = name;
+  box(name + '_floor', M.tote, TW, 0.012, TD, 0, 0.006, 0, g);
+  for (const s of [-1, 1]) { box(name + '_side', M.tote, 0.012, TH, TD, s * TW / 2, TH / 2, 0, g); box(name + '_end', M.tote, TW, TH, 0.012, 0, TH / 2, s * TD / 2, g); }
+  g.userData.items = []; return g;
+}
+function fillTote(tote) {
+  for (let i = 0; i < 6; i++) {
+    const it = makeItem((Math.random() * 4) | 0);
+    it.position.set(-0.15 + (i % 3) * 0.15, 0.012 + it.userData.h / 2, i < 3 ? -0.08 : 0.08);
+    it.rotation.y = (Math.random() - 0.5) * 0.5; tote.add(it); tote.userData.items.push(it);
+  }
+}
+let standTote = makeTote('tote_0'); fillTote(standTote); standTote.position.copy(STAND); world.add(standTote);
+const EMPTY_RACK = new THREE.Vector3(-2.6, 0.7, 0.6), FULL_RACK = new THREE.Vector3(-2.6, 0.7, 1.8);
+for (const [p, n] of [[EMPTY_RACK, 'empty_tote_rack'], [FULL_RACK, 'full_tote_rack']]) {
+  const r = grp(n, world, p.x, 0, p.z);
+  box(n + '_bed', M.conv, 0.5, 0.04, 0.65, 0, 0.68, 0, r);
+  for (let i = 0; i < 6; i++) cyl(n + '_roller', M.steel, 0.018, 0.48, 0, 0.705, -0.27 + i * 0.108, 'x', r, 12);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(n + '_leg', M.steel, 0.03, 0.66, 0.03, sx * 0.22, 0.33, sz * 0.29, r);
+}
+let fullTote = makeTote('tote_1'); fillTote(fullTote); fullTote.position.copy(FULL_RACK); fullTote.rotation.y = -Math.PI / 2; world.add(fullTote);
+let rackEmpty = null, toteN = 2;
+
+/* ================= STW-01 haptic stow gantry ================= */
+curRobot = 'stw';
+const stw = grp('STW-01_stow_gantry', world);
+const sFrame = mod(grp('stw_frame', stw), [0, 0, 0.35], 'Frame · aluminium profile', 'deflection by fiducials');
+for (const x of [-0.75, 1.15]) { box('stw_post', M.alu, 0.08, 2.65, 0.08, x, 1.325, 0.3, sFrame); box('stw_foot', M.dark, 0.2, 0.03, 0.4, x, 0.015, 0.3, sFrame); }
+box('stw_top_beam', M.alu, 1.98, 0.08, 0.08, 0.2, 2.65, 0.3, sFrame);
+box('stw_cabinet', M.dark, 0.35, 0.6, 0.25, 1.45, 0.3, 0.35, sFrame);
+box('stw_cabinet_led', M.teal, 0.2, 0.02, 0.004, 1.45, 0.52, 0.477, sFrame);
+const sCam = mod(grp('stw_pod_camera', stw), [0, 0.3, 0.2], 'Pod-face camera bar', 'bin occupancy + fabric band');
+box('stw_cam_bar', M.dark, 1.2, 0.05, 0.08, 0.2, 2.55, 0.25, sCam);
+for (let i = 0; i < 3; i++) box('stw_cam_lens', M.glass, 0.08, 0.03, 0.004, -0.2 + i * 0.4, 2.55, 0.208, sCam);
+const sY = grp('stw_y_axis', stw);
+const sYm = mod(grp('stw_y_module', sY), [0, 0, 0.3], 'Y axis · belt drive', 'belt stretch → position error');
+box('stw_cross_beam', M.shell, 1.9, 0.08, 0.1, 0.2, 0, 0.3, sYm);
+for (const x of [-0.75, 1.15]) box('stw_y_carriage', M.teal, 0.12, 0.14, 0.12, x, 0, 0.3, sYm);
+const sX = grp('stw_x_carriage', sY);
+const sXm = mod(grp('stw_x_module', sX), [0, 0.2, 0.25], 'X carriage · linear guide', 'vibration RMS');
+box('stw_x_block', M.dark, 0.16, 0.14, 0.1, 0, 0, 0.3, sXm);
+box('stw_outer_sleeve', M.shell, 0.1, 0.08, 0.35, 0, 0, 0.12, sXm);
+const sZ = grp('stw_z_arm', sX);
+const sZm = mod(grp('stw_z_module', sZ), [0, 0.12, 0.25], 'Z telescopic arm', 'ball-screw backlash');
+box('stw_inner_sleeve', M.steel, 0.07, 0.055, 0.45, 0, 0, 0.12, sZm);
+box('stw_ee_mount', M.dark, 0.08, 0.2, 0.06, 0, -0.1, -0.06, sZm);
+const sEE = mod(grp('stw_end_effector', sZ, 0, -0.25, 0), [0, -0.05, 0.45], 'Belted paddles', 'belt slip ratio');
+box('stw_ee_top', M.dark, 0.3, 0.04, 0.26, 0, 0.1, 0, sEE);
+const paddles = [], sensors = [], rollers = [];
+for (const s of [-1, 1]) {
+  const p = grp('stw_paddle_' + (s > 0 ? 'R' : 'L'), sEE, s * 0.08, 0, 0);
+  box('stw_paddle_plate', M.shell, 0.012, 0.15, 0.26, s * 0.006, 0, 0, p);
+  box('stw_paddle_belt', M.belt, 0.006, 0.12, 0.24, -s * 0.003, 0, 0, p);
+  for (const z of [-0.12, 0.12]) rollers.push(cyl('stw_belt_roller', M.steel, 0.012, 0.13, -s * 0.004, 0, z, 'y', p, 12));
+  sensors.push(box('stw_tactile_pad', M.sensor, 0.008, 0.06, 0.12, s * 0.016, 0.0, 0.0, p));
+  paddles.push([p, s]);
+}
+const sFT = mod(grp('stw_ft_sensor', sEE), [0, 0.18, 0], 'Force / tactile · 6-axis F/T', 'zero-offset drift');
+cyl('stw_ft_disc', M.sensor, 0.045, 0.03, 0, 0.135, 0, 'y', sFT, 32);
+
+/* ================= HMN-01 humanoid ================= */
+curRobot = 'hmn';
+const hmn = grp('HMN-01_humanoid', world, 1.4, 0, 2.3);
+const pelvis = grp('hmn_pelvis', hmn, 0, 0.89, 0);
+const pelvisMod = mod(grp('hmn_pelvis_module', pelvis), [0, 0, 0], 'Pelvis · hip yaw actuators', '');
+box('hmn_pelvis_block', M.dark, 0.3, 0.12, 0.18, 0, 0, 0, pelvisMod);
+const torso = grp('hmn_torso', pelvis, 0, 0.06, 0);
+const torsoMod = mod(grp('hmn_torso_module', torso), [0, 0.12, 0], 'Torso · compute + IMU', 'thermal / ECC log');
+box('hmn_chest', M.shell, 0.36, 0.42, 0.22, 0, 0.27, 0, torsoMod);
+box('hmn_chest_band', M.teal, 0.362, 0.03, 0.222, 0, 0.36, 0, torsoMod);
+box('hmn_waist', M.dark, 0.24, 0.1, 0.16, 0, 0.04, 0, torsoMod);
+const batt = mod(grp('hmn_battery', torso), [0, 0.1, -0.35], 'Battery · hot-swap 1.0 kWh', 'cell impedance');
+box('hmn_battery_pack', M.dark, 0.28, 0.3, 0.09, 0, 0.27, -0.155, batt);
+const head = mod(grp('hmn_head', torso, 0, 0.55, 0), [0, 0.3, 0], 'Sensor head · stereo + lidar', 'calibration target check');
+box('hmn_neck', M.dark, 0.07, 0.06, 0.07, 0, -0.03, 0, head);
+box('hmn_head_shell', M.shell, 0.2, 0.15, 0.17, 0, 0.07, 0, head);
+box('hmn_visor', M.glass, 0.17, 0.06, 0.004, 0, 0.08, 0.087, head);
+cyl('hmn_lidar', M.dark, 0.04, 0.04, 0, 0.165, 0, 'y', head, 24);
+const arms = [];
+for (const s of [-1, 1]) {
+  const sh = mod(grp('hmn_arm_' + (s > 0 ? 'L' : 'R'), torso, s * 0.22, 0.44, 0), [s * 0.3, 0, 0], 'Arm ' + (s > 0 ? 'L' : 'R') + ' · 4-dof', 'backlash per joint');
+  cyl('hmn_shoulder_motor', M.dark, 0.05, 0.09, s * 0.02, 0, 0, 'x', sh, 24);
+  box('hmn_upper_arm', M.shell, 0.07, 0.28, 0.08, 0, -0.15, 0, sh);
+  const el = grp('hmn_elbow', sh, 0, -0.3, 0);
+  cyl('hmn_elbow_joint', M.steel, 0.035, 0.08, 0, 0, 0, 'x', el, 20);
+  box('hmn_forearm', M.shell, 0.06, 0.26, 0.07, 0, -0.14, 0, el);
+  box('hmn_hand_paddle', M.dark, 0.03, 0.08, 0.12, -s * 0.01, -0.3, 0.02, el);
+  arms.push({ sh, el, s });
+}
+const legs = [];
+for (const s of [-1, 1]) {
+  const hip = mod(grp('hmn_leg_' + (s > 0 ? 'L' : 'R'), pelvis, s * 0.1, -0.05, 0), [s * 0.22, -0.05, 0], 'Leg ' + (s > 0 ? 'L' : 'R') + ' · hip/knee/ankle', 'knee gear fatigue');
+  cyl('hmn_hip_motor', M.dark, 0.06, 0.1, 0, 0, 0, 'x', hip, 24);
+  box('hmn_thigh', M.shell, 0.1, 0.38, 0.11, 0, -0.2, 0, hip);
+  const kn = grp('hmn_knee', hip, 0, -0.42, 0);
+  cyl('hmn_knee_motor', M.teal, 0.05, 0.11, 0, 0, 0, 'x', kn, 24);
+  box('hmn_shin', M.shell, 0.08, 0.38, 0.09, 0, -0.2, 0, kn);
+  const an = grp('hmn_ankle', kn, 0, -0.42, 0);
+  box('hmn_foot', M.dark, 0.1, 0.05, 0.24, 0, -0.025, 0.04, an);
+  box('hmn_foot_ft', M.sensor, 0.08, 0.006, 0.08, 0, -0.051, 0.04, an);
+  legs.push({ hip, kn, an, s });
+}
+
+/* ================= Safety zones ================= */
+const zVacWarn = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.7, 64), zoneMat('zone_vac_warn')); zVacWarn.rotation.x = -Math.PI / 2; zVacWarn.position.set(VX, 0.003, VZ); zVacWarn.name = 'zone_vac_warn'; world.add(zVacWarn);
+const zVacStop = new THREE.Mesh(new THREE.CircleGeometry(0.9, 64), zoneMat('zone_vac_stop')); zVacStop.rotation.x = -Math.PI / 2; zVacStop.position.set(VX, 0.004, VZ); zVacStop.name = 'zone_vac_stop'; world.add(zVacStop);
+const GZ = { x0: -0.85, x1: 1.25, z0: -0.5, z1: 0.45 };
+const zStw = new THREE.Mesh(new THREE.PlaneGeometry(GZ.x1 - GZ.x0 + 2.2, GZ.z1 + 1.1 - GZ.z0), zoneMat('zone_stw_warn'));
+zStw.rotation.x = -Math.PI / 2; zStw.position.set((GZ.x0 + GZ.x1) / 2, 0.002, (GZ.z0 + GZ.z1 + 1.1) / 2); zStw.name = 'zone_stw'; world.add(zStw);
+
+/* ================= Runners ================= */
+const ease = t => t * t * (3 - 2 * t);
+const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+class Runner {
+  constructor(J, apply, plan) { this.J = J; this.apply = apply; this.plan = plan; this.q = []; this.cur = null; apply(J); }
+  step(dt) {
+    let b = dt, guard = 0;
+    while (b > 0 && guard++ < 50) {
+      if (!this.cur) { if (!this.q.length) this.plan(this.q); if (!this.q.length) return; this.cur = this.q.shift(); this.cur.t = 0;
+        if (this.cur.to) { this.cur.from = { ...this.J }; this.cur.tgt = this.cur.to(); if ('yaw' in this.cur.tgt) this.cur.tgt.yaw = this.J.yaw + wrap(this.cur.tgt.yaw - this.J.yaw); } }
+      const c = this.cur;
+      if (c.call) { c.call(); this.cur = null; continue; }
+      if (c.until) { if (c.until()) { this.cur = null; continue; } return; }
+      const use = Math.min(b, c.dur - c.t); c.t += use; b -= use; const k = ease(Math.min(1, c.t / c.dur));
+      if (c.tgt) { for (const key in c.tgt) this.J[key] = c.from[key] + (c.tgt[key] - c.from[key]) * k; this.apply(this.J); }
+      if (c.tick) c.tick(k);
+      if (c.t >= c.dur - 1e-9) this.cur = null;
+    }
+  }
+}
+const cnt = { ind: 0, stow: 0, tote: 0, pod: 0 };
+const conv = [];
+
+/* --- VAC-01 --- */
+function ikV(p) {
+  const wx = p.x, wy = p.y + VGL, wz = p.z, dx = wx - VX, dz = wz - VZ;
+  const yaw = Math.atan2(-dz, dx), r = Math.hypot(dx, dz), y = wy - VSH, d = Math.min(Math.hypot(r, y), VL1 + VL2 - 0.002);
+  const q1 = Math.atan2(y, r) + Math.acos(THREE.MathUtils.clamp((VL1 * VL1 + d * d - VL2 * VL2) / (2 * VL1 * d), -1, 1));
+  const q2 = -(Math.PI - Math.acos(THREE.MathUtils.clamp((VL1 * VL1 + VL2 * VL2 - d * d) / (2 * VL1 * VL2), -1, 1)));
+  return { yaw, q1, q2, wp: -Math.PI / 2 - (q1 + q2) };
+}
+const vacHome = () => ikV(new THREE.Vector3(VX - 0.1, 1.25, VZ + 0.35));
+let vacHeld = null, vacState = 'idle';
+const vac_r = new Runner(vacHome(), J => { vTurn.rotation.y = J.yaw; vSh.rotation.z = J.q1; vEl.rotation.z = J.q2; vWr.rotation.z = J.wp; }, q => {
+  const tote = standTote;
+  if (!tote || !tote.userData.items.length || tote.parent !== world || tote.position.distanceTo(STAND) > 0.01) { vacState = tote && tote.parent === world ? 'tote empty · waiting swap' : 'waiting for tote'; q.push({ to: vacHome, dur: 0.8 }, { until: () => standTote && standTote.parent === world && standTote.userData.items.length && standTote.position.distanceTo(STAND) < 0.01 }); return; }
+  const it = tote.userData.items[tote.userData.items.length - 1];
+  const top = () => { const p = it.getWorldPosition(new THREE.Vector3()); p.y += it.userData.h / 2; return p; };
+  const place = () => new THREE.Vector3(CV_START, CV_Y + it.userData.h, 0);
+  q.push(
+    { call: () => vacState = 'perceive · ' + ITEM[it.userData.t].name },
+    { to: () => ikV(top().add(new THREE.Vector3(0, 0.15, 0))), dur: 0.8 },
+    { to: () => ikV(top()), dur: 0.35 },
+    { call: () => { vacState = 'vacuum seal'; tote.userData.items.pop(); vacHeld = it; vGrip.attach(it); M.teal.emissive.setHex(0x0a3a35); } },
+    { to: () => ikV(top().add(new THREE.Vector3(0, 0.25, 0))), dur: 0.4 },
+    { until: () => !conv.length || conv[conv.length - 1].position.x < CV_START - 0.26 },
+    { call: () => vacState = 'induct' },
+    { to: () => ikV(place().add(new THREE.Vector3(0, 0.15, 0))), dur: 0.7 },
+    { to: () => ikV(place()), dur: 0.25 },
+    { call: () => { world.attach(it); it.rotation.set(0, 0, 0); it.position.set(CV_START, CV_Y + it.userData.h / 2, 0); conv.push(it); vacHeld = null; cnt.ind++; M.teal.emissive.setHex(0); } },
+    { to: () => ikV(place().add(new THREE.Vector3(0, 0.2, 0))), dur: 0.3 },
+  );
+});
+
+/* --- STW-01 --- */
+let grip = { item: null, force: 0, target: 0, msg: 'waiting for item' };
+const stw_r = new Runner({ x: 0.9, y: 1.3, z: 0, gap: 0.12 }, J => {
+  sY.position.y = J.y + 0.25; sX.position.x = J.x; sZ.position.z = J.z;
+  for (const [p, s] of paddles) p.position.x = s * J.gap;
+}, q => {
+  const it = conv[0];
+  if (!it || it.position.x > CV_END + 0.001) { q.push({ to: () => ({ x: CV_END, y: CV_Y + 0.35, z: 0 }), dur: 0.6 }, { until: () => conv[0] && conv[0].position.x <= CV_END + 0.001 }); return; }
+  const own = it.userData.bin && it.userData.bin.n < 2 ? it.userData.bin : null;
+  const bin = own || bins.find(b => b.n < 2 - (b.hold || 0));
+  if (bin) it.userData.bin = bin;
+  if (!bin) { q.push({ call: () => grip.msg = 'pod full · requesting next pod' }, { to: () => ({ x: 0.2, y: 1.6, z: 0 }), dur: 0.8 }, { tick: k => pod.position.x = POD_X + (k < 0.5 ? -k * 6 : -(1 - k) * 6), dur: 3, call: null }, { call: resetPod }); return; }
+  const T = ITEM[it.userData.t], hy = CV_Y + T.d[1] / 2, w = T.d[0] / 2;
+  const by = 0.15 + bin.r * ROW_H + 0.015 + T.d[1] / 2, bx = binX(bin.c) + (bin.n ? 0.07 : -0.07);
+  q.push(
+    { to: () => ({ x: CV_END, y: hy + 0.2, z: 0, gap: 0.12 }), dur: 0.5 },
+    { to: () => ({ y: hy }), dur: 0.35 },
+    { call: () => { grip = { item: T, force: 0, target: T.force, msg: 'closing · feel contact' }; } },
+    { to: () => ({ gap: w + 0.012 }), dur: 0.35, tick: k => { grip.force = T.force * 0.6 * k; } },
+    { call: () => { conv.shift(); sEE.attach(it); grip.msg = 'force feedback · regulating'; } },
+    { dur: 0.35, tick: k => { grip.force = T.force * (0.6 + 0.4 * k); } },
+    { to: () => ({ y: by + 0.06 }), dur: 0.7, tick: k => {
+      if (k > 0.3 && k < 0.5 && T.force >= 10 && !grip.slip) { grip.slip = true; grip.msg = 'micro-slip detected → +25 %'; }
+      grip.force = T.force * (grip.slip ? 1.25 : 1) * (1 + 0.04 * Math.sin(k * 30)); } },
+    { to: () => ({ x: bx, y: by }), dur: 0.7, tick: k => { grip.msg = (it.userData.inc ? 're-stow to planned bin · ' : grip.slip ? 'slip corrected · ' : '') + 'stow → row ' + (bin.r + 1);
+      if (k > 0.45 && stw_r.J.x < 0.65 && !it.userData.inc && (dropReq || cnt.stow >= autoDropAt)) triggerDrop(it, bin); } },
+    { to: () => ({ z: -0.62 }), dur: 0.6 },
+    { dur: 0.45, tick: k => { it.position.z = -0.16 * k; for (const r of rollers) r.rotation.y += 0.4; grip.msg = 'belts drive item in'; grip.force = T.force * (1 - k); } },
+    { to: () => ({ gap: w + 0.04 }), dur: 0.2 },
+    { call: () => { pod.attach(it); it.userData.bin = bin; bin.n++; cnt.stow++; if (it.userData.inc) closeIncident(it, bin); grip.force = 0; grip.slip = false; grip.msg = 'stowed · bin ' + (bin.r + 1) + String.fromCharCode(65 + bin.c); } },
+    { to: () => ({ z: 0, gap: 0.12 }), dur: 0.55 },
+  );
+});
+function resetPod() {
+  for (const c of [...pod.children]) if (c.name.startsWith('item_')) pod.remove(c);
+  for (const b of bins) b.n = 0; cnt.pod++; pod.position.x = POD_X;
+}
+
+/* --- HMN-01 --- */
+const H = { x: 1.4, z: 2.3, h: Math.PI, phase: 0, crouch: 0, armT: 0, moving: 0, carry: null, hand: null, speedF: 1, v: 0, acc: 0, wheeled: false, wheelRot: 0 };
+const STANDBY = [1.4, 2.3];
+let hState = 'standby', simT = 0;
+const hq = []; let hcur = null;
+const walk = (x, z, label) => ({ walk: [x, z], label });
+cnt.inc = 0;
+
+// wheeled base variant (statically stable)
+const wBase = mod(grp('hmn_wheel_base', hmn), [0, 0, -0.45], 'Wheeled base · swerve drive', 'tyre wear · steering backlash');
+box('hmnw_chassis', M.dark, 0.5, 0.16, 0.6, 0, 0.16, 0, wBase);
+box('hmnw_low_battery', M.teal, 0.4, 0.05, 0.5, 0, 0.265, 0, wBase);
+for (const s of [-1, 1]) box('hmnw_bumper', M.rubber, 0.52, 0.06, 0.03, 0, 0.11, s * 0.31, wBase);
+box('hmnw_scanner', M.glass, 0.2, 0.035, 0.004, 0, 0.2, 0.302, wBase);
+const wheels = [];
+for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+  const w = grp('hmnw_wheel', wBase, sx * 0.21, 0.08, sz * 0.21);
+  cyl('hmnw_tyre', M.rubber, 0.08, 0.06, 0, 0, 0, 'x', w, 32);
+  cyl('hmnw_hub', M.steel, 0.045, 0.065, 0, 0, 0, 'x', w, 20);
+  box('hmnw_spoke', M.steel, 0.066, 0.12, 0.02, 0, 0, 0, w);
+  wheels.push(w);
+}
+const column = cyl('hmnw_lift_column', M.steel, 0.055, 1, 0, 0.6, 0, 'y', wBase, 24);
+wBase.visible = false;
+function setType(wh) {
+  H.wheeled = wh; wBase.visible = wh; for (const L of legs) L.hip.visible = !wh;
+  $('tBip').setAttribute('aria-pressed', !wh); $('tWhl').setAttribute('aria-pressed', wh);
+  log(`HMN-01 reconfigured · ${wh ? 'wheeled base (statically stable)' : 'bipedal (dynamically balanced)'}`);
+}
+function stability() {
+  const mL = H.carry ? 8 : H.hand ? 1.5 : 0, mR = 60, hR = H.wheeled ? 0.6 : 0.95, d0 = H.wheeled ? 0.29 : 0.11;
+  const xc = mL * 0.42 / (mR + mL), hc = (mR * hR + mL * 0.97) / (mR + mL);
+  const aTip = 9.81 * Math.max(0.005, d0 - xc) / hc;
+  return { aTip, aLim: H.wheeled ? 0.4 * aTip : 0.9, vMax: H.wheeled ? 1.2 : 0.7, xc, hc, d0 };
+}
+function drive(desired, b) {
+  const S = stability(), dv = THREE.MathUtils.clamp(desired - H.v, -S.aLim * b, S.aLim * b);
+  H.v += dv; H.acc = b > 0 ? dv / b : 0; return H.v * b;
+}
+const swapReady = () => standTote && standTote.parent === world && !standTote.userData.items.length && !vacHeld;
+function planH() {
+  if (incidents.length) {
+    const inc = incidents.shift(), it = inc.item, p = it.position.clone();
+    hq.push(
+      { label: `${inc.id} · retrieve ${it.userData.sku}`, walk: [p.x, p.z + 0.55] }, { face: Math.PI }, { crouch: 1.6 },
+      { call: () => { arms[1].el.attach(it); it.position.set(0, -0.36, 0.06); it.rotation.set(0, 0, 0); H.hand = it; if (inc.marker) inc.marker.visible = false; log(`${inc.id} HMN-01 picked item up from floor`, 'a'); } },
+      { crouch: 0 },
+      { label: `${inc.id} · re-induct`, walk: [1.55, 0.62] }, { face: Math.PI }, { crouch: 0.7 },
+      { call: () => { world.attach(it); it.rotation.set(0, 0, 0); it.position.set(1.55, CV_Y + it.userData.h / 2, 0); conv.push(it); conv.sort((a, b) => a.position.x - b.position.x); H.hand = null; log(`${inc.id} re-inducted · barcode rescanned ✓ · routed to planned bin`, 'a'); } },
+      { crouch: 0 }, { label: 'standby', walk: STANDBY }, { face: Math.PI },
+    );
+    return;
+  }
+  if (swapReady()) {
+    hq.push(
+      { label: 'walk → tote stand', walk: [2.6, 1.42] }, { face: Math.PI }, { crouch: 1 },
+      { call: () => { H.carry = standTote; pelvis.attach(standTote); standTote.position.set(0, 0.085, 0.42); standTote.rotation.set(0, 0, 0); standTote = null; } }, { crouch: 0 },
+      { label: 'return empty tote', walk: [0.2, 1.4] }, walk(-2.18, 0.6), { face: -Math.PI / 2 }, { crouch: 1 },
+      { call: () => { const t = H.carry; world.attach(t); t.position.copy(EMPTY_RACK); t.rotation.set(0, -Math.PI / 2, 0); if (rackEmpty) world.remove(rackEmpty); rackEmpty = t; H.carry = null; } }, { crouch: 0 },
+      { label: 'fetch full tote', walk: [-2.18, 1.8] }, { face: -Math.PI / 2 }, { crouch: 1 },
+      { call: () => { H.carry = fullTote; pelvis.attach(fullTote); fullTote.position.set(0, 0.085, 0.42); fullTote.rotation.set(0, 0, 0); fullTote = null;
+        setTimeout(() => { fullTote = makeTote('tote_' + toteN++); fillTote(fullTote); fullTote.position.copy(FULL_RACK); fullTote.rotation.y = -Math.PI / 2; world.add(fullTote); }, 2500); } }, { crouch: 0 },
+      { label: 'deliver to stand', walk: [0.2, 1.4] }, walk(2.6, 1.42), { face: Math.PI }, { crouch: 1 },
+      { call: () => { const t = H.carry; world.attach(t); t.position.copy(STAND); t.rotation.set(0, 0, 0); standTote = t; H.carry = null; cnt.tote++; log('HMN-01 tote swap complete · VAC-01 resumes'); } }, { crouch: 0 },
+      { label: 'standby', walk: STANDBY }, { face: Math.PI },
+    );
+  } else { hState = 'standby · monitoring'; hq.push({ until: () => incidents.length || swapReady() }); }
+}
+function stepH(dt, manual) {
+  const S = stability();
+  if (manual) {
+    hState = 'manual teleop';
+    const move = (keys.w ? 1 : 0) - (keys.s ? 0.6 : 0), turn = (keys.a ? 1 : 0) - (keys.d ? 1 : 0);
+    H.h += turn * 1.8 * dt;
+    const sp = drive(move * S.vMax * H.speedF, dt);
+    H.x = THREE.MathUtils.clamp(H.x + Math.sin(H.h) * sp, -3.3, 3.5); H.z = THREE.MathUtils.clamp(H.z + Math.cos(H.h) * sp, -1.6, 2.8);
+    H.moving = THREE.MathUtils.lerp(H.moving, Math.min(1, Math.abs(H.v) / 0.5 + Math.abs(turn) * 0.5), 0.2);
+    H.phase += Math.abs(sp) * 6.3 + Math.abs(turn) * dt; H.wheelRot += sp / 0.08;
+    H.crouch = Math.max(0, H.crouch - dt * 2);
+  } else {
+    let b = dt, g = 0, drove = false;
+    while (b > 0 && g++ < 20) {
+      if (!hcur) { if (!hq.length) planH(); hcur = hq.shift(); if (!hcur) break; if (hcur.label) hState = hcur.label; hcur.t = 0; }
+      const c = hcur;
+      if (c.call) { c.call(); hcur = null; continue; }
+      if (c.until) { if (c.until()) { hcur = null; continue; } H.moving *= 0.9; break; }
+      if (c.walk) {
+        const [tx, tz] = c.walk, dx = tx - H.x, dz = tz - H.z, dist = Math.hypot(dx, dz);
+        if (dist < 0.03) { hcur = null; continue; }
+        const diff = wrap(Math.atan2(dx, dz) - H.h);
+        H.h += THREE.MathUtils.clamp(diff, -2.5 * b, 2.5 * b);
+        const desired = Math.abs(diff) < 0.35 ? Math.min(S.vMax * H.speedF, Math.sqrt(2 * S.aLim * dist)) : 0;
+        const sp = Math.min(dist, Math.max(0, drive(desired, b))); drove = true;
+        H.x += Math.sin(H.h) * sp; H.z += Math.cos(H.h) * sp; H.phase += sp * 6.3 + (sp ? 0 : 0.6 * b); H.wheelRot += sp / 0.08;
+        H.moving = THREE.MathUtils.lerp(H.moving, desired ? 1 : 0.4, 0.1); break;
+      }
+      if (c.face !== undefined) {
+        const diff = wrap(c.face - H.h); H.h += THREE.MathUtils.clamp(diff, -2 * b, 2 * b); H.phase += 0.8 * b;
+        if (Math.abs(diff) < 0.01) { H.h = c.face; hcur = null; continue; } break;
+      }
+      if (c.crouch !== undefined) {
+        H.moving = THREE.MathUtils.lerp(H.moving, 0, 0.3);
+        const d = c.crouch - H.crouch, s = 1.6 * b;
+        if (Math.abs(d) <= s) { H.crouch = c.crouch; hcur = null; b -= Math.abs(d) / 1.6; continue; }
+        H.crouch += Math.sign(d) * s; break;
+      }
+    }
+    if (!drove) drive(0, dt);
+  }
+  poseH();
+}
+function poseH() {
+  hmn.position.set(H.x, 0, H.z); hmn.rotation.y = H.h;
+  const c = H.crouch, sw = H.wheeled ? 0 : Math.sin(H.phase) * 0.38 * H.moving;
+  H.armT = THREE.MathUtils.lerp(H.armT, (H.carry || H.hand || c > 0.05) ? 1 : 0, 0.12);
+  if (!H.wheeled) for (const L of legs) {
+    const ph = L.s > 0 ? sw : -sw, lift = Math.max(0, Math.sin(H.phase + (L.s > 0 ? 0 : Math.PI))) * 0.6 * H.moving;
+    L.hip.rotation.x = -0.6 * c - ph; L.kn.rotation.x = 1.2 * c + lift; L.an.rotation.x = -(L.hip.rotation.x + L.kn.rotation.x);
+  }
+  const py = H.wheeled ? 0.89 - 0.22 * c : 0.84 * Math.cos(0.6 * c) + 0.05 - Math.abs(Math.cos(H.phase)) * 0.015 * H.moving;
+  pelvis.position.y = py;
+  torso.rotation.x = (H.wheeled ? 0.3 : 0.22) * c;
+  column.scale.y = Math.max(0.05, py - 0.28); column.position.y = 0.28 + column.scale.y / 2;
+  for (const w of wheels) w.rotation.x = H.wheelRot;
+  const reach = c > 1.05;
+  for (const A of arms) {
+    const swing = (A.s > 0 ? -sw : sw) * 0.6, shT = reach ? -0.5 : -1.15, elT = reach ? -0.1 : -0.45;
+    A.sh.rotation.x = shT * H.armT + swing * (1 - H.armT); A.el.rotation.x = elT * H.armT - 0.15;
+    A.sh.rotation.z = A.s * 0.08 * H.armT;
+  }
+  if (H.carry) H.carry.position.y = 0.085;
+}
+
+/* --- Drop incidents --- */
+const incidents = [], falling = []; let incN = 0, dropReq = false, autoDropAt = 4, activeInc = null;
+const markerMat = mat('incident_marker', 0xe0564a, 0.5, 0, { emissive: 0xe0564a, emissiveIntensity: 0.7 });
+function triggerDrop(it, bin) {
+  dropReq = false; autoDropAt = cnt.stow + 12;
+  world.attach(it);
+  const inc = { id: 'INC-' + String(++incN).padStart(3, '0'), item: it, t0: simT, bin };
+  it.userData.inc = inc; bin.hold = (bin.hold || 0) + 1;
+  it.userData.v = new THREE.Vector3((Math.random() - 0.6) * 0.3, 0.3, 0.55 + Math.random() * 0.3);
+  it.userData.spin = new THREE.Vector3(3 + Math.random() * 4, Math.random() * 3, 2 + Math.random() * 4);
+  falling.push(inc); activeInc = inc; setPip(1);
+  grip.force = 0; grip.slip = false; grip.msg = 'LOAD LOST · tactile 0 N → halt';
+  stw_r.q.length = 0; stw_r.cur = null;
+  stw_r.q.push(
+    { dur: 1.4, tick: () => grip.msg = `holding · ${inc.id} raised to fleet manager` },
+    { to: () => ({ z: 0, gap: 0.12 }), dur: 0.4 },
+    { call: () => { grip.item = null; grip.msg = 'resuming with next item'; } });
+  log(`${inc.id} STW-01 load lost · ${it.userData.sku} (${ITEM[it.userData.t].name}) · tactile 0 N`, 'r');
+}
+function stepFalling(dt) {
+  for (let i = falling.length - 1; i >= 0; i--) {
+    const inc = falling[i], it = inc.item, v = it.userData.v, sp = it.userData.spin, fy = it.userData.h / 2;
+    v.y -= 9.81 * dt; it.position.addScaledVector(v, dt);
+    it.rotation.x += sp.x * dt; it.rotation.y += sp.y * dt; it.rotation.z += sp.z * dt;
+    if (it.position.y < fy) {
+      it.position.y = fy; v.y = -v.y * 0.3; v.x *= 0.5; v.z *= 0.5; sp.multiplyScalar(0.4);
+      if (Math.abs(v.y) < 0.4) {
+        it.rotation.set(0, it.rotation.y, 0); falling.splice(i, 1);
+        const m = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.2, 40), markerMat); m.name = 'incident_marker_' + inc.id;
+        m.rotation.x = -Math.PI / 2; m.position.set(it.position.x, 0.006, it.position.z); world.add(m); inc.marker = m;
+        incidents.push(inc);
+        log(`${inc.id} cam C2 localised item on floor (${it.position.x.toFixed(2)}, ${it.position.z.toFixed(2)} m) · clip ${inc.id}_C2 saved −10 s…+30 s`, 'a');
+        log(`${inc.id} fleet manager → priority retrieval task for HMN-01`, 'a');
+      }
+    }
+  }
+  for (const inc of incidents) if (inc.marker) inc.marker.scale.setScalar(1 + 0.15 * Math.sin(simT * 6));
+}
+function closeIncident(it, bin) {
+  const inc = it.userData.inc; if (!inc || inc.closed) return; inc.closed = true;
+  bin.hold = Math.max(0, (bin.hold || 0) - 1); cnt.inc++;
+  if (inc.marker) world.remove(inc.marker);
+  log(`${inc.id} closed · ${it.userData.sku} in planned bin ${bin.r + 1}${String.fromCharCode(65 + bin.c)} · pod cam verified ✓ · ${(simT - inc.t0).toFixed(0)} s`, 'g');
+  if (activeInc === inc) activeInc = null;
+}
+
+/* --- Event log --- */
+const logs = [];
+const fmtT = t => `${String(Math.floor(t / 60)).padStart(2, '0')}:${(t % 60).toFixed(1).padStart(4, '0')}`;
+const LC = { r: '#b8322a', a: '#9a6200', g: '#1b7f5a', '': '#5d5953' };
+function log(msg, c = '') {
+  logs.unshift({ t: simT, msg, c }); if (logs.length > 7) logs.length = 7;
+  $('log').innerHTML = logs.map(l => `<div style="color:${LC[l.c]}"><span style="color:#8a857c">${fmtT(l.t)}</span> ${l.msg}</div>`).join('');
+}
+
+/* --- Overhead traceability cameras --- */
+const camRig = grp('overhead_camera_rig', world);
+box('truss_beam', M.alu, 7.2, 0.08, 0.08, 0.1, 3.45, 1.0, camRig);
+for (const x of [-3.45, 3.65]) box('truss_post', M.alu, 0.08, 3.45, 0.08, x, 1.725, 1.0, camRig);
+const CAMS = [['C1', [2.5, 3.38, 1.0], [2.4, 0, 0.55]], ['C2', [0.35, 3.38, 1.0], [0.35, 0, 0.25]], ['C3', [-2.2, 3.38, 1.0], [-2.35, 0, 1.2]]].map(([id, p, t]) => {
+  box('cam_housing_' + id, M.dark, 0.12, 0.08, 0.16, p[0], p[1] - 0.02, p[2], camRig);
+  box('cam_lens_' + id, M.glass, 0.06, 0.004, 0.06, p[0], p[1] - 0.062, p[2], camRig);
+  const cam = new THREE.PerspectiveCamera(64, 300 / 170, 0.1, 3.6); cam.name = 'overhead_' + id;
+  cam.position.set(...p); cam.lookAt(new THREE.Vector3(...t)); world.add(cam); cam.updateMatrixWorld();
+  const helper = new THREE.CameraHelper(cam); helper.name = 'coverage_' + id; helper.visible = false; world.add(helper);
+  return { id, cam, helper };
+});
+const pipR = new THREE.WebGLRenderer({ canvas: $('pip3d'), antialias: true });
+pipR.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); pipR.setSize(300, 170, false); pipR.setClearColor(0xe9e6df);
+const p2 = $('pip2d').getContext('2d'); let pipIdx = 1;
+const pv = new THREE.Vector3();
+function setPip(i) { pipIdx = i; document.querySelectorAll('[data-c]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.c === i)); }
+function drawPip() {
+  const C = CAMS[pipIdx], W = 300, Hh = 170, g = p2;
+  if (stage._scene) pipR.render(stage._scene, C.cam);
+  g.setTransform(2, 0, 0, 2, 0, 0); g.clearRect(0, 0, W, Hh);
+  g.font = '10px ui-monospace, Menlo, monospace';
+  g.fillStyle = 'rgba(20,22,24,.75)'; g.fillRect(0, 0, W, 16);
+  g.fillStyle = Math.floor(simT * 2) % 2 ? '#e0564a' : '#6b2520'; g.beginPath(); g.arc(8, 8, 3, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#e6e8e6'; g.fillText(`REC ${C.id} · ${fmtT(simT)} · 30 s ring buffer`, 16, 11.5);
+  const tag = (obj, label, col, sz) => {
+    obj.getWorldPosition(pv); pv.project(C.cam); if (pv.z > 1) return;
+    const x = (pv.x * 0.5 + 0.5) * W, y = (-pv.y * 0.5 + 0.5) * Hh; if (x < 0 || x > W || y < 16 || y > Hh) return;
+    g.strokeStyle = col; g.lineWidth = 1.5; g.strokeRect(x - sz / 2, y - sz / 2, sz, sz); g.fillStyle = col; g.fillText(label, x - sz / 2, y - sz / 2 - 3);
+  };
+  tag(pelvis, 'HMN-01', '#2f7cf6', 34);
+  if (vacHeld) tag(vacHeld, vacHeld.userData.sku, '#138076', 16);
+  for (const inc of new Set([...falling, ...incidents, ...(activeInc ? [activeInc] : [])])) tag(inc.item, inc.id + ' ' + inc.item.userData.sku, '#e0564a', 20);
+  if (activeInc) { g.fillStyle = 'rgba(224,86,74,.92)'; g.fillRect(0, Hh - 16, W, 16); g.fillStyle = '#fff'; g.fillText(`${activeInc.id} · tracking ${activeInc.item.userData.sku} · clip linked to WMS`, 6, Hh - 5); }
+}
+function hud2() {
+  const S = stability(), util = Math.abs(H.acc) / S.aTip;
+  $('stT').textContent = H.wheeled ? 'wheeled · static' : 'bipedal · dynamic';
+  $('stV').textContent = `${Math.abs(H.acc).toFixed(2)} / ${S.aTip.toFixed(2)} m/s²`;
+  $('stG').style.width = Math.min(100, util * 100) + '%';
+  $('stG').style.background = util > 1 ? '#e0564a' : util > 0.6 ? '#e0a43a' : '#1f9e93';
+  $('stS').textContent = H.wheeled
+    ? `tip limit g·d/h = ${S.aTip.toFixed(1)} m/s² · accel capped at 40 %${H.carry ? ' · tote shifts CoM +' + (S.xc * 100).toFixed(1) + ' cm' : ''}`
+    : `feet give ±${(S.d0 * 100).toFixed(0)} cm support · above ${S.aTip.toFixed(2)} m/s² only active balance keeps it up`;
+  $('c4').textContent = cnt.inc;
+}
+
+/* ================= Safety interlock ================= */
+const Z = { vac: 1, stw: 1 };
+const zc = { g: 0x4cc38a, a: 0xe0a43a, r: 0xe0564a };
+function safety() {
+  const dv = Math.hypot(H.x - VX, H.z - VZ);
+  const atStand = Math.hypot(H.x - 2.6, H.z - 1.42) < 0.15;
+  Z.vac = dv < 0.9 ? 0 : dv < 1.7 ? (atStand ? 0.5 : 0.4) : 1;
+  const dx = Math.max(GZ.x0 - H.x, 0, H.x - GZ.x1), dz = Math.max(GZ.z0 - H.z, 0, H.z - GZ.z1), dg = Math.hypot(dx, dz);
+  Z.stw = dg < 0.3 ? 0 : dg < 1.1 ? 0.4 : 1;
+  zVacStop.material.color.setHex(Z.vac === 0 ? zc.r : zc.g); zVacStop.material.opacity = Z.vac === 0 ? 0.4 : 0.12;
+  zVacWarn.material.color.setHex(Z.vac < 1 ? (Z.vac ? zc.a : zc.r) : zc.g); zVacWarn.material.opacity = Z.vac < 1 ? 0.32 : 0.14;
+  zStw.material.color.setHex(Z.stw < 1 ? (Z.stw ? zc.a : zc.r) : zc.g); zStw.material.opacity = Z.stw < 1 ? 0.3 : 0.12;
+  H.speedF = (Z.vac < 1 || Z.stw < 1) ? 0.6 : 1;
+}
+
+/* ================= Conveyor ================= */
+function stepConv(dt) {
+  for (let i = 0; i < conv.length; i++) {
+    const lim = i === 0 ? CV_END : conv[i - 1].position.x + 0.24;
+    conv[i].position.x = Math.max(lim, conv[i].position.x - 0.35 * dt);
+  }
+}
+
+/* ================= Exploded view + labels ================= */
+let explode = 0, explodeOn = false;
+const lblRoot = $('labels');
+for (const m of modules) { const d = document.createElement('div'); d.className = 'lbl'; d.innerHTML = m.label + (m.spec ? ` · <em>${m.spec}</em>` : ''); lblRoot.appendChild(d); m.el = d; }
+const v3 = new THREE.Vector3();
+function updateExplode(dt) {
+  explode = THREE.MathUtils.clamp(explode + (explodeOn ? 1 : -1) * dt * 1.6, 0, 1);
+  const k = ease(explode);
+  for (const m of modules) m.obj.position.copy(m.base).addScaledVector(m.off, m.robot === expRobot ? k : 0);
+  if (camGoal) {
+    const a = Math.min(1, dt * 3.5);
+    stage._camera.position.lerp(camGoal.p, a); stage._controls.target.lerp(camGoal.t, a);
+    if (stage._camera.position.distanceTo(camGoal.p) < 0.01) camGoal = null;
+  }
+  const cam = stage._camera, rect = stage.getBoundingClientRect();
+  for (const m of modules) {
+    const on = explode > 0.6 && m.label && m.robot === expRobot && m.obj.visible;
+    m.el.classList.toggle('on', !!on);
+    if (!on) continue;
+    m.obj.getWorldPosition(v3); v3.y += 0.12; v3.project(cam);
+    m.el.style.left = (rect.left + (v3.x * 0.5 + 0.5) * rect.width) + 'px';
+    m.el.style.top = (rect.top + (-v3.y * 0.5 + 0.5) * rect.height) + 'px';
+  }
+}
+
+let expRobot = 'stw', camGoal = null, camSaved = null;
+function focus(r) {
+  expRobot = r;
+  document.querySelectorAll('[data-r]').forEach(b => b.setAttribute('aria-pressed', b.dataset.r === r));
+  const t = r === 'vac' ? new THREE.Vector3(2.75, 1.0, 0.45) : r === 'stw' ? new THREE.Vector3(0.25, 1.35, 0.1) : new THREE.Vector3(H.x, 1.0, H.z);
+  const off = r === 'stw' ? new THREE.Vector3(1.4, 1.2, 4.4) : new THREE.Vector3(1.9, 1.1, 3.4);
+  const left = new THREE.Vector3(-off.z, 0, off.x).normalize().multiplyScalar(r === 'stw' ? 1.1 : 0.85);
+  t.add(left);
+  camGoal = { p: t.clone().add(off), t };
+}
+/* ================= HUD ================= */
+const dotC = f => f === 0 ? '#e0564a' : f < 1 ? '#e0a43a' : '#4cc38a';
+function hud() {
+  $('s0').textContent = (Z.vac === 0 ? 'HOLD · person in zone' : Z.vac < 1 ? 'slowed ' + Math.round(Z.vac * 100) + '% · ' : '') + (Z.vac === 0 ? '' : vacState);
+  $('s1').textContent = (Z.stw === 0 ? 'HOLD · person in zone' : Z.stw < 1 ? 'slowed 40% · ' : '') + (Z.stw === 0 ? '' : grip.msg);
+  $('s2').textContent = hState + (H.speedF < 1 ? ' · 0.42 m/s near robots' : '');
+  $('d0').style.background = dotC(Z.vac); $('d1').style.background = dotC(Z.stw); $('d2').style.background = mode === 'manual' ? '#2f7cf6' : '#4cc38a';
+  $('it').textContent = grip.item ? `${grip.item.name} · target ${grip.item.force} N` : '—';
+  $('fN').textContent = grip.force.toFixed(1) + ' N';
+  $('fg').style.width = Math.min(100, grip.force / 16 * 100) + '%';
+  $('fg').style.background = grip.slip ? '#e0a43a' : '#1f9e93';
+  $('ft').style.left = grip.item ? (grip.item.force / 16 * 100) + '%' : '0';
+  $('fs').textContent = grip.msg;
+  $('c0').textContent = cnt.ind; $('c1').textContent = cnt.stow; $('c2').textContent = cnt.tote; $('c3').textContent = cnt.pod;
+  M.sensor.emissiveIntensity = Math.min(1.5, grip.force / 8);
+}
+
+/* ================= Boot / loop ================= */
+stage.setObject(world);
+stage._camera.position.set(-1.9, 5.0, 8.0);
+stage._controls.target.set(-1.3, 0.7, 0.6);
+stage._controls.update();
+
+let speed = 1, paused = false, mode = 'auto', last = performance.now();
+const keys = {};
+(function tick(now) {
+  const real = Math.min(0.05, (now - last) / 1000); last = now;
+  updateExplode(real);
+  if (!paused && explode === 0) {
+    const dt = real * speed;
+    simT += dt;
+    safety();
+    stepH(dt, mode === 'manual');
+    vac_r.step(dt * Z.vac);
+    stw_r.step(dt * Z.stw);
+    stepConv(dt);
+    stepFalling(dt);
+  }
+  hud(); hud2(); drawPip();
+  if (document.hidden) setTimeout(() => tick(performance.now()), 33); else requestAnimationFrame(tick);
+})(last);
+
+addEventListener('keydown', e => { const k = e.key.toLowerCase(); if ('wasd'.includes(k) && k.length === 1) keys[k] = true; });
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+document.querySelectorAll('.pad button').forEach(b => {
+  const k = b.dataset.k, on = e => { e.preventDefault(); keys[k] = true; }, off = () => keys[k] = false;
+  b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off);
+});
+const setMode = m => { mode = m; $('bAuto').setAttribute('aria-pressed', m === 'auto'); $('bMan').setAttribute('aria-pressed', m === 'manual'); $('manual').style.display = m === 'manual' ? 'flex' : 'none'; };
+$('bAuto').onclick = () => setMode('auto');
+$('tBip').onclick = () => setType(false);
+$('tWhl').onclick = () => setType(true);
+$('bDrop').onclick = () => { dropReq = true; log('operator armed a drop on the next STW-01 transfer'); };
+$('bCov').onclick = e => { const on = !CAMS[0].helper.visible; CAMS.forEach(c => c.helper.visible = on); e.target.setAttribute('aria-pressed', on); };
+document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => setPip(+b.dataset.c));
+$('bMan').onclick = () => setMode('manual');
+$('bExp').onclick = e => {
+  explodeOn = !explodeOn; e.target.setAttribute('aria-pressed', explodeOn);
+  $('exp').style.display = explodeOn ? 'flex' : 'none';
+  if (explodeOn) { camSaved = { p: stage._camera.position.clone(), t: stage._controls.target.clone() }; focus(expRobot); }
+  else if (camSaved) camGoal = camSaved;
+};
+document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => focus(b.dataset.r));
+$('bPause').onclick = e => { paused = !paused; e.target.textContent = paused ? 'Play' : 'Pause'; };
+document.querySelectorAll('button[data-s]').forEach(b => b.onclick = () => { speed = +b.dataset.s; document.querySelectorAll('button[data-s]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+</script>
+</body>
+</html>

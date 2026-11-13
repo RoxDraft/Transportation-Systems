@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;background:#0f1214;color:#e6e8e6;font-family:'IBM Plex Sans',Helvetica,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+*{box-sizing:border-box}
+a{color:#4fc9ba;text-decoration:none}
+a:hover{color:#8ee3d8}
+</style>
+</helmet>
+<div style="height:100vh;display:flex;flex-direction:column">
+  <header style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:8px 16px;min-height:48px;border-bottom:1px solid #232a2f;background:#121619;flex:none">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:22px;height:22px;border-radius:5px;background:#2fb5a6"></div>
+      <div style="font-weight:600;font-size:15px;white-space:nowrap">Dockyard OS</div>
+      <div style="font-size:12px;color:#8b949a;white-space:nowrap">{{ subtitle }}</div>
+    </div>
+    <nav style="flex:0 1 auto;display:flex;flex-wrap:wrap;gap:2px;padding:3px;border:1px solid #232a2f;border-radius:8px;min-width:0">
+      <sc-for list="{{ views }}" as="v" hint-placeholder-count="5">
+        <button onClick="{{ v.pick }}" title="{{ v.hint }}" style="display:flex;align-items:center;gap:8px;padding:6px 12px;border:0;border-radius:6px;cursor:pointer;font:500 12px 'IBM Plex Sans',sans-serif;white-space:nowrap;background:{{ v.bg }};color:{{ v.fg }}" style-hover="color:#e6e8e6">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6f787d">{{ v.key }}</span>{{ v.short }}
+          <span style="width:6px;height:6px;border-radius:50%;background:{{ v.dot }}"></span>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="margin-left:auto;flex:none;display:flex;align-items:center;gap:12px">
+    <button onClick="{{ toggleSplit }}" style="font:12px 'IBM Plex Sans',sans-serif;padding:6px 12px;border-radius:6px;border:1px solid {{ splitBorder }};background:transparent;color:#c8cdcf;cursor:pointer;white-space:nowrap">{{ splitLabel }}</button>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8b949a;white-space:nowrap">{{ clock }}</div>
+    </div>
+  </header>
+  <main style="flex:1;min-height:0;display:flex;gap:1px;background:#232a2f">
+    <sc-for list="{{ panes }}" as="p" hint-placeholder-count="1">
+      <section style="flex:1;min-width:0;display:flex;flex-direction:column;background:#0f1214">
+        <sc-if value="{{ p.showBar }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:30px;padding:4px 10px;overflow:hidden;border-bottom:1px solid #232a2f;background:#121619;font-size:11px;color:#8b949a">
+            <span>{{ p.side }}</span>
+            <sc-for list="{{ p.opts }}" as="o" hint-placeholder-count="5">
+              <button onClick="{{ o.pick }}" style="padding:2px 8px;border:0;border-radius:4px;cursor:pointer;font:11px 'IBM Plex Sans',sans-serif;white-space:nowrap;background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <div style="position:relative;flex:1;min-height:0">
+          <sc-for list="{{ p.frames }}" as="f" hint-placeholder-count="1">
+            <iframe src="{{ f.src }}" title="{{ f.label }}" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:{{ f.bg }};visibility:{{ f.vis }};z-index:{{ f.z }}"></iframe>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;keepAlive&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;description&quot;:&quot;Keep visited monitors running in the background&quot;}}">
+const VIEWS = [
+  { id: 'fleet', label: 'Fleet Orchestrator', src: 'Fleet Orchestrator.dc.html', bg: '#0f1214', dot: '#4cc38a', hint: 'ROS 2 fleet: vision, LiDAR, topics, logs' },
+  { id: 'cell', label: 'Warehouse Floor', src: 'Warehouse Floor.html', bg: '#eeebe5', dot: '#4cc38a', hint: 'Dock unloading → palletizer → FMR put-away, plus pick & stow cell' },
+  { id: 'pdm', label: 'Predictive Maintenance', src: 'Predictive Maintenance.dc.html', bg: '#0f1214', dot: '#e0a43a', hint: 'Fatigue, accuracy, vibration, work orders' },
+];
+const SHORT = { fleet: 'Fleet', cell: 'Warehouse', pdm: 'Maintenance' };
+const KEY = 'dockyard_cc_v2';
+
+class Component extends DCLogic {
+  state = (() => { try { return { a: 'fleet', b: 'cell', split: false, focus: 0, loaded: ['fleet'], ...JSON.parse(localStorage.getItem(KEY) || '{}'), now: Date.now(), w: innerWidth }; } catch { return { w: innerWidth, a: 'fleet', b: 'cell', split: false, focus: 0, loaded: ['fleet'], now: Date.now() }; } })();
+  componentDidMount() {
+    this.iv = setInterval(() => this.setState({ now: Date.now() }), 1000);
+    this.onResize = () => this.setState({ w: innerWidth }); addEventListener('resize', this.onResize); this.onResize();
+    this.onKey = e => { const n = +e.key; if (n >= 1 && n <= VIEWS.length && !e.target.closest?.('input,textarea')) this.go(VIEWS[n - 1].id); };
+    this.onMsg = e => { const id = e.data && e.data.dockyardNav; if (VIEWS.some(v => v.id === id)) this.go(id); };
+    addEventListener('keydown', this.onKey); addEventListener('message', this.onMsg);
+    this.loadBoth();
+  }
+  componentWillUnmount() { clearInterval(this.iv); removeEventListener('keydown', this.onKey); removeEventListener('resize', this.onResize); removeEventListener('message', this.onMsg); }
+  save(s) { this.setState(s, () => { const { a, b, split, focus } = this.state; localStorage.setItem(KEY, JSON.stringify({ a, b, split, focus })); this.loadBoth(); }); }
+  loadBoth() { const need = [this.state.a, this.state.split && this.state.b].filter(Boolean).filter(id => !this.state.loaded.includes(id)); if (need.length) this.setState(s => ({ loaded: [...s.loaded, ...need] })); }
+  go(id, pane) { const p = pane ?? (this.state.split ? this.state.focus : 0); this.save(p === 1 ? { b: id, focus: 1 } : { a: id, focus: 0 }); }
+
+  renderVals() {
+    const { a, b, split, focus, loaded, now } = this.state, keepAlive = this.props.keepAlive ?? true;
+    const active = split ? (focus ? b : a) : a;
+    const wide = (this.state.w || innerWidth) >= 1180;
+    const views = VIEWS.map((v, i) => ({ ...v, key: i + 1, short: wide ? v.label : SHORT[v.id], bg: v.id === active ? '#2a3136' : 'transparent', fg: v.id === active ? '#e6e8e6' : '#9aa3a8', pick: () => this.go(v.id) }));
+    const pane = (cur, idx) => ({
+      showBar: split, side: idx ? 'Right' : 'Left',
+      opts: VIEWS.map(v => ({ label: SHORT[v.id], bg: v.id === cur ? '#2a3136' : 'transparent', fg: v.id === cur ? '#e6e8e6' : '#8b949a', pick: () => this.go(v.id, idx) })),
+      frames: VIEWS.filter(v => keepAlive ? loaded.includes(v.id) && (idx === 0 || v.id === cur) : v.id === cur)
+        .filter(v => idx === 0 ? !(split && v.id === b && v.id !== a) : true)
+        .map(v => ({ src: v.src, label: v.label, bg: v.bg, vis: v.id === cur ? 'visible' : 'hidden', z: v.id === cur ? 1 : 0 })),
+    });
+    return {
+      views, panes: split ? [pane(a, 0), pane(b, 1)] : [pane(a, 0)],
+      splitLabel: split ? 'Single view' : 'Split view', splitBorder: split ? '#2fb5a6' : '#2a3136',
+      toggleSplit: () => this.save({ split: !split, focus: 0, b: b === a ? VIEWS.find(v => v.id !== a).id : b }),
+      subtitle: wide ? 'Control Center' : '',
+      clock: new Date(now).toLocaleTimeString([], { hour12: false }),
+    };
+  }
+}
+</script>
+</body>
+</html>
