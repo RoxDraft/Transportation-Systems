@@ -1691,5 +1691,6 @@ document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => focus(b.dat
 $('bPause').onclick = e => { paused = !paused; e.target.textContent = paused ? 'Play' : 'Pause'; };
 document.querySelectorAll('button[data-s]').forEach(b => b.onclick = () => { speed = +b.dataset.s; document.querySelectorAll('button[data-s]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
 </script>
+<script src="back-link.js"></script>
 </body>
 </html>
